@@ -407,3 +407,16 @@ def test_unknown_habitat_does_not_break_random_compatible_selection(database):
     assert len(known) == 8
     unknown = next(c for c in main.creatures() if c["habitat"] == "unknown")
     assert not unknown["eligible_for_tournament"] and unknown["id"] not in known
+
+
+def test_search_uses_reviewed_display_name_without_rewriting_legacy_rows(database):
+    with sqlite3.connect(database) as conn:
+        library.import_records(conn, [record()])
+        library.import_records(
+            conn, [reviewed_record(display_name="Reviewed fixture title")]
+        )
+    assert len(main.creatures(q="reviewed fixture")) == 1
+    with sqlite3.connect(database) as conn:
+        assert (
+            conn.execute("SELECT name FROM creatures").fetchone()[0] == "Test fixture"
+        )

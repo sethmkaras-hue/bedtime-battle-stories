@@ -39,7 +39,7 @@ Allow roughly 338 MiB for Kokoro files, roughly 60–70 MiB for the selected Pip
 
 ## Providers and voices
 
-Kokoro is the default narrator. Heart (`af_heart`) is the editorial default; Sarah, Emma, Michael and George are available alternatives. This is a selection/pacing control, not arbitrary voice instructions. Piper Lessac is the default name voice. The same pronunciation override mapping is used for local names and narration without changing displayed scientific names. Guides remain approximate and need listening on real devices.
+Kokoro is the default narrator. Heart (`af_heart`) is the editorial default; Sarah, Emma, Michael and George are available alternatives. This is a selection/pacing control, not arbitrary voice instructions. Piper Lessac remains the default name-voice preference, but creature buttons now play only prepared verified assets. Build them using GENERATE_PRONUNCIATIONS.sh after source review; missing assets never trigger tap-time synthesis. Parent voice previews remain explicit generation actions. See [library maintenance](CREATURE_LIBRARY.md). The same pronunciation override mapping is used for local names and narration without changing displayed scientific names. Guides remain approximate and need listening on real devices.
 
 Each provider exposes availability, voices, identity and generation through a shared interface. Missing local packages/models trigger the other installed local provider, then browser speech. OpenAI is never an automatic fallback. Browser speech stays entirely frontend-side; it has no generated file or reliable time/progress API. The UI identifies the fallback and supports reading when the device has no voice.
 

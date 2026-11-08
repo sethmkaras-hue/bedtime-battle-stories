@@ -50,3 +50,9 @@ Real Kokoro CPU generation is measured. Piper's model download was blocked by cl
 ## Python 3.14 CPU audio compatibility
 
 Optional audio uses Sherpa-ONNX Kokoro with English IPA input, supported ONNX Runtime wheels and maintained OHF Piper. Unsupported package Python constraints must not be overridden. Missing packages/models and generation failures must be visible in Settings; the core app must start independently. Piper model-host policy failures are separate from Python compatibility and must retain the tested Kokoro pronunciation fallback. Preserve existing model/cache directories when migrating runtime-specific model formats. Ubuntu 26.04 instructions target Python 3.14; distinguish native Python validation from OS/hardware coverage.
+
+## Creature library and asset provenance iteration
+
+Add versioned encyclopedia records, portable stable keys, protected reviewed fields, ranges with source references, explicit taxonomy, licensed media attribution, independent encyclopedia browsing and repeatable validation/auditing. Prehistoric Ocean retains its legacy API routing key but distinguishes marine reptiles and other marine groups. Outcome ratings remain separate from scientific facts.
+
+Creature speakers must play prebuilt local files only. Verified-only bulk generation uses the existing bounded cache worker; missing audio is reported without tap-time synthesis. Parent voice previews and story narration remain explicit separate paths. Scientific, image and pronunciation research is blocked in the current cloud network: no new verified records may be claimed until authoritative evidence is inspected. Targets 150/60/40 remain unmet; report all unresolved records and coverage accurately.

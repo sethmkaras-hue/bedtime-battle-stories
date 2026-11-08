@@ -113,11 +113,12 @@ def creatures(category: Literal['dinosaur', 'shark', 'marine_reptile'] | None = 
                 if key in extra:
                     item[key] = extra[key]
             result.append(item)
-        selected=[r for r in result if (category is None or r['category'] == category)
-                and (q.casefold() in r['name'].casefold() or q.casefold() in (r['scientific_name'] or '').casefold())]
-        enriched=encyclopedia.enrich(conn,selected,os.environ.get('BBS_AUDIO_CACHE',ROOT/'data/audio_cache'))
+        enriched=encyclopedia.enrich(conn,result,os.environ.get('BBS_AUDIO_CACHE',ROOT/'data/audio_cache'))
         for item in enriched:item['eligible_for_tournament']=bool(HABITAT_ARENAS.get(item['habitat'],set()))
-        return enriched
+        selected=[r for r in enriched if (category is None or r['category']==category)
+                  and (q.casefold() in r['name'].casefold() or q.casefold() in (r['scientific_name'] or '').casefold())]
+        return sorted(selected,key=lambda r:r['name'].casefold())
+
 
 
 def arenas_for(rows):
