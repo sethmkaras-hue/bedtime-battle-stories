@@ -1,0 +1,6 @@
+-r requirements.txt
+# CPU-only runtime; never install the [gpu] or [train] extras.
+kokoro-onnx==0.6.1
+piper-tts==1.8.0
+soundfile>=0.13,<1
+openai>=2,<4

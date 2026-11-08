@@ -10,6 +10,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, StrictInt
 from app.adventure import progress
+from app.audio.routes import router as audio_router, create_service
 
 ROOT = Path(__file__).resolve().parent.parent
 DB = Path(os.environ.get('BBS_DB_PATH', ROOT / 'data' / ('sample.sqlite3' if os.environ.get('BBS_SAMPLE_DATA') == '1' else 'creatures.sqlite3')))
@@ -54,10 +55,15 @@ def initialize_database():
 @asynccontextmanager
 async def lifespan(app):
     initialize_database()
-    yield
+    app.state.audio = create_service()
+    try:
+        yield
+    finally:
+        app.state.audio.close()
 
 
 app = FastAPI(title='Bedtime Battle Stories', lifespan=lifespan)
+app.include_router(audio_router)
 app.mount('/static', StaticFiles(directory=ROOT / 'static'), name='static')
 
 
