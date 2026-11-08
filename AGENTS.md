@@ -28,3 +28,8 @@
 
 - Keep Python 3.14 installability tested. Do not bypass Requires-Python; use the maintained Sherpa Kokoro API and external IPA rather than lexicon-only inference that can omit words.
 - Distinguish Piper package/native-extension support from voice-host network access. Missing Piper models must retain an explicit, tested Kokoro fallback and useful Settings diagnostics.
+
+- Never promote a taxon, pronunciation or image license from a suggested URL or an AI respelling. Record inspected evidence/reviewer/date and retain explicit unverified states. Do not add entries merely to satisfy count targets.
+- Preserve numeric IDs and stable import keys. Keep reviewed profiles, pronunciations and artwork protected; store fictional outcome ratings separately. Unknown measurements are null, never zero.
+- Creature speaker taps must only play prepared local files. Do not call local/cloud/browser TTS during browsing; generate verified guidance explicitly with GENERATE_PRONUNCIATIONS.sh. Parent previews are separate.
+- Real imagery requires matching taxon identity, complete reusable-license credit and validated local WebP assets. Use an explicit artwork-review placeholder when evidence is missing.

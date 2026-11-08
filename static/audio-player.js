@@ -27,6 +27,8 @@ window.BedtimeAudio = class {
     this.generating = false;
     this.audio.pause();
     this.nameAudio.pause();
+    this.playingNameButton?.setAttribute("aria-pressed", "false");
+    this.pronouncing = false;
     window.speechSynthesis?.cancel();
     this.status.closest(".audio-card")?.classList.remove("loading");
   }
@@ -195,7 +197,7 @@ window.BedtimeAudio = class {
     this.chunks = [];
     return this.play();
   }
-  async pronounce(creature, prefs, button) {
+  async previewPronunciation(creature, prefs, button) {
     this.audio.pause();
     this.nameAudio.pause();
     window.speechSynthesis?.cancel();
@@ -253,6 +255,71 @@ window.BedtimeAudio = class {
       if (token === this.nameToken) this.browserName(text, prefs);
     } finally {
       if (token === this.nameToken) this.pronouncing = false;
+      button?.removeAttribute("aria-busy");
+    }
+  }
+  async pronounce(creature, prefs, button) {
+    this.audio.pause();
+    this.nameAudio.pause();
+    window.speechSynthesis?.cancel();
+    if (!this.generating) this.token++;
+    this.pronouncing = true;
+    const nameToken = ++this.nameToken;
+    this.playingNameButton?.setAttribute("aria-pressed", "false");
+    const options = creature.pronunciation_audio_options || [];
+    const asset =
+      options.find(
+        (a) =>
+          a.provider === prefs.pronunciationProvider &&
+          a.voice === prefs.pronunciationVoice,
+      ) ||
+      creature.pronunciation_audio ||
+      options[0];
+    if (
+      !asset ||
+      !/^\/api\/library\/pronunciations\/\d+\/[0-9a-f]{64}$/.test(asset.url)
+    ) {
+      const guide =
+        creature.profile?.pronunciation?.phonetic || creature.pronunciation;
+      document.getElementById("message").textContent =
+        "Pronunciation audio is not prepared yet." +
+        (guide
+          ? (creature.profile?.pronunciation?.status === "verified"
+              ? " Written guide: "
+              : " Written guide (unverified): ") + guide
+          : " A parent can review this name.");
+      this.pronouncing = false;
+      console.info(
+        "Missing prebuilt pronunciation asset for creature",
+        creature.id,
+      );
+      return;
+    }
+    this.playingNameButton = button;
+    button?.setAttribute("aria-busy", "true");
+    this.nameAudio.onended = () =>
+      button?.setAttribute("aria-pressed", "false");
+    this.nameAudio.onerror = () => {
+      button?.setAttribute("aria-busy", "false");
+      button?.setAttribute("aria-pressed", "false");
+      document.getElementById("message").textContent =
+        "This pronunciation file is missing. Please ask a parent to refresh the prepared audio.";
+    };
+    // Start the local media request directly within the tap gesture. No fetch,
+    // synthesis, browser speech or external request is made by this path.
+    if (!this.nameAudio.src.endsWith(asset.url)) this.nameAudio.src = asset.url;
+    this.nameAudio.currentTime = 0;
+    this.nameAudio.playbackRate = prefs.nameRate / (asset.speed || 1);
+    try {
+      await this.nameAudio.play();
+      if (nameToken === this.nameToken)
+        button?.setAttribute("aria-pressed", "true");
+    } catch {
+      if (nameToken !== this.nameToken) return;
+      document.getElementById("message").textContent =
+        "Tap the speaker again to play the prepared pronunciation.";
+    } finally {
+      if (nameToken === this.nameToken) this.pronouncing = false;
       button?.removeAttribute("aria-busy");
     }
   }

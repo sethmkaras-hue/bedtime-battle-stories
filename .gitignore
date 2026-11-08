@@ -8,3 +8,5 @@ data/audio_cache/
 data/models/
 data/benchmarks/
 !.env.example
+data/library_audit.json
+data/pronunciation_report.json

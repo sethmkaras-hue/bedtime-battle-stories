@@ -52,6 +52,31 @@ The new Kokoro bundle goes in **data/models/kokoro-sherpa/**. Use the downloader
 
 Piper's Python 3.14 package/CLI and native phonemizer work in validation. Its official voice host still returned a proxy-policy 403 in this cloud. That is a network-access issue, not an obsolete package source. Where the voice is unavailable, Kokoro handles both stories and names locally; OpenAI remains opt-in and browser speech is the final fallback. Settings gives the missing-package/model reason and last generation-error type. See [compatibility investigation](docs/PYTHON314.md).
 
+## Creature book, research and prepared names
+
+Explore the creature book from Home without starting a tournament. Tap a creature picture for its profile and source/image credits. Selection keeps a separate Add/Remove action. Featured/category trails are available; biological trait trails show only reviewed claims. Existing creature IDs and fictional game ratings are preserved independently of encyclopedia data.
+
+**Research is incomplete:** outbound policy blocked the museum/Commons sources. The inherited **110 dinosaur genera, 42 sharks and 12 marine reptiles remain unverified**; no new verified taxa or licensed species photos were added. All 164 images are explicitly marked placeholders. Verified pronunciation coverage and prepared name audio are both **0/164**. [The full audit](docs/CREATURE_AUDIT.json) names every unresolved record; [the maintenance guide](docs/CREATURE_LIBRARY.md) gives target gaps, schema, licensing and research steps. No target was met by inventing facts.
+
+Creature speakers now play **pre-generated local audio only**, never request TTS on tap. Missing audio shows a written fallback. After researching and importing verified guidance, a parent runs:
+
+```bash
+bash GENERATE_PRONUNCIATIONS.sh --provider kokoro --voice af_heart \
+  --report data/pronunciation_report.json
+```
+
+Repeat runs reuse current audio. The command skips unverified names, including inherited respellings. Parent voice previews remain explicit generation actions; story narration and its cache are preserved. To curate and inspect records:
+
+```bash
+.venv/bin/python scripts/library.py export --output /tmp/creatures-for-review.json
+.venv/bin/python scripts/library.py schema --output /tmp/creature-schema.json
+.venv/bin/python scripts/library.py validate /path/to/reviewed-creatures.json
+.venv/bin/python scripts/library.py import /path/to/reviewed-creatures.json
+.venv/bin/python scripts/library.py audit --output data/library_audit.json
+```
+
+Image preparation and real-image import validation use optional `requirements-media.txt`. Read the [licensed media workflow](docs/CREATURE_LIBRARY.md) before importing assets; never assume museum content is redistributable. Reviewed records, pronunciations and artwork are protected against automatic overwrites.
+
 ## Tonight’s adventure
 
 1. **Start Adventure** → choose dinosaurs, sharks, prehistoric ocean creatures, or a compatible Ocean Mix. **Surprise Me!** creates a random valid tournament directly.
@@ -109,14 +134,16 @@ Never point development sample mode at a production database. Unset `BBS_SAMPLE_
 .venv/bin/python -m pip check
 .venv/bin/python -m pip install -r requirements-dev.txt
 .venv/bin/python tests/redesign_smoke.py http://127.0.0.1:8502 /tmp/bedtime-screenshots
+.venv/bin/python tests/library_smoke.py http://127.0.0.1:8502 /tmp/bedtime-library-screenshots
 ```
 
 Normal tests use temporary data and mocked audio; models and paid API calls are not required. Browser tests use system Chromium (`CHROMIUM_PATH` overrides `/usr/bin/chromium`) and deterministic audio transport. They cover settings persistence, selection/removal, speaker controls, bracket progression, all seven battles, cache confirmation, HTML audio pause/resume/replay, quiet mode and mobile overflow. The older browser-script entry points delegate to this flow.
 
-Real CPU Kokoro generation, five voice selections, disk-cache hits and a real HTML pronunciation playback passed against a **Python 3.14.9** server. The suite passes **59 tests** on Python 3.14 with audio dependencies, on Python 3.14 with core dependencies only, and on Python 3.12. Piper’s native extension, CLI and phonemizer were exercised on 3.14; its actual voice model was blocked by outbound policy, so full Piper inference remains unverified. These tests ran on Debian Linux, not a native Ubuntu 26.04 image. Physical iPhone Safari and the home laptop were not tested; no audible-quality claim is made. See [measurements and limitations](docs/PYTHON314.md).
+**Earlier Python compatibility validation:** Real CPU Kokoro generation, five voice selections, disk-cache hits and a real HTML pronunciation playback passed against a **Python 3.14.9** server. The earlier Python compatibility change passed 59 tests across those environments. This library change passes 78 tests with media dependencies installed; its mobile tests cover profiles and prepared-file playback using fixtures. Piper’s native extension, CLI and phonemizer were exercised on 3.14; its actual voice model was blocked by outbound policy, so full Piper inference remains unverified. These tests ran on Debian Linux, not a native Ubuntu 26.04 image. Physical iPhone Safari and the home laptop were not tested; no audible-quality claim is made. See [measurements and limitations](docs/PYTHON314.md).
 
 ## Architecture
 
+- `app/library.py`, `app/library_routes.py`: versioned profile/provenance records, protected imports, audits and read-only prepared pronunciation delivery.
 - `app/main.py`, `app/adventure.py`: existing SQLite library, compatibility rules, reproducible game outcomes and local chapters. Catalog loading is initialized once per active database configuration rather than repeated for every request.
 - `app/audio/providers.py`: optional Kokoro, Piper and official OpenAI SDK adapters; CPU sessions and model-aware identity.
 - `app/audio/service.py`: one worker, eight pending jobs, duplicate suppression, atomic WAV publication, persistent content-addressed cache and bounded job metadata.

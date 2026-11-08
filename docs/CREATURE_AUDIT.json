@@ -1,0 +1,2606 @@
+{
+  "unprofiled": [],
+  "duplicate_species_ids": [],
+  "counts": {
+    "dinosaur": 110,
+    "shark": 42,
+    "marine_reptile": 12
+  },
+  "verified_counts": {
+    "dinosaur": 0,
+    "shark": 0,
+    "marine_reptile": 0
+  },
+  "targets": {
+    "dinosaur": 150,
+    "shark": 60,
+    "marine_reptile": 40
+  },
+  "target_gaps": {
+    "dinosaur": 150,
+    "shark": 60,
+    "marine_reptile": 40
+  },
+  "total": 164,
+  "licensed_images": 0,
+  "placeholders": 164,
+  "verified_pronunciations": 0,
+  "ready_pronunciations": 0,
+  "complete": 0,
+  "records": [
+    {
+      "id": 1,
+      "stable_key": "dinosaur:tyrannosaurus",
+      "name": "Tyrannosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 2,
+      "stable_key": "dinosaur:triceratops",
+      "name": "Triceratops",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 3,
+      "stable_key": "dinosaur:stegosaurus",
+      "name": "Stegosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 4,
+      "stable_key": "dinosaur:allosaurus",
+      "name": "Allosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 5,
+      "stable_key": "dinosaur:diplodocus",
+      "name": "Diplodocus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 6,
+      "stable_key": "dinosaur:brachiosaurus",
+      "name": "Brachiosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 7,
+      "stable_key": "dinosaur:ankylosaurus",
+      "name": "Ankylosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 8,
+      "stable_key": "dinosaur:parasaurolophus",
+      "name": "Parasaurolophus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 9,
+      "stable_key": "dinosaur:apatosaurus",
+      "name": "Apatosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 10,
+      "stable_key": "dinosaur:brontosaurus",
+      "name": "Brontosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 11,
+      "stable_key": "dinosaur:velociraptor",
+      "name": "Velociraptor",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 12,
+      "stable_key": "dinosaur:deinonychus",
+      "name": "Deinonychus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 13,
+      "stable_key": "dinosaur:spinosaurus",
+      "name": "Spinosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 14,
+      "stable_key": "dinosaur:iguanodon",
+      "name": "Iguanodon",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 15,
+      "stable_key": "dinosaur:pachycephalosaurus",
+      "name": "Pachycephalosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 16,
+      "stable_key": "dinosaur:carnotaurus",
+      "name": "Carnotaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 17,
+      "stable_key": "dinosaur:ceratosaurus",
+      "name": "Ceratosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 18,
+      "stable_key": "dinosaur:dilophosaurus",
+      "name": "Dilophosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 19,
+      "stable_key": "dinosaur:coelophysis",
+      "name": "Coelophysis",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 20,
+      "stable_key": "dinosaur:compsognathus",
+      "name": "Compsognathus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 21,
+      "stable_key": "dinosaur:gallimimus",
+      "name": "Gallimimus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 22,
+      "stable_key": "dinosaur:ornithomimus",
+      "name": "Ornithomimus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 23,
+      "stable_key": "dinosaur:struthiomimus",
+      "name": "Struthiomimus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 24,
+      "stable_key": "dinosaur:therizinosaurus",
+      "name": "Therizinosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 25,
+      "stable_key": "dinosaur:oviraptor",
+      "name": "Oviraptor",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 26,
+      "stable_key": "dinosaur:citipati",
+      "name": "Citipati",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 27,
+      "stable_key": "dinosaur:protoceratops",
+      "name": "Protoceratops",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 28,
+      "stable_key": "dinosaur:psittacosaurus",
+      "name": "Psittacosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 29,
+      "stable_key": "dinosaur:styracosaurus",
+      "name": "Styracosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 30,
+      "stable_key": "dinosaur:centrosaurus",
+      "name": "Centrosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 31,
+      "stable_key": "dinosaur:pachyrhinosaurus",
+      "name": "Pachyrhinosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 32,
+      "stable_key": "dinosaur:chasmosaurus",
+      "name": "Chasmosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 33,
+      "stable_key": "dinosaur:pentaceratops",
+      "name": "Pentaceratops",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 34,
+      "stable_key": "dinosaur:torosaurus",
+      "name": "Torosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 35,
+      "stable_key": "dinosaur:kosmoceratops",
+      "name": "Kosmoceratops",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 36,
+      "stable_key": "dinosaur:diabloceratops",
+      "name": "Diabloceratops",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 37,
+      "stable_key": "dinosaur:nasutoceratops",
+      "name": "Nasutoceratops",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 38,
+      "stable_key": "dinosaur:einiosaurus",
+      "name": "Einiosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 39,
+      "stable_key": "dinosaur:edmontosaurus",
+      "name": "Edmontosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 40,
+      "stable_key": "dinosaur:corythosaurus",
+      "name": "Corythosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 41,
+      "stable_key": "dinosaur:lambeosaurus",
+      "name": "Lambeosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 42,
+      "stable_key": "dinosaur:saurolophus",
+      "name": "Saurolophus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 43,
+      "stable_key": "dinosaur:gryposaurus",
+      "name": "Gryposaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 44,
+      "stable_key": "dinosaur:maiasaura",
+      "name": "Maiasaura",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 45,
+      "stable_key": "dinosaur:ouranosaurus",
+      "name": "Ouranosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 46,
+      "stable_key": "dinosaur:muttaburrasaurus",
+      "name": "Muttaburrasaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 47,
+      "stable_key": "dinosaur:dryosaurus",
+      "name": "Dryosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 48,
+      "stable_key": "dinosaur:camptosaurus",
+      "name": "Camptosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 49,
+      "stable_key": "dinosaur:tenontosaurus",
+      "name": "Tenontosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 50,
+      "stable_key": "dinosaur:hypsilophodon",
+      "name": "Hypsilophodon",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 51,
+      "stable_key": "dinosaur:thescelosaurus",
+      "name": "Thescelosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 52,
+      "stable_key": "dinosaur:leaellynasaura",
+      "name": "Leaellynasaura",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 53,
+      "stable_key": "dinosaur:gasparinisaura",
+      "name": "Gasparinisaura",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 54,
+      "stable_key": "dinosaur:heterodontosaurus",
+      "name": "Heterodontosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 55,
+      "stable_key": "dinosaur:lesothosaurus",
+      "name": "Lesothosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 56,
+      "stable_key": "dinosaur:scelidosaurus",
+      "name": "Scelidosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 57,
+      "stable_key": "dinosaur:scutellosaurus",
+      "name": "Scutellosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 58,
+      "stable_key": "dinosaur:kentrosaurus",
+      "name": "Kentrosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 59,
+      "stable_key": "dinosaur:huayangosaurus",
+      "name": "Huayangosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 60,
+      "stable_key": "dinosaur:tuojiangosaurus",
+      "name": "Tuojiangosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 61,
+      "stable_key": "dinosaur:dacentrurus",
+      "name": "Dacentrurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 62,
+      "stable_key": "dinosaur:miragaia",
+      "name": "Miragaia",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 63,
+      "stable_key": "dinosaur:euoplocephalus",
+      "name": "Euoplocephalus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 64,
+      "stable_key": "dinosaur:saichania",
+      "name": "Saichania",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 65,
+      "stable_key": "dinosaur:tarchia",
+      "name": "Tarchia",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 66,
+      "stable_key": "dinosaur:pinacosaurus",
+      "name": "Pinacosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 67,
+      "stable_key": "dinosaur:nodosaurus",
+      "name": "Nodosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 68,
+      "stable_key": "dinosaur:edmontonia",
+      "name": "Edmontonia",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 69,
+      "stable_key": "dinosaur:sauropelta",
+      "name": "Sauropelta",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 70,
+      "stable_key": "dinosaur:borealopelta",
+      "name": "Borealopelta",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 71,
+      "stable_key": "dinosaur:polacanthus",
+      "name": "Polacanthus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 72,
+      "stable_key": "dinosaur:argentinosaurus",
+      "name": "Argentinosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 73,
+      "stable_key": "dinosaur:patagotitan",
+      "name": "Patagotitan",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 74,
+      "stable_key": "dinosaur:dreadnoughtus",
+      "name": "Dreadnoughtus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 75,
+      "stable_key": "dinosaur:saltasaurus",
+      "name": "Saltasaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 76,
+      "stable_key": "dinosaur:alamosaurus",
+      "name": "Alamosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 77,
+      "stable_key": "dinosaur:rapetosaurus",
+      "name": "Rapetosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 78,
+      "stable_key": "dinosaur:isisaurus",
+      "name": "Isisaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 79,
+      "stable_key": "dinosaur:amargasaurus",
+      "name": "Amargasaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 80,
+      "stable_key": "dinosaur:dicraeosaurus",
+      "name": "Dicraeosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 81,
+      "stable_key": "dinosaur:rebbachisaurus",
+      "name": "Rebbachisaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 82,
+      "stable_key": "dinosaur:nigersaurus",
+      "name": "Nigersaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 83,
+      "stable_key": "dinosaur:camarasaurus",
+      "name": "Camarasaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 84,
+      "stable_key": "dinosaur:mamenchisaurus",
+      "name": "Mamenchisaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 85,
+      "stable_key": "dinosaur:shunosaurus",
+      "name": "Shunosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 86,
+      "stable_key": "dinosaur:omeisaurus",
+      "name": "Omeisaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 87,
+      "stable_key": "dinosaur:cetiosaurus",
+      "name": "Cetiosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 88,
+      "stable_key": "dinosaur:vulcanodon",
+      "name": "Vulcanodon",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 89,
+      "stable_key": "dinosaur:plateosaurus",
+      "name": "Plateosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 90,
+      "stable_key": "dinosaur:massospondylus",
+      "name": "Massospondylus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 91,
+      "stable_key": "dinosaur:riojasaurus",
+      "name": "Riojasaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 92,
+      "stable_key": "dinosaur:mussaurus",
+      "name": "Mussaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 93,
+      "stable_key": "dinosaur:herrerasaurus",
+      "name": "Herrerasaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 94,
+      "stable_key": "dinosaur:eoraptor",
+      "name": "Eoraptor",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 95,
+      "stable_key": "dinosaur:megalosaurus",
+      "name": "Megalosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 96,
+      "stable_key": "dinosaur:baryonyx",
+      "name": "Baryonyx",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 97,
+      "stable_key": "dinosaur:suchomimus",
+      "name": "Suchomimus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 98,
+      "stable_key": "dinosaur:giganotosaurus",
+      "name": "Giganotosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 99,
+      "stable_key": "dinosaur:carcharodontosaurus",
+      "name": "Carcharodontosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 100,
+      "stable_key": "dinosaur:acrocanthosaurus",
+      "name": "Acrocanthosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 101,
+      "stable_key": "dinosaur:mapusaurus",
+      "name": "Mapusaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 102,
+      "stable_key": "dinosaur:tarbosaurus",
+      "name": "Tarbosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 103,
+      "stable_key": "dinosaur:albertosaurus",
+      "name": "Albertosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 104,
+      "stable_key": "dinosaur:gorgosaurus",
+      "name": "Gorgosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 105,
+      "stable_key": "dinosaur:daspletosaurus",
+      "name": "Daspletosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 106,
+      "stable_key": "dinosaur:yutyrannus",
+      "name": "Yutyrannus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 107,
+      "stable_key": "dinosaur:utahraptor",
+      "name": "Utahraptor",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 108,
+      "stable_key": "dinosaur:microraptor",
+      "name": "Microraptor",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 109,
+      "stable_key": "dinosaur:sinosauropteryx",
+      "name": "Sinosauropteryx",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 110,
+      "stable_key": "dinosaur:archaeopteryx",
+      "name": "Archaeopteryx",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 111,
+      "stable_key": "shark:carcharodon-carcharias",
+      "name": "Great white shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 112,
+      "stable_key": "shark:rhincodon-typus",
+      "name": "Whale shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 113,
+      "stable_key": "shark:galeocerdo-cuvier",
+      "name": "Tiger shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 114,
+      "stable_key": "shark:sphyrna-mokarran",
+      "name": "Great hammerhead",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 115,
+      "stable_key": "shark:carcharhinus-leucas",
+      "name": "Bull shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 116,
+      "stable_key": "shark:prionace-glauca",
+      "name": "Blue shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 117,
+      "stable_key": "shark:isurus-oxyrinchus",
+      "name": "Shortfin mako",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 118,
+      "stable_key": "shark:ginglymostoma-cirratum",
+      "name": "Nurse shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 119,
+      "stable_key": "shark:cetorhinus-maximus",
+      "name": "Basking shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 120,
+      "stable_key": "shark:megachasma-pelagios",
+      "name": "Megamouth shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 121,
+      "stable_key": "shark:somniosus-microcephalus",
+      "name": "Greenland shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 122,
+      "stable_key": "shark:lamna-nasus",
+      "name": "Porbeagle",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 123,
+      "stable_key": "shark:lamna-ditropis",
+      "name": "Salmon shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 124,
+      "stable_key": "shark:isurus-paucus",
+      "name": "Longfin mako",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 125,
+      "stable_key": "shark:carcharhinus-longimanus",
+      "name": "Oceanic whitetip shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 126,
+      "stable_key": "shark:carcharhinus-falciformis",
+      "name": "Silky shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 127,
+      "stable_key": "shark:carcharhinus-obscurus",
+      "name": "Dusky shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 128,
+      "stable_key": "shark:carcharhinus-plumbeus",
+      "name": "Sandbar shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 129,
+      "stable_key": "shark:carcharhinus-limbatus",
+      "name": "Blacktip shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 130,
+      "stable_key": "shark:carcharhinus-brevipinna",
+      "name": "Spinner shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 131,
+      "stable_key": "shark:carcharhinus-melanopterus",
+      "name": "Blacktip reef shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 132,
+      "stable_key": "shark:triaenodon-obesus",
+      "name": "Whitetip reef shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 133,
+      "stable_key": "shark:carcharhinus-amblyrhynchos",
+      "name": "Grey reef shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 134,
+      "stable_key": "shark:carcharhinus-perezi",
+      "name": "Caribbean reef shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 135,
+      "stable_key": "shark:negaprion-brevirostris",
+      "name": "Lemon shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 136,
+      "stable_key": "shark:sphyrna-lewini",
+      "name": "Scalloped hammerhead",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 137,
+      "stable_key": "shark:sphyrna-zygaena",
+      "name": "Smooth hammerhead",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 138,
+      "stable_key": "shark:sphyrna-tiburo",
+      "name": "Bonnethead",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 139,
+      "stable_key": "shark:stegostoma-tigrinum",
+      "name": "Zebra shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 140,
+      "stable_key": "shark:nebrius-ferrugineus",
+      "name": "Tawny nurse shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 141,
+      "stable_key": "shark:carcharias-taurus",
+      "name": "Sand tiger shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 142,
+      "stable_key": "shark:mitsukurina-owstoni",
+      "name": "Goblin shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 143,
+      "stable_key": "shark:alopias-vulpinus",
+      "name": "Common thresher",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 144,
+      "stable_key": "shark:alopias-superciliosus",
+      "name": "Bigeye thresher",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 145,
+      "stable_key": "shark:alopias-pelagicus",
+      "name": "Pelagic thresher",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 146,
+      "stable_key": "shark:squalus-acanthias",
+      "name": "Spiny dogfish",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 147,
+      "stable_key": "shark:scyliorhinus-canicula",
+      "name": "Small-spotted catshark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 148,
+      "stable_key": "shark:triakis-semifasciata",
+      "name": "Leopard shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 149,
+      "stable_key": "shark:heterodontus-francisci",
+      "name": "Horn shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 150,
+      "stable_key": "shark:heterodontus-portusjacksoni",
+      "name": "Port Jackson shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 151,
+      "stable_key": "shark:hemiscyllium-ocellatum",
+      "name": "Epaulette shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 152,
+      "stable_key": "shark:chiloscyllium-punctatum",
+      "name": "Brownbanded bamboo shark",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 153,
+      "stable_key": "marine_reptile:mosasaurus-hoffmannii",
+      "name": "Mosasaurus",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 154,
+      "stable_key": "marine_reptile:tylosaurus-proriger",
+      "name": "Tylosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 155,
+      "stable_key": "marine_reptile:plesiosaurus-dolichodeirus",
+      "name": "Plesiosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 156,
+      "stable_key": "marine_reptile:ichthyosaurus-communis",
+      "name": "Ichthyosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 157,
+      "stable_key": "marine_reptile:elasmosaurus-platyurus",
+      "name": "Elasmosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 158,
+      "stable_key": "marine_reptile:kronosaurus-queenslandicus",
+      "name": "Kronosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 159,
+      "stable_key": "marine_reptile:liopleurodon-ferox",
+      "name": "Liopleurodon",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 160,
+      "stable_key": "marine_reptile:ophthalmosaurus-icenicus",
+      "name": "Ophthalmosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 161,
+      "stable_key": "marine_reptile:cryptoclidus",
+      "name": "Cryptoclidus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 162,
+      "stable_key": "marine_reptile:polycotylus",
+      "name": "Polycotylus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 163,
+      "stable_key": "marine_reptile:shonisaurus",
+      "name": "Shonisaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    },
+    {
+      "id": 164,
+      "stable_key": "marine_reptile:temnodontosaurus",
+      "name": "Temnodontosaurus",
+      "issues": [
+        "scientific_review_needed",
+        "not_verified_species_record",
+        "artwork_review_needed",
+        "pronunciation_review_needed",
+        "pronunciation_audio_missing",
+        "three_sourced_facts_needed",
+        "length_unknown",
+        "weight_unknown"
+      ],
+      "complete": false
+    }
+  ]
+}

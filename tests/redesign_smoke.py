@@ -67,10 +67,11 @@ def run(base='http://127.0.0.1:8502', screenshots=None):
         page.locator('#search').evaluate("e=>e.parentElement.open=true")
         page.locator('#search').fill('tyrannosaurus');assert page.locator('.creature').count()==1
         page.locator('.speaker').first.click()
-        page.wait_for_function("speechSynthesis.last!==null")
-        assert page.evaluate('speechSynthesis.last.text')=='tie ran oh sore us'
+        assert page.evaluate('speechSynthesis.last') is None
+        assert 'not prepared' in page.locator('#message').inner_text()
+        assert state['requests']==0
         page.locator('#search').fill('')
-        page.locator('.creature-pick').first.click()
+        page.locator('#creatures .creature-select').first.click()
         assert page.locator('#count').inner_text()=='1 of 8 Selected'
         page.locator('.selection-slot.filled').click()
         assert page.locator('#next').is_disabled()
