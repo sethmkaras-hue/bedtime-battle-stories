@@ -10,3 +10,5 @@ data/benchmarks/
 !.env.example
 data/library_audit.json
 data/pronunciation_report.json
+data/importer/
+data/backups/

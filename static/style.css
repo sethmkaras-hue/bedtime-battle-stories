@@ -1122,3 +1122,4 @@ img[data-real-image] {
 img[data-real-image] {
   object-fit: contain !important;
 }
+#parent-login input,.parent-proposal input[type=text]{display:block;width:100%;padding:14px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:12px;min-height:48px}.parent-proposal{padding:20px;background:var(--surface);border:1px solid var(--line);border-radius:20px;margin:20px 0}.parent-proposal pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px}.parent-proposal img{display:block;max-width:100%;max-height:300px;object-fit:contain;border-radius:12px;margin:16px auto}.parent-proposal a{display:inline-block;padding:10px;color:var(--lavender);min-height:44px}.parent-proposal button{margin:10px 10px 0 0}

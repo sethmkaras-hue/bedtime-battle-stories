@@ -119,3 +119,73 @@ Outcome ratings remain fictional game rules stored separately by creature ID. Ve
 - A separate 390×844 Chromium regression exercised encyclopedia filters/search/profile/add-to-selection, missing-audio handling and **synthetic prerecorded WAV transport**, verifying zero `/api/audio` generation requests from creature speaker taps. The fixture is not a reviewed catalog pronunciation or licensed species photo.
 - The real generation wrapper ran against the bundled audit database: **0 generated, 0 reused, 164 unverified skipped, 0 failed**. That is a tested safe skip, not a claim of verified pronunciation playback or new source research.
 - Physical iPhone Safari, audible pronunciation quality and licensed species-image visual accuracy were not validated. Model inference/narration performance was not optimized or re-benchmarked in this phase.
+
+## Automated population on Ubuntu 26.04 / Python 3.14
+
+The importer is implemented; completion of the encyclopedia still requires accessible sources and adult review. It never fills gaps with generated biology or guessed pronunciations. It preserves numeric IDs, reviewed fields, approved artwork and tournament rules. Source-supported fields remain distinct from adult-reviewed fields and fully verified profiles.
+
+From the repository, with the existing application stopped for initial dependency installation:
+
+```bash
+sudo apt update
+sudo apt install python3.14 python3.14-venv
+python3.14 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt -r requirements-media.txt -r requirements-audio.txt
+.venv/bin/python scripts/setup_audio.py kokoro
+.venv/bin/python scripts/configure_parent.py
+bash START_APP.sh
+```
+
+The parent command securely prompts for a 12+ character passphrase. It creates one local passphrase hash, not a user account. Restarting invalidates review sessions; changing the credential also invalidates them. Keep the app on your trusted home network. Use HTTPS through your existing trusted reverse proxy when password confidentiality across the network is needed.
+
+In another terminal, from the same repository:
+
+```bash
+# No database, backup or persistent cache writes (except this requested report):
+./IMPORT_CREATURE_LIBRARY.sh --pilot 10 --dry-run --report /tmp/creature-pilot.json
+# Real pilot: backup, fetch, stage proposals, apply exact supported facts:
+./IMPORT_CREATURE_LIBRARY.sh --pilot 10 --report data/pilot-report.json
+# After inspecting publisher terms, optionally enable museum HTML research:
+./IMPORT_CREATURE_LIBRARY.sh --pilot 10 --refresh --allow-museum-pages
+./IMPORT_CREATURE_LIBRARY.sh --review
+# Review the pilot in Settings → Parent content review before expanding:
+./IMPORT_CREATURE_LIBRARY.sh --all
+# After approving pronunciation guidance, prepare the local audio:
+bash GENERATE_PRONUNCIATIONS.sh --provider kokoro
+```
+
+`BBS_VENV` selects another virtual environment. `--propose-only` stages even supported facts without applying them. `--skip-audio` omits the default verified-only CPU audio generation step. `--refresh` revisits completed checkpoints and conditionally refreshes HTTP responses; ordinary restarts reuse checkpoints and downloaded assets. Exit status **2** means source failures, pending review or audio failures remain; it is not a completed encyclopedia. The JSON report and `data/importer/latest-report.json` contain coverage, candidates, unresolved issues, request counts and generation failures. `--review` lists pending proposals without contacting sources. Dry runs require an initialized database (start the app once).
+
+### Sources and evidence
+
+PBDB official API supplies exact accepted fossil taxa, parent classification and recorded fossil intervals. GBIF's official species-match API supplies exact accepted Animalia identities (especially sharks). Synonyms, fuzzy matches and ambiguous scientific identities are refused. Fossil intervals and localities are labeled as source observations, not exhaustive lifespan or geographic claims. NHM genus pages have conservative labeled-fact and pronunciation parsers; HTML retrieval is **opt-in** after publisher terms review. Unsupported page layouts are queued rather than guessed.
+
+AMNH, Smithsonian and Florida Museum are useful manual authorities, but do not yet have dedicated automatic fact adapters. Usborne and other educational references can be researched manually; `--pronunciation-index path.json` accepts a mapping of exact scientific names to approved educational page URLs within the importer’s source allowlist. This enables the labeled-guide parser, not unrestricted scraping. Alternate accepted variants can be retained in the existing pronunciation record. No third-party recording is downloaded. Missing guidance stays unverified.
+
+Requests use HTTPS, an identified user agent, robots checks, per-host pacing, bounded retries/backoff and Retry-After handling. Inaccessible robots policies fail closed. Redirects remain within explicit scientific/media hosts. There is no access-control workaround. APIs and sites may change terms or schema; inspect their current policies before use. Set `BBS_IMPORT_USER_AGENT` to include your contact if required by a publisher. Sources that cannot be fetched appear in the review queue with links/issues.
+
+Commons acquisition first resolves the exact scientific name and rank through Wikidata. A filename is insufficient: Commons MediaInfo must explicitly depict that taxon, descriptive metadata must agree, and reusable license/creator metadata must be present. Living sharks require photographic evidence; extinct candidates require reconstruction/paleoart evidence. Fossils and incomplete/uncertain identification are queued. Supported licenses remain CC0, Public Domain, CC BY and CC BY-SA 3.0/4.0. Preserve attribution and license obligations; Settings → Image credits lists approved artwork.
+
+Up to two supported candidates per creature are downloaded into quarantine and converted to a preview, with a 20 MB transfer and 25 megapixel decode limit. An adult selects the image before publication. Approval verifies the original checksum and produces local responsive WebP assets. Remote search results never become child-facing images merely because their names match.
+
+### Review, expansion and storage
+
+Settings → Parent content review requires the configured passphrase. Sessions expire after 15 minutes; writes also require same-origin requests, a session CSRF token and explicit confirmation. Adults may approve supported facts, edit and approve evidenced pronunciation guidance, approve a downloaded licensed image, or reject the proposal. Partial approvals remain incomplete; they do not certify the whole profile. Reviewed fields are protected on later imports. Approving guidance does not itself generate audio: run the bulk command above. Child speaker taps only play existing prepared files.
+
+Full mode discovers accepted PBDB taxa toward 150 dinosaur genera, 60 shark species and 40 marine genera. New identities are deduplicated and staged for review, never added just to inflate counts. Habitat, modern status and other unsupported biological fields require research before tournament eligibility or whole-profile verification. The targets are goals, not a promise that every needed field can be automatically sourced. An adult can reject unsuitable or outdated candidates.
+
+Importer state, checkpoints, HTTP cache, quarantined originals and previews live under `data/importer/` (`BBS_IMPORT_DIR` overrides the default; configure the web app and CLI consistently). Parent credentials are stored there with restrictive permissions. SQLite backups are made under the database’s `backups/` directory before import/review changes. Existing audio remains under `data/audio_cache/`; approved images under `static/creatures/`. Back up these together. Do not commit these private/generated artifacts. Database locks cover short writes rather than network retrieval; imports can run while the app serves requests. Bulk audio may compete with narration for CPU, so schedule it outside story time.
+
+Allow several GB for caches, originals, WebP variants and backups, in addition to the audio models/packages. A pathological 250-creature batch with two 20 MB originals per creature can require over 20 GB because HTTP caching and quarantined originals both retain copies. Actual usage depends on source sizes and backup retention. Keep backups deliberately; remove old backups/caches only after stopping imports and saving the reviewed library. Do not remove quarantined originals for pending image proposals: approval needs their checksum-verified bytes.
+
+### Troubleshooting and validation limits
+
+- Access denied, unavailable robots or proxy errors: inspect the report, use manual research, or rerun on a home connection where the publisher permits access. Never disable the access checks.
+- A normal resume makes no requests for completed checkpoints. Use `--refresh` after access is restored or source content changes.
+- No pronunciation audio: inspect unverified/missing guidance in parent review, approve credible guidance, install the local model and rerun generation. No paid key is needed. Settings reports local provider/model failures.
+- Missing image preview: install `requirements-media.txt`, check disk space, image limits, license and exact taxon evidence; unresolved candidates require manual research.
+- Parent login unavailable: configure the passphrase with the same `BBS_IMPORT_DIR` used by the running server. No web endpoint reads arbitrary filesystem paths or starts shell imports.
+
+The cloud pilot processed ten real catalog identities but **downloaded no scientific data, licensed imagery or pronunciation guidance**: the proxy blocked source access. It staged ten unresolved proposals without promoting records. Resuming reused all ten checkpoints with zero HTTP requests. Offline fixtures verify parsing, matching, licenses, download quarantine, restart, backups and protected review. Browser checks use synthetic evidence and audio; they do not establish real taxon accuracy, audible pronunciation quality or physical-device compatibility.
+
+Automated-import validation: 94 offline tests pass on Python 3.14 with media dependencies. The core-only environment passed with optional media tests skipped. Mobile Chromium regressions passed for authenticated parent approval/logout, encyclopedia prepared-file playback with no tap-time synthesis, and the complete seven-battle tournament. The GitHub workflow runs offline tests on Python 3.12 and 3.14; no remote CI outcome is implied by local results.
