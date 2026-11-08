@@ -2,7 +2,7 @@
 
 ## CPU setup
 
-Use Python 3.12 on Ubuntu 24.04. The optional dependency file pins compatible CPU packages: `kokoro-onnx==0.6.1`, maintained `piper-tts==1.8.0` from OHF-Voice, soundfile, and the official OpenAI SDK. Normal app dependencies remain small. Do not install `[gpu]`, training extras, CUDA or NVIDIA drivers.
+Use Python 3.12+ on Ubuntu 24.04 or Python 3.14 on Ubuntu 26.04. The optional file selects `sherpa-onnx==2.0.1` for Kokoro, `onnxruntime==1.31.1` for Piper, maintained `piper-tts==1.8.0`, `phonemizer==3.6.0`, `espeakng-loader==0.2.4`, soundfile and the official OpenAI SDK. The old `kokoro-onnx==0.6.1` wrapper excludes Python 3.14 and is no longer used. See [Python 3.14 investigation and current validation](PYTHON314.md). Normal app dependencies remain small. Do not install `[gpu]`, training extras, CUDA or NVIDIA drivers.
 
 ```bash
 python3 -m venv .venv
@@ -20,17 +20,18 @@ Or download engines separately:
 Models are retained at:
 
 ```text
-data/models/kokoro/kokoro-v1.0.onnx
-data/models/kokoro/voices-v1.0.bin
+data/models/kokoro-sherpa/model.onnx
+data/models/kokoro-sherpa/voices.bin
+data/models/kokoro-sherpa/tokens.txt
 data/models/piper/en_US-lessac-medium.onnx
 data/models/piper/en_US-lessac-medium.onnx.json
 ```
 
-The downloader checks pinned SHA-256 hashes for the selected official Kokoro release artifacts. Piper files are checked against sizes and MD5 digests in the official HTTPS voice manifest. Downloads go to `.part` files and are renamed only after verification; failed partial downloads are removed. Existing files with unexpected checksums are not overwritten. Keep TLS verification enabled. Model setup is explicit and never happens during application startup.
+The downloader checks pinned SHA-256 hashes for the selected official Sherpa Kokoro archive. Piper files are checked against sizes and MD5 digests in the official HTTPS voice manifest. Downloads go to `.part` files and are renamed only after verification; failed partial downloads are removed. Existing files with unexpected checksums are not overwritten. Keep TLS verification enabled. Model setup is explicit and never happens during application startup.
 
 Sources and licenses:
 
-- [Kokoro ONNX runtime and examples](https://github.com/thewh1teagle/kokoro-onnx); [selected model release](https://github.com/thewh1teagle/kokoro-onnx/releases/tag/model-files-v1.1). Kokoro model: Apache-2.0; review the runtime’s own license too.
+- [Sherpa-ONNX runtime and examples](https://github.com/k2-fsa/sherpa-onnx); [selected Kokoro v1.0 model archive](https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-multi-lang-v1_0.tar.bz2). Review the bundled model license, runtime license and espeak/phonemizer licenses before redistribution.
 - [Maintained OHF Piper](https://github.com/OHF-Voice/piper1-gpl) and [Python API](https://github.com/OHF-Voice/piper1-gpl/blob/main/docs/API_PYTHON.md). Piper runtime: GPL-3.0. [Voice model repository](https://huggingface.co/rhasspy/piper-voices) contains voice-specific model cards/licenses; do not assume all voices share a license.
 - [Official OpenAI Python SDK](https://github.com/openai/openai-python).
 
@@ -42,7 +43,7 @@ Kokoro is the default narrator. Heart (`af_heart`) is the editorial default; Sar
 
 Each provider exposes availability, voices, identity and generation through a shared interface. Missing local packages/models trigger the other installed local provider, then browser speech. OpenAI is never an automatic fallback. Browser speech stays entirely frontend-side; it has no generated file or reliable time/progress API. The UI identifies the fallback and supports reading when the device has no voice.
 
-ONNX sessions explicitly select `CPUExecutionProvider`, default to two intra-op threads (configurable 1–4), one inter-op thread, and disable the CPU memory arena. Models are loaded lazily and reused by the worker. Restart after model replacement. No model files are committed.
+Kokoro explicitly selects Sherpa’s `cpu` provider with two threads (configurable 1–4). Piper sessions select `CPUExecutionProvider`, two intra-op threads (configurable 1–4), one inter-op thread, and disable the CPU memory arena. Kokoro supplies external English IPA to Sherpa; it does not rely on a finite word lexicon or the deprecated espeak data-dir setting. Models are loaded lazily and reused by the worker. Restart after model replacement. No model files are committed.
 
 ## Cache and worker
 
@@ -85,7 +86,9 @@ Run locally after model setup:
 
 The script prints generation seconds, audio seconds, real-time factor (generation/audio), cache status and peak process RSS. Settings offers the same fixed local sample benchmark. An already cached benchmark is labeled cached; its recorded synthesis timing is historical, not a new measurement. For a fresh measurement, clear the cache explicitly first, and account for cold model loading. Do not benchmark a paid provider; the benchmark endpoint accepts only local engines.
 
-## Measured validation
+## Historical validation before the Python 3.14 migration
+
+The measurements below used the old wrapper and are retained as historical evidence only. Current engine/version measurements and validation are in [PYTHON314.md](PYTHON314.md).
 
 These are measurements from this Debian 13 cloud environment, Python 3.12.14, CPUExecutionProvider, two ONNX threads. They are not laptop or physical iPhone measurements and do not establish perceived voice quality.
 
