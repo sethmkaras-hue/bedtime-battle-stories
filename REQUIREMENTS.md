@@ -38,3 +38,11 @@ Phase 1 includes opt-in isolated development data, search/filtering, unbiased ra
 ## Version 2 local adventure scope
 
 The next iteration adds an editorial catalog (164 entries; scientific source review pending), browser voice selection and guided pronunciation, seed-based fictional game outcomes, seven locally authored template chapters, winner advancement and champion display. Ratings are explicitly game rules, not scientifically validated probabilities. Session reconstruction sends entrant IDs, settings, seed and completion count; no server history. Approximate chapter durations depend on voice speed. Scientific catalog verification, trait-based simulation, verified audio and generated media remain outstanding. No paid services are configured or called.
+
+## Kid-friendly UX and CPU audio iteration
+
+The main flow is Home → Adventure → Eight Creatures → Visual Bracket → Story → Updated Bracket → Champion. Advanced controls live in persistent local Settings. Popular creatures precede expandable search/all browsing; locally bundled decorative SVGs are safe fallbacks. Displayed names and existing data remain intact. The inherited catalog has 110 dinosaur genera, not a verified 100-species catalog; scientific validation remains pending.
+
+Kokoro is the primary CPU narrator, Piper the primary CPU name provider; the other local provider and then browser speech provide fallback. OpenAI is optional, server-configured, never an automatic fallback. One bounded background worker generates content-addressed WAVs with duplicate suppression, atomic publication and confirmed cache management. Models and generated audio are ignored by Git and retained across updates. Native HTML audio handles playback/time/seek; browser fallback does not claim accurate progress. Winner reveal occurs at narration end or explicit read-complete action. Quiet mode defers while active narration or current-battle generation is underway.
+
+Real Kokoro CPU generation is measured. Piper's model download was blocked by cloud policy, so real Piper generation/performance remains an acceptance item for an environment with model access. Physical iPhone Safari and Ubuntu laptop validation remain outstanding; Chromium touch-viewport tests do not replace them.

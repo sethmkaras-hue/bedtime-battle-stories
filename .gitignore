@@ -4,3 +4,7 @@ __pycache__/
 *.pyc
 .env
 data/*.sqlite3
+data/audio_cache/
+data/models/
+data/benchmarks/
+!.env.example

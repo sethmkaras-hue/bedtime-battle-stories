@@ -1,63 +1,61 @@
 "use strict";
+const $ = (id) => document.getElementById(id),
+  settings = window.BedtimeSettings;
 let category = "",
   library = [],
   selected = [],
   current = null,
+  screen = "welcome",
+  returnScreen = "welcome",
+  beforeQuiet = "welcome",
   lastAction = Date.now(),
-  screen = "categories",
-  beforeQuiet = "categories",
-  narrationToken = 0,
-  busy = false;
-const $ = (id) => document.getElementById(id);
+  busy = false,
+  providerInfo = {},
+  loadId = 0;
 const screens = [
+  "welcome",
   "categories",
   "selection",
-  "settings",
   "bracket",
   "player",
+  "celebration",
+  "settings",
   "quiet",
 ];
+const audio = new BedtimeAudio($("story-audio"), $("audio-status"), () => {
+  touch();
+  if (screen === "player" && current?.chapter) guarded(finishChapter)();
+});
 function touch() {
   lastAction = Date.now();
 }
 function show(id) {
+  if (screen === "player" && id !== "player") audio.stop();
   screen = id;
   screens.forEach((s) => ($(s).hidden = s !== id));
-  $("back").hidden = ["categories", "quiet"].includes(id);
+  $("back").hidden = ["welcome", "quiet"].includes(id);
+  document.body.classList.toggle("sleeping", id === "quiet");
   $("message").textContent = "";
   touch();
-}
-function save() {
-  try {
-    sessionStorage.setItem("bedtimeTournament", JSON.stringify(current));
-  } catch {
-    /* Optional browser storage. */
-  }
+  if (id === "bracket") requestAnimationFrame(drawConnectors);
+  window.scrollTo({ top: 0, behavior: "instant" });
 }
 function stopAudio() {
-  narrationToken++;
-  window.speechSynthesis?.cancel();
-  document.querySelectorAll("audio").forEach((a) => a.pause());
-  $("pause").textContent = "Pause";
-}
-function narrationActive() {
-  return (
-    Boolean(
-      window.speechSynthesis?.speaking && !window.speechSynthesis?.paused,
-    ) ||
-    Array.from(document.querySelectorAll("audio")).some(
-      (a) => !a.paused && !a.ended,
-    )
-  );
+  audio.stop();
 }
 function checkIdle() {
-  if (narrationActive()) {
+  const prefs = settings.get();
+  if (!prefs.timeoutEnabled) return;
+  if (audio.active() || (audio.generating && screen === "player")) {
     touch();
     return;
   }
-  if (screen !== "quiet" && Date.now() - lastAction >= 300000) {
+  if (
+    screen !== "quiet" &&
+    Date.now() - lastAction >= prefs.idleMinutes * 60000
+  ) {
     beforeQuiet = screen;
-    stopAudio();
+    audio.stop();
     show("quiet");
   }
 }
@@ -65,101 +63,11 @@ document.addEventListener("pointerdown", touch);
 document.addEventListener("keydown", touch);
 document.addEventListener("visibilitychange", checkIdle);
 setInterval(checkIdle, 1000);
-function voices() {
-  return (
-    window.speechSynthesis
-      ?.getVoices?.()
-      .filter((v) => /^en[-_]/i.test(v.lang)) || []
-  );
-}
-function loadVoices() {
-  const saved = $("voice").value;
-  $("voice").replaceChildren(new Option("Device default", ""));
-  voices().forEach((v) =>
-    $("voice").add(new Option(v.name + " (" + v.lang + ")", v.voiceURI)),
-  );
-  if (saved) $("voice").value = saved;
-  else {
-    const preferred = voices().find((v) =>
-      /Google US English|Samantha|Natural/i.test(v.name),
-    );
-    if (preferred) $("voice").value = preferred.voiceURI;
-  }
-}
-window.speechSynthesis?.addEventListener?.("voiceschanged", loadVoices);
-loadVoices();
-try {
-  const pref = JSON.parse(localStorage.getItem("bedtimeVoice") || "null");
-  if (pref) {
-    $("name-rate").value = pref.rate || "0.8";
-    $("guided-names").checked = pref.guided !== false;
-    const restoreVoice = () => {
-      if (voices().some((v) => v.voiceURI === pref.voice))
-        $("voice").value = pref.voice;
-    };
-    restoreVoice();
-    window.speechSynthesis?.addEventListener?.("voiceschanged", restoreVoice);
-  }
-} catch {
-  /* Optional preferences. */
-}
-["voice", "name-rate", "guided-names"].forEach((id) =>
-  $(id).addEventListener("change", () => {
-    try {
-      localStorage.setItem(
-        "bedtimeVoice",
-        JSON.stringify({
-          voice: $("voice").value,
-          rate: $("name-rate").value,
-          guided: $("guided-names").checked,
-        }),
-      );
-    } catch {}
-  }),
-);
-function spokenName(c) {
-  return $("guided-names").checked && c.pronunciation
-    ? c.pronunciation
-        .toLowerCase()
-        .replace(/sawr/g, "sore")
-        .replace(/\buh\b/g, "ah")
-    : c.name;
-}
-// One adapter for pronunciation and narration; a future audio service can replace it.
-function utterance(text, rate) {
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = "en-US";
-  u.rate = rate;
-  const v = voices().find((v) => v.voiceURI === $("voice").value);
-  if (v) {
-    u.voice = v;
-    u.lang = v.lang;
-  }
-  return u;
-}
-function say(c) {
-  if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) {
-    $("message").textContent =
-      "Speech is unavailable. Try the written pronunciation guide.";
-    return;
-  }
-  stopAudio();
-  touch();
-  const u = utterance(spokenName(c), Number($("name-rate").value));
-  u.onend = touch;
-  u.onerror = () => {
-    $("message").textContent =
-      "The device voice could not play. Try another voice.";
-    touch();
-  };
-  speechSynthesis.speak(u);
-}
-function hear(c) {
-  const b = document.createElement("button");
-  b.textContent = "Hear";
-  b.setAttribute("aria-label", "Pronounce " + c.name);
-  b.onclick = () => say(c);
-  return b;
+function save() {
+  try {
+    sessionStorage.setItem("bedtimeTournament", JSON.stringify(current));
+  } catch {}
+  $("continue-adventure").hidden = !current;
 }
 async function api(path, options) {
   const r = await fetch(path, options);
@@ -168,163 +76,365 @@ async function api(path, options) {
     throw Error(
       typeof data.detail === "string"
         ? data.detail
-        : "Please check your selection and settings.",
+        : "Please check your choices and try again.",
     );
   return data;
 }
-function guarded(action) {
-  return async () => {
+function guarded(fn) {
+  return async (event) => {
     if (busy) return;
     busy = true;
+    const b = event?.currentTarget;
+    if (b?.tagName === "BUTTON") {
+      b.disabled = true;
+      b.classList.add("loading-button");
+    }
     try {
-      await action();
+      await fn();
     } catch (e) {
-      $("message").textContent = e.message || "Please try again.";
+      $("message").textContent =
+        e.message || "Something went wrong. Please try again.";
     } finally {
       busy = false;
+      if (b) {
+        b.disabled = false;
+        b.classList.remove("loading-button");
+      }
+      if (screen === "selection") updateCount();
     }
   };
 }
-function render() {
-  const term = $("search").value.toLocaleLowerCase();
-  $("creatures").replaceChildren();
-  const visible = library.filter((c) =>
-    (c.name + " " + c.scientific_name).toLocaleLowerCase().includes(term),
-  );
-  $("library-status").textContent = visible.length + " creatures to explore";
-  visible.forEach((c) => {
-    const el = document.createElement("div");
-    el.className = "creature";
-    const row = document.createElement("div");
-    row.className = "creature-actions";
-    const b = document.createElement("button");
-    const pos = selected.indexOf(c.id);
-    b.textContent = (pos >= 0 ? pos + 1 + ". " : "") + c.name;
-    b.setAttribute("aria-pressed", String(pos >= 0));
-    b.disabled = selected.length === 8 && pos < 0;
-    b.onclick = () => {
-      if (pos >= 0) selected = selected.filter((x) => x !== c.id);
-      else if (selected.length < 8) selected.push(c.id);
-      render();
-    };
-    row.append(b, hear(c));
-    const details = document.createElement("details");
-    const summary = document.createElement("summary");
-    summary.textContent = "Meet " + c.name;
-    details.append(summary);
-    [
-      c.scientific_name,
-      c.description,
-      "Food: " + (c.diet || "Not yet reviewed"),
-      "Say it: " + (c.pronunciation || c.name),
-      "Measurements: not yet verified",
-    ].forEach((text) => {
-      const p = document.createElement("p");
-      p.textContent = text;
-      details.append(p);
-    });
-    if (c.review_status) {
-      const p = document.createElement("p");
-      p.textContent = "Scientific reference review pending.";
-      details.append(p);
-    }
-    if (c.source_url) {
-      const link = document.createElement("a");
-      link.href = c.source_url;
-      link.textContent = "Parent reference";
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-      details.append(link);
-    }
-    el.append(row, details);
-    $("creatures").append(el);
-  });
-  $("count").textContent = selected.length + " of 8 selected";
+function illustration(c) {
+  const ref = c.image_reference;
+  return typeof ref === "string" &&
+    /^\/static\/[a-zA-Z0-9_./-]+$/.test(ref) &&
+    !ref.includes("..")
+    ? ref
+    : "/static/assets/" +
+        (c.category === "shark"
+          ? "shark"
+          : c.category === "marine_reptile"
+            ? "marine_reptile"
+            : "dinosaur") +
+        ".svg";
+}
+function picture(c) {
+  const img = document.createElement("img");
+  img.src = illustration(c);
+  img.alt = "";
+  img.loading = "lazy";
+  img.onerror = () => {
+    img.onerror = null;
+    img.src = illustration({ ...c, image_reference: null });
+  };
+  return img;
+}
+function hear(c) {
+  const b = document.createElement("button");
+  b.className = "speaker";
+  b.setAttribute("aria-label", "Pronounce " + c.name);
+  b.innerHTML =
+    '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 4 5 9H2v6h3l6 5V4Z"/><path d="M15 8c3 2 3 6 0 8m3-11c5 4 5 10 0 14" stroke-linecap="round"/></svg>';
+  b.onclick = (e) => {
+    e.stopPropagation();
+    touch();
+    audio.pronounce(c, settings.get(), b);
+  };
+  return b;
+}
+const popularNames = [
+  "Tyrannosaurus",
+  "Triceratops",
+  "Stegosaurus",
+  "Velociraptor",
+  "Brachiosaurus",
+  "Ankylosaurus",
+  "Spinosaurus",
+  "Diplodocus",
+  "Parasaurolophus",
+  "Allosaurus",
+  "Great white shark",
+  "Whale shark",
+  "Tiger shark",
+  "Great hammerhead",
+  "Bull shark",
+  "Blue shark",
+  "Shortfin mako",
+  "Nurse shark",
+  "Mosasaurus",
+  "Tylosaurus",
+  "Plesiosaurus",
+  "Ichthyosaurus",
+  "Elasmosaurus",
+  "Kronosaurus",
+  "Liopleurodon",
+  "Ophthalmosaurus",
+];
+function updateCount() {
+  $("count").textContent = selected.length + " of 8 Selected";
   $("next").disabled = selected.length !== 8;
   $("random").disabled = library.length < 8;
 }
-async function categoryLibrary(value) {
-  if (value === "ocean") {
-    const rows = await api("/api/creatures");
-    return rows.filter((c) => ["shark", "marine_reptile"].includes(c.category));
+function render() {
+  updateCount();
+  $("selection-slots").replaceChildren();
+  for (let i = 0; i < 8; i++) {
+    const c = library.find((c) => c.id === selected[i]);
+    const slot = document.createElement("button");
+    slot.className = "selection-slot" + (c ? " filled" : "");
+    slot.setAttribute(
+      "aria-label",
+      c ? "Remove " + c.name : "Empty selection slot " + (i + 1),
+    );
+    if (c) {
+      slot.append(picture(c));
+      const label = document.createElement("span");
+      label.textContent = c.name;
+      slot.append(label);
+      slot.onclick = () => {
+        selected = selected.filter((id) => id !== c.id);
+        render();
+      };
+    } else {
+      slot.textContent = "+";
+      slot.disabled = true;
+    }
+    $("selection-slots").append(slot);
   }
-  return api("/api/creatures?category=" + encodeURIComponent(value));
-}
-document.querySelectorAll("[data-category]").forEach(
-  (b) =>
-    (b.onclick = guarded(async () => {
-      category = b.dataset.category;
-      library = await categoryLibrary(category);
-      selected = [];
-      $("search").value = "";
-      render();
-      show("selection");
-      if (library.length < 8)
-        $("message").textContent =
-          "This library needs at least eight creatures.";
-    })),
-);
-$("search").oninput = render;
-$("random").onclick = guarded(async () => {
-  const data = await api(
-    "/api/selection/random?category=" + encodeURIComponent(category),
+  const term = $("search").value.toLocaleLowerCase();
+  let rows = library.filter((c) =>
+    (c.name + " " + c.scientific_name).toLocaleLowerCase().includes(term),
   );
-  selected = data.creature_ids;
+  if (!term && $("browse-group").value === "popular")
+    rows = rows
+      .filter((c) => popularNames.includes(c.name))
+      .sort(
+        (a, b) => popularNames.indexOf(a.name) - popularNames.indexOf(b.name),
+      );
+  $("library-heading").textContent = term
+    ? "Your search"
+    : $("browse-group").value === "popular"
+      ? "Popular Creatures"
+      : "All Creatures";
+  $("library-status").textContent = rows.length
+    ? "Tap a creature to join your adventure."
+    : "No creatures found. Try another name.";
+  $("creatures").replaceChildren();
+  rows.forEach((c) => {
+    const card = document.createElement("article");
+    const pos = selected.indexOf(c.id);
+    card.className = "creature" + (pos >= 0 ? " selected" : "");
+    const pick = document.createElement("button");
+    pick.className = "creature-pick";
+    pick.setAttribute(
+      "aria-label",
+      (pos >= 0 ? "Remove " : "Select ") + c.name,
+    );
+    pick.setAttribute("aria-pressed", String(pos >= 0));
+    pick.disabled = selected.length === 8 && pos < 0;
+    pick.append(picture(c));
+    const name = document.createElement("strong");
+    name.textContent = c.name;
+    pick.append(name);
+    pick.onclick = () => {
+      if (pos >= 0) selected = selected.filter((id) => id !== c.id);
+      else if (selected.length < 8) selected.push(c.id);
+      render();
+    };
+    card.append(pick, hear(c));
+    if (pos >= 0) {
+      const mark = document.createElement("span");
+      mark.className = "selection-mark";
+      mark.textContent = "✓ " + (pos + 1);
+      card.append(mark);
+    }
+    const details = document.createElement("details");
+    const summary = document.createElement("summary");
+    summary.textContent = "Creature notes";
+    details.append(summary);
+    [c.scientific_name, c.description, "Say it: " + (c.pronunciation || c.name)]
+      .filter(Boolean)
+      .forEach((text) => {
+        const p = document.createElement("p");
+        p.textContent = text;
+        details.append(p);
+      });
+    if (c.review_status) {
+      const p = document.createElement("p");
+      p.textContent = "Editorial profile · science review pending";
+      details.append(p);
+    }
+    card.append(details);
+    $("creatures").append(card);
+  });
+}
+async function choose(value) {
+  const rows = await api(
+    value === "ocean" ? "/api/creatures" : "/api/creatures?category=" + value,
+  );
+  category = value;
+  library =
+    value === "ocean"
+      ? rows.filter((c) => ["shark", "marine_reptile"].includes(c.category))
+      : rows;
+  selected = [];
+  $("search").value = "";
+  $("browse-group").value = "popular";
+  render();
+  show("selection");
+}
+document
+  .querySelectorAll("[data-category]")
+  .forEach((b) => (b.onclick = guarded(() => choose(b.dataset.category))));
+$("start-adventure").onclick = () => show("categories");
+$("search").oninput = render;
+$("browse-group").onchange = render;
+$("clear").onclick = () => {
+  selected = [];
+  render();
+};
+$("random").onclick = guarded(async () => {
+  selected = (await api("/api/selection/random?category=" + category))
+    .creature_ids;
   render();
 });
-$("next").onclick = () => show("settings");
-function renderBracket() {
-  $("rounds").replaceChildren();
-  current.rounds.forEach((round) => {
-    const h = document.createElement("h3");
-    h.textContent = round.name;
-    $("rounds").append(h);
-    round.matches.forEach((m, i) => {
-      const a = document.createElement("article");
-      const label = document.createElement("p");
-      label.textContent =
-        "Match " + (i + 1) + (m.status === "complete" ? " · complete" : "");
-      a.append(label);
-      ["left", "right"].forEach((side, n) => {
-        if (n) a.append(document.createTextNode(" versus "));
-        const c = m[side];
-        const span = document.createElement("span");
-        span.textContent = c ? c.name : "Winner of earlier match";
-        a.append(span);
-        if (c) a.append(hear(c));
-      });
-      if (m.winner) {
-        const p = document.createElement("p");
-        p.textContent = "Winner: " + m.winner.name;
-        a.append(p);
-      }
-      $("rounds").append(a);
-    });
-  });
-  $("champion").textContent = current.champion
-    ? "Our champion is " + current.champion.name + "! Everyone can rest now."
-    : "";
-  $("story").hidden = !current.chapter;
-}
-$("start").onclick = guarded(async () => {
-  stopAudio();
-  current = await api("/api/tournament", {
+async function createTournament(ids = selected) {
+  audio.stop();
+  const p = settings.get();
+  const result = await api("/api/tournament", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      creature_ids: selected,
-      shuffle: $("shuffle").checked,
-      realism: $("realism").value,
-      duration: $("duration").value,
+      creature_ids: ids,
+      shuffle: p.shuffle,
+      realism: p.realism,
+      duration: p.duration,
     }),
   });
+  current = result;
   save();
   renderBracket();
   show("bracket");
+  requestAnimationFrame(drawConnectors);
+}
+$("next").onclick = guarded(() => createTournament());
+$("surprise").onclick = guarded(async () => {
+  const all = await api("/api/creatures");
+  const valid = ["dinosaur", "shark", "marine_reptile"].filter(
+    (cat) => all.filter((c) => c.category === cat).length >= 8,
+  );
+  if (!valid.length)
+    throw Error("Add at least eight compatible creatures to begin.");
+  const cat = valid[Math.floor(Math.random() * valid.length)];
+  const ids = (await api("/api/selection/random?category=" + cat)).creature_ids;
+  await createTournament(ids);
 });
-function openStory() {
+function renderBracket() {
+  $("rounds").replaceChildren();
+  let activeId = current.chapter?.match_id;
+  current.rounds.forEach((round, ri) => {
+    const col = document.createElement("div");
+    col.className = "round";
+    const h = document.createElement("h2");
+    h.textContent = round.name;
+    col.append(h);
+    const list = document.createElement("div");
+    list.className = "round-matches";
+    round.matches.forEach((m, i) => {
+      const card = document.createElement("article");
+      card.className =
+        "match " +
+        (m.status === "complete"
+          ? "complete"
+          : m.id === activeId
+            ? "active"
+            : "");
+      card.dataset.match = m.id;
+      const label = document.createElement("p");
+      label.className = "match-label";
+      label.textContent =
+        "BATTLE " +
+        (ri === 0 ? i + 1 : ri === 1 ? i + 5 : 7) +
+        (m.id === activeId
+          ? " · UP NEXT"
+          : m.status === "complete"
+            ? " · COMPLETE"
+            : "");
+      card.append(label);
+      ["left", "right"].forEach((side, index) => {
+        if (index) {
+          const vs = document.createElement("div");
+          vs.className = "match-vs";
+          vs.textContent = "VS";
+          card.append(vs);
+        }
+        const c = m[side];
+        const row = document.createElement("div");
+        row.className =
+          "contender" +
+          (m.winner && c ? (m.winner.id === c.id ? " winner" : " loser") : "");
+        const name = document.createElement("span");
+        name.textContent = c
+          ? (m.winner?.id === c.id ? "✓ " : "") + c.name
+          : "Waiting for Winner";
+        if (c) row.append(picture(c));
+        row.append(name);
+        if (c) row.append(hear(c));
+        card.append(row);
+      });
+      list.append(card);
+    });
+    col.append(list);
+    $("rounds").append(col);
+  });
+  const winnerCol = document.createElement("div");
+  winnerCol.className = "round";
+  const title = document.createElement("h2");
+  title.textContent = "Champion";
+  const content = document.createElement("div");
+  content.className = "round-matches";
+  const winner = document.createElement("article");
+  winner.className = "match";
+  if (current.champion) {
+    winner.append(picture(current.champion));
+    const h = document.createElement("h3");
+    h.textContent = current.champion.name;
+    winner.append(h, hear(current.champion));
+  } else winner.textContent = "✦ A champion is waiting to be discovered";
+  content.append(winner);
+  winnerCol.append(title, content);
+  $("rounds").append(winnerCol);
+  $("story").hidden = !current.chapter;
+  requestAnimationFrame(drawConnectors);
+}
+$("focus-battle").onclick = () => {
+  $("rounds")
+    .querySelector(".active")
+    ?.scrollIntoView({
+      behavior: settings.get().reducedMotion ? "instant" : "smooth",
+      block: "nearest",
+      inline: "center",
+    });
+};
+function overrides(participants) {
+  const output = {};
+  if (settings.get().guidedNames)
+    for (const c of participants)
+      if (c.pronunciation)
+        output[c.name] = c.pronunciation.toLowerCase().replace(/sawr/g, "sore");
+  return output;
+}
+async function openStory() {
+  if (!current?.chapter) return;
   const c = current.chapter;
-  if (!c) return;
+  const ri = current.rounds.findIndex((r) =>
+    r.matches.some((m) => m.id === c.match_id),
+  );
+  $("battle-label").textContent =
+    current.rounds[ri].name.toUpperCase() +
+    " · BATTLE " +
+    (current.completed + 1) +
+    " OF 7";
   $("chapter-title").textContent = c.title;
   $("chapter-text").replaceChildren();
   c.paragraphs.forEach((text) => {
@@ -332,17 +442,42 @@ function openStory() {
     p.textContent = text;
     $("chapter-text").append(p);
   });
-  $("speak").textContent = "Hear the names";
+  $("battle-creatures").replaceChildren();
+  c.participants.forEach((creature, i) => {
+    if (i) {
+      const vs = document.createElement("span");
+      vs.className = "versus";
+      vs.textContent = "VS";
+      $("battle-creatures").append(vs);
+    }
+    const card = document.createElement("div");
+    card.className = "battle-portrait";
+    const name = document.createElement("h2");
+    name.textContent = creature.name;
+    card.append(picture(creature), name, hear(creature));
+    $("battle-creatures").append(card);
+  });
   show("player");
+  const id = ++loadId;
+  audio.chunks = [];
+  const prefs = settings.get();
+  $("story-rate").value = String(prefs.narrationRate);
+  const ready = await audio.prepare(
+    [...c.paragraphs, c.ending].join("\n\n"),
+    prefs,
+    overrides(c.participants),
+  );
+  if (
+    ready &&
+    id === loadId &&
+    screen === "player" &&
+    prefs.autoNarration &&
+    !audio.pronouncing &&
+    !audio.active()
+  )
+    audio.play();
 }
-$("story").onclick = openStory;
-$("speak").onclick = () => {
-  if (current?.chapter)
-    say({
-      name: current.chapter.participants.map((c) => c.name).join(" and "),
-      pronunciation: current.chapter.participants.map(spokenName).join(" and "),
-    });
-};
+$("story").onclick = () => openStory();
 function context(completed = current.completed) {
   return {
     creature_ids: current.entrant_ids,
@@ -361,103 +496,264 @@ async function finishChapter() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(context(current.completed + 1)),
   });
-  stopAudio();
+  audio.stop();
   current = result;
   save();
   renderBracket();
-  show("bracket");
-  $("message").textContent = ending;
+  if (current.champion) celebrate();
+  else {
+    show("bracket");
+    requestAnimationFrame(drawConnectors);
+    $("message").textContent = ending;
+  }
 }
 $("finish").onclick = guarded(finishChapter);
-function playStory() {
-  if (!current?.chapter) return;
-  if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) {
-    $("message").textContent =
-      "Read the story below, then reveal the ending. Speech is unavailable on this device.";
-    return;
-  }
-  stopAudio();
-  const token = narrationToken;
-  let chunks = [...current.chapter.paragraphs, current.chapter.ending];
-  const participants = current.chapter.participants
-    .slice()
-    .sort((a, b) => b.name.length - a.name.length);
-  chunks = chunks.map((t) => {
-    for (const c of participants) t = t.split(c.name).join(spokenName(c));
-    return t;
-  });
-  let index = 0;
-  function next() {
-    if (token !== narrationToken) return;
-    if (index === chunks.length) {
-      touch();
-      guarded(finishChapter)();
-      return;
-    }
-    const u = utterance(chunks[index++], Number($("story-rate").value));
-    u.onend = () => {
-      touch();
-      next();
-    };
-    u.onerror = (e) => {
-      if (
-        token === narrationToken &&
-        !["canceled", "interrupted"].includes(e.error)
-      )
-        $("message").textContent =
-          "Playback stopped. Try another voice or read along.";
-    };
-    speechSynthesis.speak(u);
-  }
-  next();
-}
-$("play").onclick = () => {
-  if (window.speechSynthesis?.paused) {
-    speechSynthesis.resume();
-    $("pause").textContent = "Pause";
-  } else playStory();
-};
-$("replay").onclick = playStory;
+$("play").onclick = () => audio.play();
 $("pause").onclick = () => {
-  if (!window.speechSynthesis) return;
-  if (speechSynthesis.paused) {
-    speechSynthesis.resume();
-    $("pause").textContent = "Pause";
-  } else {
-    speechSynthesis.pause();
-    $("pause").textContent = "Resume";
-  }
+  audio.pause();
   touch();
 };
-$("stop").onclick = () => {
-  stopAudio();
-  touch();
+$("replay").onclick = () => audio.replay();
+$("story-rate").onchange = () => {
+  settings.set("narrationRate", Number($("story-rate").value));
+  if (audio.prefs) audio.prefs.narrationRate = settings.get().narrationRate;
+  $("story-audio").playbackRate = settings.get().narrationRate;
 };
-$("home").onclick = () => {
-  stopAudio();
+function celebrate() {
+  const c = current.champion;
+  $("winner-card").replaceChildren(picture(c));
+  const h = document.createElement("h2");
+  h.textContent = c.name;
+  $("winner-card").append(h, hear(c));
+  show("celebration");
+}
+$("play-again").onclick = guarded(() => createTournament(current.entrant_ids));
+$("new-adventure").onclick = () => {
+  current = null;
+  save();
+  selected = [];
   show("categories");
 };
+$("view-bracket").onclick = () => {
+  renderBracket();
+  show("bracket");
+  requestAnimationFrame(drawConnectors);
+};
+$("continue-adventure").onclick = () => {
+  renderBracket();
+  current.champion ? celebrate() : show("bracket");
+  requestAnimationFrame(drawConnectors);
+};
+$("home").onclick = () => {
+  loadId++;
+  audio.stop();
+  show("welcome");
+};
 $("back").onclick = () => {
-  stopAudio();
+  loadId++;
+  audio.stop();
+  if (screen === "settings") {
+    const target = returnScreen;
+    if (target === "player") openStory();
+    else show(target);
+    return;
+  }
   show(
     {
+      categories: "welcome",
       selection: "categories",
-      settings: "selection",
-      bracket: library.length ? "settings" : "categories",
+      bracket: library.length ? "selection" : "welcome",
       player: "bracket",
-    }[screen] || "categories",
+      celebration: "bracket",
+    }[screen] || "welcome",
   );
 };
 $("resume").onclick = () => show(beforeQuiet);
+const fields = {
+  "narration-provider": "narrationProvider",
+  "pronunciation-provider": "pronunciationProvider",
+  "narration-voice": "narrationVoice",
+  "pronunciation-voice": "pronunciationVoice",
+  "name-rate": "nameRate",
+  "narration-rate": "narrationRate",
+  "auto-narration": "autoNarration",
+  "pronunciation-buttons": "pronunciationButtons",
+  "guided-names": "guidedNames",
+  duration: "duration",
+  realism: "realism",
+  shuffle: "shuffle",
+  "timeout-enabled": "timeoutEnabled",
+  "idle-minutes": "idleMinutes",
+  "reduced-motion": "reducedMotion",
+};
+function voiceOptions(kind) {
+  const provider = settings.get()[kind + "Provider"];
+  const select = $(kind + "-voice"),
+    saved = settings.get()[kind + "Voice"];
+  select.replaceChildren();
+  let voices =
+    provider === "browser"
+      ? (window.speechSynthesis?.getVoices?.() || [])
+          .filter((v) => /^en[-_]/i.test(v.lang))
+          .map((v) => ({ id: v.voiceURI, name: v.name }))
+      : providerInfo[provider]?.voices || [];
+  if (!voices.length)
+    voices = [
+      {
+        id:
+          provider === "kokoro"
+            ? "af_heart"
+            : provider === "piper"
+              ? "en_US-lessac-medium"
+              : provider === "openai"
+                ? "coral"
+                : "",
+        name:
+          provider === "browser"
+            ? "Device default"
+            : provider === "kokoro"
+              ? "Heart · American English"
+              : provider === "piper"
+                ? "Lessac · US English"
+                : "Coral",
+      },
+    ];
+  voices.forEach((v) => select.add(new Option(v.name, v.id)));
+  if (voices.some((v) => v.id === saved)) select.value = saved;
+  else settings.set(kind + "Voice", voices[0].id);
+}
+function syncSettings() {
+  const p = settings.get();
+  for (const [id, key] of Object.entries(fields)) {
+    if (id.endsWith("-voice")) continue;
+    const el = $(id);
+    if (el.type === "checkbox") el.checked = p[key];
+    else el.value = String(p[key]);
+  }
+  voiceOptions("narration");
+  voiceOptions("pronunciation");
+}
+for (const [id, key] of Object.entries(fields))
+  $(id).addEventListener("change", () => {
+    const el = $(id);
+    settings.set(
+      key,
+      el.type === "checkbox"
+        ? el.checked
+        : ["nameRate", "narrationRate", "idleMinutes"].includes(key)
+          ? Number(el.value)
+          : el.value,
+    );
+    if (id.endsWith("-provider"))
+      voiceOptions(id.startsWith("narration") ? "narration" : "pronunciation");
+  });
+$("preferences").onsubmit = (e) => e.preventDefault();
+async function cacheStats() {
+  try {
+    const data = await api("/api/audio/cache");
+    $("cache-stats").textContent =
+      data.count +
+      " saved audio files · " +
+      (data.bytes / 1024 / 1024).toFixed(1) +
+      " MB";
+  } catch {
+    $("cache-stats").textContent = "Audio cache status unavailable.";
+  }
+}
+async function refreshProviders() {
+  try {
+    const data = await api("/api/audio/providers");
+    providerInfo = data.providers;
+    $("provider-status").replaceChildren();
+    Object.entries(providerInfo).forEach(([name, info]) => {
+      const p = document.createElement("p");
+      p.textContent =
+        name +
+        ": " +
+        (info.available ? "Ready" : info.reason || "Setup needed");
+      $("provider-status").append(p);
+    });
+  } catch {
+    $("provider-status").textContent =
+      "Server audio unavailable. Device speech remains available.";
+  }
+  syncSettings();
+}
+$("settings-open").onclick = () => {
+  if (screen === "settings") return;
+  returnScreen = screen;
+  audio.stop();
+  show("settings");
+  syncSettings();
+  refreshProviders();
+  cacheStats();
+};
+window.speechSynthesis?.addEventListener?.("voiceschanged", () => {
+  if (screen === "settings") {
+    voiceOptions("narration");
+    voiceOptions("pronunciation");
+  }
+});
+$("preview-name").onclick = () =>
+  audio.pronounce(
+    { name: "Tyrannosaurus", pronunciation: "tie ran oh sore us" },
+    settings.get(),
+    $("preview-name"),
+  );
+$("preview-story").onclick = guarded(async () => {
+  const p = settings.get();
+  await audio.prepare(
+    "The moon is shining. A wonderful little adventure is about to begin.",
+    p,
+  );
+  await audio.play();
+});
+$("clear-cache").onclick = () => {
+  $("cache-confirm").hidden = false;
+};
+$("cancel-clear").onclick = () => {
+  $("cache-confirm").hidden = true;
+};
+$("confirm-clear").onclick = guarded(async () => {
+  await api("/api/audio/cache", {
+    method: "DELETE",
+    headers: { "X-Bedtime-Confirm": "clear" },
+  });
+  $("cache-confirm").hidden = true;
+  cacheStats();
+});
+$("benchmark").onclick = guarded(async () => {
+  const p = settings.get();
+  if (!["kokoro", "piper"].includes(p.narrationProvider))
+    throw Error("Choose a local provider to benchmark.");
+  $("benchmark-result").textContent = "Measuring local audio generation…";
+  const data = await api("/api/audio/benchmark", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      provider: p.narrationProvider,
+      voice: p.narrationVoice,
+    }),
+  });
+  let result = data;
+  while (["queued", "generating"].includes(result.state)) {
+    await new Promise((r) => setTimeout(r, 1000));
+    result = await api("/api/audio/jobs/" + data.key);
+  }
+  if (result.state !== "ready")
+    throw Error(result.error || "Benchmark unavailable");
+  $("benchmark-result").textContent = result.cached
+    ? "Cached result · " + JSON.stringify(result.metrics)
+    : JSON.stringify(result.metrics);
+});
 async function restore() {
   try {
-    const config = await api("/api/config");
-    $("sample").hidden = !config.sample_data;
+    const cfg = await api("/api/config");
+    $("sample").hidden = !cfg.sample_data;
     const stored = JSON.parse(
       sessionStorage.getItem("bedtimeTournament") || "null",
     );
     if (stored) {
-      current = stored;
       const ids =
         stored.entrant_ids ||
         stored.rounds[0].matches.flatMap((m) => [m.left.id, m.right.id]);
@@ -474,9 +770,8 @@ async function restore() {
         }),
       });
       save();
-      renderBracket();
-      show("bracket");
     }
+    await refreshProviders();
   } catch {
     current = null;
     try {
@@ -485,3 +780,48 @@ async function restore() {
   }
 }
 restore();
+
+function drawConnectors() {
+  const root = $("rounds");
+  if (!current || !root.children.length) return;
+  root.querySelector(".bracket-links")?.remove();
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.classList.add("bracket-links");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("width", root.scrollWidth);
+  svg.setAttribute("height", root.scrollHeight);
+  const origin = root.getBoundingClientRect();
+  function connect(source, target) {
+    if (!source || !target) return;
+    const a = source.getBoundingClientRect(),
+      b = target.getBoundingClientRect(),
+      sx = a.right - origin.left,
+      sy = a.top + a.height / 2 - origin.top,
+      dx = b.left - origin.left,
+      dy = b.top + b.height / 2 - origin.top;
+    const path = document.createElementNS(svg.namespaceURI, "path");
+    path.setAttribute("d", `M ${sx} ${sy} H ${(sx + dx) / 2} V ${dy} H ${dx}`);
+    path.setAttribute("fill", "none");
+    path.setAttribute("stroke", "#596582");
+    path.setAttribute("stroke-width", "2");
+    svg.append(path);
+  }
+  current.rounds.forEach((r) =>
+    r.matches.forEach((m) =>
+      (m.sources || []).forEach((id) =>
+        connect(
+          root.querySelector(`[data-match="${id}"]`),
+          root.querySelector(`[data-match="${m.id}"]`),
+        ),
+      ),
+    ),
+  );
+  connect(
+    root.querySelector('[data-match="r2m0"]'),
+    root.querySelector(".round:last-child .match"),
+  );
+  root.prepend(svg);
+}
+window.addEventListener("resize", () => {
+  if (screen === "bracket") drawConnectors();
+});

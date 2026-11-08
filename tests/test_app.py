@@ -7,6 +7,8 @@ from app import main
 
 @pytest.fixture
 def client(tmp_path, monkeypatch):
+    monkeypatch.setenv('BBS_AUDIO_CACHE',str(tmp_path/'audio-cache'))
+    monkeypatch.setenv('BBS_MODEL_DIR',str(tmp_path/'models'))
     monkeypatch.setattr(main, 'DB', tmp_path / 'test.sqlite3')
     monkeypatch.setattr(main, 'SAMPLE', True)
     monkeypatch.setattr(main, 'CATALOG', False)

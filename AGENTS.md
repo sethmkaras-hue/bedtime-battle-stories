@@ -20,3 +20,8 @@
 - Keep editorial catalog review status explicit. Do not describe unverified reference links, approximate pronunciation guides or game ratings as scientifically validated.
 - Keep version-2 outcomes reproducible from entrants/settings/seed/completion; never trust submitted winners or persist tournament history.
 - Test speech controls with deterministic stubs, and report audible/device validation separately.
+- Keep the child flow simple; keep settings global and preserve active progress when opening them. Use bundled assets and speaker icons with accessible labels and 44px+ targets.
+- TTS must be optional and CPU-only. Do not download models during app startup or import heavy engines into the request event loop. Keep one bounded generation worker and never choose a paid fallback automatically.
+- Cache identity must include provider/model/voice/text/speed/overrides. Publish audio atomically, deduplicate concurrent jobs and require confirmation before clearing. Never commit model binaries or generated audio.
+- Retain HTML5 audio controls and Safari user-gesture recovery. Do not regenerate on pause/resume/replay or reveal the winner before end/read-complete.
+- Report real model generation, mocked adapter tests, browser transport tests, audible quality and physical-device checks separately. Benchmark measured CPU time/duration/RSS without claiming unmeasured improvements.

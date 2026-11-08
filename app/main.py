@@ -5,16 +5,20 @@ import json
 import os
 import random
 import sqlite3
+import threading
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, StrictInt
 from app.adventure import progress
+from app.audio.routes import router as audio_router, create_service
 
 ROOT = Path(__file__).resolve().parent.parent
 DB = Path(os.environ.get('BBS_DB_PATH', ROOT / 'data' / ('sample.sqlite3' if os.environ.get('BBS_SAMPLE_DATA') == '1' else 'creatures.sqlite3')))
 SAMPLE = os.environ.get('BBS_SAMPLE_DATA') == '1'
 CATALOG = os.environ.get('BBS_CATALOG', '1') == '1'
+_database_ready = None
+_database_lock = threading.RLock()
 # A matchup needs a shared arena across every participant. Extend here as
 # verified species gain more specific habitat requirements.
 HABITAT_ARENAS = {'land': {'land'}, 'marine': {'water'},
@@ -22,6 +26,7 @@ HABITAT_ARENAS = {'land': {'land'}, 'marine': {'water'},
 
 
 def initialize_database():
+    global _database_ready
     DB.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(DB) as conn:
         conn.execute('''CREATE TABLE IF NOT EXISTS creatures (
@@ -50,14 +55,28 @@ def initialize_database():
                 conn.execute(f"INSERT OR IGNORE INTO creatures ({','.join(keys)}) VALUES ({','.join('?' for _ in keys)})", list(row.values()))
                 conn.execute("UPDATE creatures SET pronunciation=? WHERE name=? AND scientific_name=? AND (pronunciation IS NULL OR pronunciation='')", (row['pronunciation'], row['name'], row['scientific_name']))
 
+    _database_ready = (str(DB.resolve()), DB.stat().st_ino, SAMPLE, CATALOG)
+
+
+def ensure_database():
+    with _database_lock:
+        identity = (str(DB.resolve()), DB.stat().st_ino, SAMPLE, CATALOG) if DB.exists() else None
+        if identity is None or identity != _database_ready:
+            initialize_database()
+
 
 @asynccontextmanager
 async def lifespan(app):
     initialize_database()
-    yield
+    app.state.audio = create_service()
+    try:
+        yield
+    finally:
+        app.state.audio.close()
 
 
 app = FastAPI(title='Bedtime Battle Stories', lifespan=lifespan)
+app.include_router(audio_router)
 app.mount('/static', StaticFiles(directory=ROOT / 'static'), name='static')
 
 
@@ -69,13 +88,13 @@ def home():
 @app.get('/api/config')
 def config():
     return {'sample_data': SAMPLE, 'catalog': CATALOG and not SAMPLE, 'idle_minutes': 5,
-            'version': '2.0', 'catalog_review': 'Reference checks pending; measurements omitted'}
+            'version': '3.0', 'catalog_review': 'Reference checks pending; measurements omitted'}
 
 
 @app.get('/api/creatures')
 def creatures(category: Literal['dinosaur', 'shark', 'marine_reptile'] | None = None,
               q: str = ''):
-    initialize_database()
+    ensure_database()
     with sqlite3.connect(DB) as conn:
         conn.row_factory = sqlite3.Row
         rows = conn.execute('SELECT * FROM creatures ORDER BY name').fetchall()
