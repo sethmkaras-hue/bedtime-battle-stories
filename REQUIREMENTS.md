@@ -34,3 +34,7 @@ Ubuntu home server, Python 3.12+, FastAPI, SQLite, local-network access from iPh
 ## Validated Phase 1 scope
 
 Phase 1 includes opt-in isolated development data, search/filtering, unbiased random selection, strict tournament validation, shared-arena habitat compatibility, session-only bracket persistence, source-match references for future progression, browser pronunciation and a resumable quiet state. No outcomes, progression or generated narration are implemented. Active narration defers the five-minute idle timeout. Phase 2 owns scientifically reviewed species profiles and finer habitat rules. Development sample records omit unverified measurements.
+
+## Version 2 local adventure scope
+
+The next iteration adds an editorial catalog (164 entries; scientific source review pending), browser voice selection and guided pronunciation, seed-based fictional game outcomes, seven locally authored template chapters, winner advancement and champion display. Ratings are explicitly game rules, not scientifically validated probabilities. Session reconstruction sends entrant IDs, settings, seed and completion count; no server history. Approximate chapter durations depend on voice speed. Scientific catalog verification, trait-based simulation, verified audio and generated media remain outstanding. No paid services are configured or called.

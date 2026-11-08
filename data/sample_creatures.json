@@ -5,8 +5,9 @@
     "scientific_name": "Tyrannosaurus rex",
     "category": "dinosaur",
     "habitat": "land",
-    "description": "Development sample; full species profile awaits Phase 2 review.",
-    "pronunciation": null
+    "description": "A prehistoric dinosaur. It ate other animals.",
+    "pronunciation": "tie RAN oh SAWR us",
+    "diet": "meat"
   },
   {
     "id": 2,
@@ -14,8 +15,9 @@
     "scientific_name": "Triceratops horridus",
     "category": "dinosaur",
     "habitat": "land",
-    "description": "Development sample; full species profile awaits Phase 2 review.",
-    "pronunciation": null
+    "description": "A prehistoric dinosaur. Its diet included plants.",
+    "pronunciation": "try SERR uh tops",
+    "diet": "plants"
   },
   {
     "id": 3,
@@ -23,8 +25,9 @@
     "scientific_name": "Stegosaurus stenops",
     "category": "dinosaur",
     "habitat": "land",
-    "description": "Development sample; full species profile awaits Phase 2 review.",
-    "pronunciation": null
+    "description": "A prehistoric dinosaur. Its diet included plants.",
+    "pronunciation": "STEG oh SAWR us",
+    "diet": "plants"
   },
   {
     "id": 4,
@@ -32,8 +35,9 @@
     "scientific_name": "Allosaurus fragilis",
     "category": "dinosaur",
     "habitat": "land",
-    "description": "Development sample; full species profile awaits Phase 2 review.",
-    "pronunciation": null
+    "description": "A prehistoric dinosaur. It ate other animals.",
+    "pronunciation": "AL oh SAWR us",
+    "diet": "meat"
   },
   {
     "id": 5,
@@ -41,8 +45,9 @@
     "scientific_name": "Diplodocus carnegii",
     "category": "dinosaur",
     "habitat": "land",
-    "description": "Development sample; full species profile awaits Phase 2 review.",
-    "pronunciation": null
+    "description": "A prehistoric dinosaur. Its diet included plants.",
+    "pronunciation": "dip LOD uh kus",
+    "diet": "plants"
   },
   {
     "id": 6,
@@ -50,8 +55,9 @@
     "scientific_name": "Brachiosaurus altithorax",
     "category": "dinosaur",
     "habitat": "land",
-    "description": "Development sample; full species profile awaits Phase 2 review.",
-    "pronunciation": null
+    "description": "A prehistoric dinosaur. Its diet included plants.",
+    "pronunciation": "BRAK ee oh SAWR us",
+    "diet": "plants"
   },
   {
     "id": 7,
@@ -59,8 +65,9 @@
     "scientific_name": "Ankylosaurus magniventris",
     "category": "dinosaur",
     "habitat": "land",
-    "description": "Development sample; full species profile awaits Phase 2 review.",
-    "pronunciation": null
+    "description": "A prehistoric dinosaur. Its diet included plants.",
+    "pronunciation": "ang KYE loh SAWR us",
+    "diet": "plants"
   },
   {
     "id": 8,
@@ -68,8 +75,9 @@
     "scientific_name": "Parasaurolophus walkeri",
     "category": "dinosaur",
     "habitat": "land",
-    "description": "Development sample; full species profile awaits Phase 2 review.",
-    "pronunciation": null
+    "description": "A prehistoric dinosaur. Its diet included plants.",
+    "pronunciation": "pair uh saw ROL uh fuss",
+    "diet": "plants"
   },
   {
     "id": 9,
@@ -77,8 +85,9 @@
     "scientific_name": "Carcharodon carcharias",
     "category": "shark",
     "habitat": "marine",
-    "description": "Development sample; full species profile awaits Phase 2 review.",
-    "pronunciation": null
+    "description": "A shark, a fish with a skeleton made of cartilage. It ate other animals.",
+    "pronunciation": "Great white shark",
+    "diet": "meat"
   },
   {
     "id": 10,
@@ -86,8 +95,9 @@
     "scientific_name": "Rhincodon typus",
     "category": "shark",
     "habitat": "marine",
-    "description": "Development sample; full species profile awaits Phase 2 review.",
-    "pronunciation": null
+    "description": "A shark, a fish with a skeleton made of cartilage. It filtered small food from the water.",
+    "pronunciation": "Whale shark",
+    "diet": "filter feeder"
   },
   {
     "id": 11,
@@ -95,8 +105,9 @@
     "scientific_name": "Galeocerdo cuvier",
     "category": "shark",
     "habitat": "marine",
-    "description": "Development sample; full species profile awaits Phase 2 review.",
-    "pronunciation": null
+    "description": "A shark, a fish with a skeleton made of cartilage. It ate other animals.",
+    "pronunciation": "Tiger shark",
+    "diet": "meat"
   },
   {
     "id": 12,
@@ -104,8 +115,9 @@
     "scientific_name": "Sphyrna mokarran",
     "category": "shark",
     "habitat": "marine",
-    "description": "Development sample; full species profile awaits Phase 2 review.",
-    "pronunciation": null
+    "description": "A shark, a fish with a skeleton made of cartilage. It ate other animals.",
+    "pronunciation": "Great hammerhead",
+    "diet": "meat"
   },
   {
     "id": 13,
@@ -113,8 +125,9 @@
     "scientific_name": "Carcharhinus leucas",
     "category": "shark",
     "habitat": "marine",
-    "description": "Development sample; full species profile awaits Phase 2 review.",
-    "pronunciation": null
+    "description": "A shark, a fish with a skeleton made of cartilage. It ate other animals.",
+    "pronunciation": "Bull shark",
+    "diet": "meat"
   },
   {
     "id": 14,
@@ -122,8 +135,9 @@
     "scientific_name": "Prionace glauca",
     "category": "shark",
     "habitat": "marine",
-    "description": "Development sample; full species profile awaits Phase 2 review.",
-    "pronunciation": null
+    "description": "A shark, a fish with a skeleton made of cartilage. It ate other animals.",
+    "pronunciation": "Blue shark",
+    "diet": "meat"
   },
   {
     "id": 15,
@@ -131,8 +145,9 @@
     "scientific_name": "Isurus oxyrinchus",
     "category": "shark",
     "habitat": "marine",
-    "description": "Development sample; full species profile awaits Phase 2 review.",
-    "pronunciation": null
+    "description": "A shark, a fish with a skeleton made of cartilage. It ate other animals.",
+    "pronunciation": "Shortfin mako",
+    "diet": "meat"
   },
   {
     "id": 16,
@@ -140,8 +155,9 @@
     "scientific_name": "Ginglymostoma cirratum",
     "category": "shark",
     "habitat": "marine",
-    "description": "Development sample; full species profile awaits Phase 2 review.",
-    "pronunciation": null
+    "description": "A shark, a fish with a skeleton made of cartilage. It ate other animals.",
+    "pronunciation": "Nurse shark",
+    "diet": "meat"
   },
   {
     "id": 17,
@@ -149,8 +165,9 @@
     "scientific_name": "Mosasaurus hoffmannii",
     "category": "marine_reptile",
     "habitat": "marine",
-    "description": "Development sample; full species profile awaits Phase 2 review.",
-    "pronunciation": null
+    "description": "An extinct marine reptile, not a dinosaur. It ate other animals.",
+    "pronunciation": "moh zuh SAWR us",
+    "diet": "meat"
   },
   {
     "id": 18,
@@ -158,8 +175,9 @@
     "scientific_name": "Tylosaurus proriger",
     "category": "marine_reptile",
     "habitat": "marine",
-    "description": "Development sample; full species profile awaits Phase 2 review.",
-    "pronunciation": null
+    "description": "An extinct marine reptile, not a dinosaur. It ate other animals.",
+    "pronunciation": "tie loh SAWR us",
+    "diet": "meat"
   },
   {
     "id": 19,
@@ -167,8 +185,9 @@
     "scientific_name": "Plesiosaurus dolichodeirus",
     "category": "marine_reptile",
     "habitat": "marine",
-    "description": "Development sample; full species profile awaits Phase 2 review.",
-    "pronunciation": null
+    "description": "An extinct marine reptile, not a dinosaur. It ate other animals.",
+    "pronunciation": "plee zee oh SAWR us",
+    "diet": "meat"
   },
   {
     "id": 20,
@@ -176,8 +195,9 @@
     "scientific_name": "Ichthyosaurus communis",
     "category": "marine_reptile",
     "habitat": "marine",
-    "description": "Development sample; full species profile awaits Phase 2 review.",
-    "pronunciation": null
+    "description": "An extinct marine reptile, not a dinosaur. It ate other animals.",
+    "pronunciation": "IK thee oh SAWR us",
+    "diet": "meat"
   },
   {
     "id": 21,
@@ -185,8 +205,9 @@
     "scientific_name": "Elasmosaurus platyurus",
     "category": "marine_reptile",
     "habitat": "marine",
-    "description": "Development sample; full species profile awaits Phase 2 review.",
-    "pronunciation": null
+    "description": "An extinct marine reptile, not a dinosaur. It ate other animals.",
+    "pronunciation": "ee LAZ moh SAWR us",
+    "diet": "meat"
   },
   {
     "id": 22,
@@ -194,8 +215,9 @@
     "scientific_name": "Kronosaurus queenslandicus",
     "category": "marine_reptile",
     "habitat": "marine",
-    "description": "Development sample; full species profile awaits Phase 2 review.",
-    "pronunciation": null
+    "description": "An extinct marine reptile, not a dinosaur. It ate other animals.",
+    "pronunciation": "KROH noh SAWR us",
+    "diet": "meat"
   },
   {
     "id": 23,
@@ -203,8 +225,9 @@
     "scientific_name": "Liopleurodon ferox",
     "category": "marine_reptile",
     "habitat": "marine",
-    "description": "Development sample; full species profile awaits Phase 2 review.",
-    "pronunciation": null
+    "description": "An extinct marine reptile, not a dinosaur. It ate other animals.",
+    "pronunciation": "lye oh PLOOR oh don",
+    "diet": "meat"
   },
   {
     "id": 24,
@@ -212,7 +235,8 @@
     "scientific_name": "Ophthalmosaurus icenicus",
     "category": "marine_reptile",
     "habitat": "marine",
-    "description": "Development sample; full species profile awaits Phase 2 review.",
-    "pronunciation": null
+    "description": "An extinct marine reptile, not a dinosaur. It ate other animals.",
+    "pronunciation": "off THAL moh SAWR us",
+    "diet": "meat"
   }
 ]
