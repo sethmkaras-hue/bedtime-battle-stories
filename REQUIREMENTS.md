@@ -30,3 +30,7 @@ Ubuntu home server, Python 3.12+, FastAPI, SQLite, local-network access from iPh
 3. Deterministic battle engine, bracket advancement and realism settings.
 4. AI-generated stories, images and narration with cost controls.
 5. Bedtime audio polish, reliability and deployment.
+
+## Validated Phase 1 scope
+
+Phase 1 includes opt-in isolated development data, search/filtering, unbiased random selection, strict tournament validation, shared-arena habitat compatibility, session-only bracket persistence, source-match references for future progression, browser pronunciation and a resumable quiet state. No outcomes, progression or generated narration are implemented. Active narration defers the five-minute idle timeout. Phase 2 owns scientifically reviewed species profiles and finer habitat rules. Development sample records omit unverified measurements.

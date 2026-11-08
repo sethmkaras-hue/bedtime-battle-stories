@@ -1,0 +1,218 @@
+[
+  {
+    "id": 1,
+    "name": "Tyrannosaurus",
+    "scientific_name": "Tyrannosaurus rex",
+    "category": "dinosaur",
+    "habitat": "land",
+    "description": "Development sample; full species profile awaits Phase 2 review.",
+    "pronunciation": null
+  },
+  {
+    "id": 2,
+    "name": "Triceratops",
+    "scientific_name": "Triceratops horridus",
+    "category": "dinosaur",
+    "habitat": "land",
+    "description": "Development sample; full species profile awaits Phase 2 review.",
+    "pronunciation": null
+  },
+  {
+    "id": 3,
+    "name": "Stegosaurus",
+    "scientific_name": "Stegosaurus stenops",
+    "category": "dinosaur",
+    "habitat": "land",
+    "description": "Development sample; full species profile awaits Phase 2 review.",
+    "pronunciation": null
+  },
+  {
+    "id": 4,
+    "name": "Allosaurus",
+    "scientific_name": "Allosaurus fragilis",
+    "category": "dinosaur",
+    "habitat": "land",
+    "description": "Development sample; full species profile awaits Phase 2 review.",
+    "pronunciation": null
+  },
+  {
+    "id": 5,
+    "name": "Diplodocus",
+    "scientific_name": "Diplodocus carnegii",
+    "category": "dinosaur",
+    "habitat": "land",
+    "description": "Development sample; full species profile awaits Phase 2 review.",
+    "pronunciation": null
+  },
+  {
+    "id": 6,
+    "name": "Brachiosaurus",
+    "scientific_name": "Brachiosaurus altithorax",
+    "category": "dinosaur",
+    "habitat": "land",
+    "description": "Development sample; full species profile awaits Phase 2 review.",
+    "pronunciation": null
+  },
+  {
+    "id": 7,
+    "name": "Ankylosaurus",
+    "scientific_name": "Ankylosaurus magniventris",
+    "category": "dinosaur",
+    "habitat": "land",
+    "description": "Development sample; full species profile awaits Phase 2 review.",
+    "pronunciation": null
+  },
+  {
+    "id": 8,
+    "name": "Parasaurolophus",
+    "scientific_name": "Parasaurolophus walkeri",
+    "category": "dinosaur",
+    "habitat": "land",
+    "description": "Development sample; full species profile awaits Phase 2 review.",
+    "pronunciation": null
+  },
+  {
+    "id": 9,
+    "name": "Great white shark",
+    "scientific_name": "Carcharodon carcharias",
+    "category": "shark",
+    "habitat": "marine",
+    "description": "Development sample; full species profile awaits Phase 2 review.",
+    "pronunciation": null
+  },
+  {
+    "id": 10,
+    "name": "Whale shark",
+    "scientific_name": "Rhincodon typus",
+    "category": "shark",
+    "habitat": "marine",
+    "description": "Development sample; full species profile awaits Phase 2 review.",
+    "pronunciation": null
+  },
+  {
+    "id": 11,
+    "name": "Tiger shark",
+    "scientific_name": "Galeocerdo cuvier",
+    "category": "shark",
+    "habitat": "marine",
+    "description": "Development sample; full species profile awaits Phase 2 review.",
+    "pronunciation": null
+  },
+  {
+    "id": 12,
+    "name": "Great hammerhead",
+    "scientific_name": "Sphyrna mokarran",
+    "category": "shark",
+    "habitat": "marine",
+    "description": "Development sample; full species profile awaits Phase 2 review.",
+    "pronunciation": null
+  },
+  {
+    "id": 13,
+    "name": "Bull shark",
+    "scientific_name": "Carcharhinus leucas",
+    "category": "shark",
+    "habitat": "marine",
+    "description": "Development sample; full species profile awaits Phase 2 review.",
+    "pronunciation": null
+  },
+  {
+    "id": 14,
+    "name": "Blue shark",
+    "scientific_name": "Prionace glauca",
+    "category": "shark",
+    "habitat": "marine",
+    "description": "Development sample; full species profile awaits Phase 2 review.",
+    "pronunciation": null
+  },
+  {
+    "id": 15,
+    "name": "Shortfin mako",
+    "scientific_name": "Isurus oxyrinchus",
+    "category": "shark",
+    "habitat": "marine",
+    "description": "Development sample; full species profile awaits Phase 2 review.",
+    "pronunciation": null
+  },
+  {
+    "id": 16,
+    "name": "Nurse shark",
+    "scientific_name": "Ginglymostoma cirratum",
+    "category": "shark",
+    "habitat": "marine",
+    "description": "Development sample; full species profile awaits Phase 2 review.",
+    "pronunciation": null
+  },
+  {
+    "id": 17,
+    "name": "Mosasaurus",
+    "scientific_name": "Mosasaurus hoffmannii",
+    "category": "marine_reptile",
+    "habitat": "marine",
+    "description": "Development sample; full species profile awaits Phase 2 review.",
+    "pronunciation": null
+  },
+  {
+    "id": 18,
+    "name": "Tylosaurus",
+    "scientific_name": "Tylosaurus proriger",
+    "category": "marine_reptile",
+    "habitat": "marine",
+    "description": "Development sample; full species profile awaits Phase 2 review.",
+    "pronunciation": null
+  },
+  {
+    "id": 19,
+    "name": "Plesiosaurus",
+    "scientific_name": "Plesiosaurus dolichodeirus",
+    "category": "marine_reptile",
+    "habitat": "marine",
+    "description": "Development sample; full species profile awaits Phase 2 review.",
+    "pronunciation": null
+  },
+  {
+    "id": 20,
+    "name": "Ichthyosaurus",
+    "scientific_name": "Ichthyosaurus communis",
+    "category": "marine_reptile",
+    "habitat": "marine",
+    "description": "Development sample; full species profile awaits Phase 2 review.",
+    "pronunciation": null
+  },
+  {
+    "id": 21,
+    "name": "Elasmosaurus",
+    "scientific_name": "Elasmosaurus platyurus",
+    "category": "marine_reptile",
+    "habitat": "marine",
+    "description": "Development sample; full species profile awaits Phase 2 review.",
+    "pronunciation": null
+  },
+  {
+    "id": 22,
+    "name": "Kronosaurus",
+    "scientific_name": "Kronosaurus queenslandicus",
+    "category": "marine_reptile",
+    "habitat": "marine",
+    "description": "Development sample; full species profile awaits Phase 2 review.",
+    "pronunciation": null
+  },
+  {
+    "id": 23,
+    "name": "Liopleurodon",
+    "scientific_name": "Liopleurodon ferox",
+    "category": "marine_reptile",
+    "habitat": "marine",
+    "description": "Development sample; full species profile awaits Phase 2 review.",
+    "pronunciation": null
+  },
+  {
+    "id": 24,
+    "name": "Ophthalmosaurus",
+    "scientific_name": "Ophthalmosaurus icenicus",
+    "category": "marine_reptile",
+    "habitat": "marine",
+    "description": "Development sample; full species profile awaits Phase 2 review.",
+    "pronunciation": null
+  }
+]

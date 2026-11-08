@@ -11,3 +11,9 @@
 - Keep child-facing combat non-graphic; biting, kicking and tail strikes are permitted.
 - Document incomplete features and distinguish placeholders from implemented behavior.
 - Preserve compatibility with Ubuntu Linux and local-network hosting.
+- Keep development sample data opt-in and separate from the production database; tests use temporary SQLite files.
+- Require a shared compatible arena across all tournament participants; unknown habitats fail closed.
+- Use unbiased sampling without replacement and preserve bracket selection order unless shuffling is requested.
+- Session-only brackets may use browser sessionStorage; do not add server-side tournament history.
+- Idle timeout must not interrupt active narration; provide explicit resume from quiet mode.
+- For frontend changes, run the optional mobile Chromium regression when available and distinguish it from physical Safari/Android validation.
