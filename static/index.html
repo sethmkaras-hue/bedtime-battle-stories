@@ -1,121 +1,13 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Bedtime Battle Stories</title>
-    <link rel="stylesheet" href="/static/style.css" />
-  </head>
-  <body>
-    <main>
-      <h1>Bedtime Battle Stories</h1>
-      <p>Choose your adventure.</p>
-      <p id="version">Version 2 · friendly story tournaments</p>
-      <p id="sample" hidden>Development sample library</p>
-      <details id="voice-settings">
-        <summary>Voice &amp; pronunciation</summary>
-        <label
-          >English voice
-          <select id="voice">
-            <option value="">Device default</option>
-          </select></label
-        ><label
-          >Name speed
-          <select id="name-rate">
-            <option value="0.65">Extra slow</option>
-            <option value="0.8" selected>Gentle</option>
-            <option value="1">Normal</option>
-          </select></label
-        ><label
-          ><input type="checkbox" id="guided-names" checked /> Use pronunciation
-          guides</label
-        >
-        <p>
-          Approximate English guides. Voices vary by device; listen and choose
-          the clearest one.
-        </p>
-      </details>
-      <nav>
-        <button id="home">Choose a category</button
-        ><button id="back" hidden>Back</button>
-      </nav>
-      <section id="quiet" hidden>
-        <h2>Time to rest</h2>
-        <p>Your adventure is waiting quietly.</p>
-        <button id="resume">Resume adventure</button>
-      </section>
-      <section id="categories">
-        <button data-category="dinosaur">Dinosaurs</button
-        ><button data-category="shark">Sharks</button
-        ><button data-category="marine_reptile">
-          Prehistoric Sea Creatures</button
-        ><button data-category="ocean">
-          Ocean mix · sharks &amp; sea reptiles
-        </button>
-      </section>
-      <section id="selection" hidden>
-        <h2>Pick eight creatures</h2>
-        <p>Tap in the order you want them paired.</p>
-        <p id="count">0 of 8 selected</p>
-        <input
-          id="search"
-          placeholder="Search creatures"
-          aria-label="Search creatures"
-        />
-        <p id="library-status"></p>
-        <div id="creatures"></div>
-        <button id="random">Pick eight for me</button
-        ><button id="next" disabled>Continue</button>
-      </section>
-      <section id="settings" hidden>
-        <h2>Your adventure</h2>
-        <p>
-          Friendly fictional contests. Realism changes game rules; these are not
-          scientific predictions.
-        </p>
-        <label
-          >Realism
-          <select id="realism">
-            <option value="realistic">Realistic</option>
-            <option value="balanced" selected>Balanced</option>
-            <option value="anything">Anything Can Happen</option>
-          </select></label
-        ><label
-          >Battle length
-          <select id="duration">
-            <option value="short">1 minute</option>
-            <option value="normal" selected>2 minutes</option>
-            <option value="long">3 minutes</option>
-          </select></label
-        ><label><input id="shuffle" type="checkbox" />Randomize matchups</label
-        ><button id="start">Create bracket</button>
-      </section>
-      <section id="bracket" hidden>
-        <h2>Tournament bracket</h2>
-        <div id="rounds"></div>
-        <p id="champion"></p>
-        <button id="story">Listen to the next chapter</button>
-      </section>
-      <section id="player" hidden>
-        <h2 id="chapter-title">Battle story</h2>
-        <p>Make-believe adventures · everyone stays safe</p>
-        <div id="chapter-text"></div>
-        <label
-          >Story speed
-          <select id="story-rate">
-            <option value="0.8">Slow</option>
-            <option value="0.95" selected>Gentle</option>
-            <option value="1.1">Brisk</option>
-          </select></label
-        ><button id="play">Play story</button><button id="pause">Pause</button
-        ><button id="replay">Replay</button
-        ><button id="speak">Hear the names</button
-        ><button id="stop">Stop speaking</button
-        ><button id="finish">Reveal the ending</button>
-        <p id="timeout"></p>
-      </section>
-      <p id="message" role="status"></p>
-    </main>
-    <script src="/static/app.js"></script>
-  </body>
-</html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101529"><title>Bedtime Battle Stories</title><link rel="stylesheet" href="/static/style.css"></head>
+<body><header class="app-header"><button id="home" class="brand" aria-label="Home">☾ <span>Bedtime adventures</span></button><button id="settings-open" class="icon-button" aria-label="Open settings">⚙</button></header><main>
+<button id="back" class="back" hidden>← Back</button>
+<section id="welcome" class="welcome"><p class="eyebrow">A LITTLE WONDER BEFORE SLEEP</p><h1>Bedtime<br>Battle Stories</h1><p class="subtitle">Who will win tonight?</p><img class="hero" src="/static/assets/dinosaur.svg" alt="A friendly illustrated dinosaur beneath the stars"><div class="home-actions"><button id="start-adventure" class="primary">Start Adventure <span>→</span></button><button id="surprise" class="secondary">✧ Surprise Me!</button></div><p class="soft-note">Eight creatures. Seven stories. One sleepy champion.</p><button id="continue-adventure" hidden>Continue tonight’s adventure →</button></section>
+<section id="categories" hidden><p class="eyebrow">CHAPTER ONE · THE ADVENTURE BEGINS</p><h1>Where shall we go?</h1><p class="subtitle">Pick a world to explore tonight.</p><div class="adventure-grid"><button class="adventure-card" data-category="dinosaur"><img src="/static/assets/dinosaur.svg" alt=""><strong>Dinosaur Battles</strong><span>Big footsteps. Bigger adventures.</span></button><button class="adventure-card" data-category="shark"><img src="/static/assets/shark.svg" alt=""><strong>Shark Battles</strong><span>Dive into a moonlit ocean.</span></button><button class="adventure-card" data-category="marine_reptile"><img src="/static/assets/marine_reptile.svg" alt=""><strong>Prehistoric Ocean Battles</strong><span>Meet the ancient sea giants.</span></button><button class="adventure-card ocean-card" data-category="ocean"><span class="world-icon">≈</span><strong>Ocean Mix</strong><span>Sharks and ancient sea reptiles together.</span></button></div></section>
+<section id="selection" hidden><p class="eyebrow">YOUR ADVENTURE CREW</p><h1>Choose Your Fighters</h1><p id="count" class="selection-count" aria-live="polite">0 of 8 Selected</p><div id="selection-slots" class="selection-slots" aria-label="Selected creatures"></div><div class="selection-tools"><button id="random">✧ Random 8</button><button id="clear">Clear</button><button id="next" class="primary" disabled>Start Tournament →</button></div><details class="browse-tools"><summary>Search &amp; explore all creatures</summary><input id="search" type="search" placeholder="Find a creature…" aria-label="Search creatures"><label>Show <select id="browse-group"><option value="popular">Popular Creatures</option><option value="all">All Creatures</option></select></label></details><h2 id="library-heading">Popular Creatures</h2><p id="library-status" class="muted"></p><div id="creatures" class="creature-grid"></div></section>
+<section id="bracket" hidden><p class="eyebrow">TONIGHT’S TOURNAMENT</p><h1>The adventure path</h1><p class="subtitle">Follow your favorites to the final.</p><div class="bracket-actions"><button id="story" class="primary">▶ Watch This Battle!</button><button id="focus-battle">◎ Focus on Current Battle</button></div><div id="bracket-scroll" tabindex="0" aria-label="Tournament bracket. Scroll horizontally to explore rounds."><div id="rounds" class="rounds"></div></div><p id="champion" hidden></p></section>
+<section id="player" hidden><p id="battle-label" class="eyebrow"></p><div id="battle-creatures" class="battle-creatures"></div><h1 id="chapter-title">The battle begins!</h1><p class="soft-note">A make-believe adventure. Everyone stays safe.</p><div class="audio-card"><p id="audio-status" role="status">Getting your story ready…</p><audio id="story-audio" preload="metadata" controls playsinline></audio><div class="playback-controls"><button id="play" class="primary" aria-label="Play narration">▶ Play</button><button id="pause" aria-label="Pause or resume narration">Ⅱ Pause</button><button id="replay" aria-label="Replay narration">↺ Replay</button></div><label>Story speed <select id="story-rate"><option value="0.8">Slow</option><option value="0.95">Gentle</option><option value="1">Normal</option><option value="1.15">Brisk</option></select></label></div><details class="story-book" open><summary>Read along</summary><div id="chapter-text"></div></details><button id="finish" class="secondary">I’ve read it · reveal the ending →</button><p id="timeout"></p></section>
+<section id="celebration" class="celebration" hidden><p class="eyebrow">✦ A WONDERFUL ADVENTURE ✦</p><h1>Tournament<br>Champion!</h1><div id="winner-card"></div><p class="subtitle">Brave adventures. Sweet dreams.</p><button id="play-again" class="primary">↺ Play Again!</button><button id="new-adventure">New Adventure</button><button id="view-bracket">See the finished bracket</button></section>
+<section id="settings" hidden><p class="eyebrow">JUST RIGHT FOR TONIGHT</p><h1>Adventure settings</h1><p class="subtitle">A few little choices for a lovely bedtime.</p><form id="preferences"><fieldset><legend>Sound &amp; voices</legend><label>Narration provider<select id="narration-provider"><option value="kokoro">Kokoro · local CPU</option><option value="piper">Piper · local CPU</option><option value="browser">Device voice</option><option value="openai">OpenAI · optional paid</option></select></label><label>Narration voice<select id="narration-voice"></select></label><button type="button" id="preview-story">▶ Preview story voice</button><label>Pronunciation provider<select id="pronunciation-provider"><option value="piper">Piper · local CPU</option><option value="kokoro">Kokoro · local CPU</option><option value="browser">Device voice</option><option value="openai">OpenAI · optional paid</option></select></label><label>Pronunciation voice<select id="pronunciation-voice"></select></label><button type="button" id="preview-name">◖ Preview a name</button><label>Name speed<select id="name-rate"><option value="0.65">Extra slow</option><option value="0.8">Gentle</option><option value="1">Normal</option></select></label><label>Narration speed<select id="narration-rate"><option value="0.8">Slow</option><option value="0.95">Gentle</option><option value="1">Normal</option><option value="1.15">Brisk</option></select></label><label class="toggle"><input type="checkbox" id="auto-narration">Automatically play prepared stories</label><label class="toggle"><input type="checkbox" id="pronunciation-buttons">Show pronunciation buttons</label><label class="toggle"><input type="checkbox" id="guided-names">Use pronunciation guides</label></fieldset><fieldset><legend>Story choices</legend><label>Chapter length<select id="duration"><option value="short">About 1 minute</option><option value="normal">About 2 minutes</option><option value="long">About 3 minutes</option></select></label><label>Realism<select id="realism"><option value="realistic">Realistic</option><option value="balanced">Balanced</option><option value="anything">Anything Can Happen</option></select></label><label class="toggle"><input type="checkbox" id="shuffle">Randomize matchups</label><p class="soft-note">Fictional game rules, not scientific predictions. Story choices apply to your next tournament.</p></fieldset><fieldset><legend>Bedtime</legend><label class="toggle"><input id="timeout-enabled" type="checkbox">Enable quiet bedtime mode</label><label>Idle time<select id="idle-minutes"><option value="2">2 minutes</option><option value="5">5 minutes</option><option value="10">10 minutes</option><option value="15">15 minutes</option></select></label><label class="toggle"><input id="reduced-motion" type="checkbox">Reduce motion</label></fieldset><fieldset><legend>Audio saved on this server</legend><p id="cache-stats">Checking saved audio…</p><button type="button" id="clear-cache">Clear Audio Cache</button><div id="cache-confirm" hidden><p>Delete generated audio? Stories can be generated again.</p><button type="button" id="confirm-clear">Yes, clear audio</button><button type="button" id="cancel-clear">Keep it</button></div></fieldset><details><summary>Advanced audio</summary><div id="provider-status"></div><button type="button" id="benchmark">Benchmark local narration</button><p id="benchmark-result"></p><p class="soft-note">OpenAI is optional and disabled until configured server-side. A selected paid provider can incur charges. No keys are stored here.</p></details></form><p class="soft-note">Settings save automatically on this device.</p></section>
+<section id="quiet" class="quiet" hidden><span class="moon">☾</span><h1>The stars are resting.</h1><p>Your adventure is waiting quietly.</p><button id="resume" class="primary">Wake Up</button></section>
+<p id="message" role="status" aria-live="polite"></p><p id="sample" class="soft-note" hidden>Development sample library</p><footer>Made for little explorers &amp; sweet dreams <span>☾</span></footer></main><script src="/static/settings.js"></script><script src="/static/audio-player.js"></script><script src="/static/app.js"></script></body></html>
