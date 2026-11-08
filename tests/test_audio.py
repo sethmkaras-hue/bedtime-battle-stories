@@ -147,17 +147,24 @@ def test_audio_api_and_path_validation(tmp_path,monkeypatch,service):
 
 
 def test_kokoro_provider_cpu_adapter(tmp_path,monkeypatch):
+    from app.audio import phonemes
     calls={}
+    def config(**kwargs):
+        calls.update(kwargs)
+        return types.SimpleNamespace(validate=lambda:True)
     class Engine:
-        @staticmethod
-        def from_session(session,voices):calls['session']=session;return Engine()
-        def get_voices(self):return ['af_heart']
-        def create(self,text,**kwargs):calls.update(kwargs);return [0],24000
-    monkeypatch.setitem(sys.modules,'kokoro_onnx',types.SimpleNamespace(Kokoro=Engine))
+        def __init__(self,config):pass
+        def generate(self,text,generation):
+            calls['generation']=generation
+            return types.SimpleNamespace(samples=[0],sample_rate=24000)
+    fake=types.SimpleNamespace(OfflineTtsConfig=config,OfflineTtsModelConfig=config,
+        OfflineTtsKokoroModelConfig=config,OfflineTts=Engine,GenerationConfig=types.SimpleNamespace)
+    monkeypatch.setitem(sys.modules,'sherpa_onnx',fake)
     monkeypatch.setitem(sys.modules,'soundfile',types.SimpleNamespace(write=lambda path,*a,**k:wav_file(path)))
-    monkeypatch.setattr(providers,'cpu_session',lambda path:'cpu-session')
+    monkeypatch.setattr(phonemes,'phoneme_sentences',lambda *args:[[97,98]])
     p=providers.KokoroProvider(tmp_path);p.generate_audio('Hello','af_heart',.9,tmp_path/'test.wav')
-    assert calls['session']=='cpu-session' and calls['speed']==.9
+    assert calls['provider']=='cpu' and calls['generation'].sid==3
+    assert calls['generation'].speed==.9 and calls['generation'].phoneme_codepoints==[[97,98]]
     assert (tmp_path/'test.wav').exists()
 
 
@@ -217,3 +224,13 @@ def test_voice_change_creates_another_cache_entry(service):
     assert a['key']!=b['key']
     assert wait(s,a['key'])['state']=='ready'
     assert wait(s,b['key'])['state']=='ready'
+
+
+def test_provider_status_distinguishes_missing_packages_and_models(tmp_path,monkeypatch):
+    p=providers.KokoroProvider(tmp_path)
+    monkeypatch.setattr(providers,'installed',lambda name:False)
+    assert 'Missing dependencies' in p.get_provider_info()['reason']
+    monkeypatch.setattr(providers,'installed',lambda name:True)
+    assert 'Missing model files' in p.get_provider_info()['reason']
+    p.last_error='Last generation failed (RuntimeError)'
+    assert 'RuntimeError' in p.get_provider_info()['last_error']

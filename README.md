@@ -2,9 +2,9 @@
 
 A little adventure book for bedtime. Pick eight dinosaurs, sharks or ancient sea creatures, listen to seven friendly story battles, and discover tonight’s champion. Built for a child and supervising parent on a home network: FastAPI, SQLite, vanilla JavaScript, no accounts and no saved tournament history.
 
-## Start on Ubuntu 24.04
+## Start on Ubuntu 24.04 or 26.04
 
-Python 3.12+ is required. Port **8502** remains the default; port 8501 is untouched.
+Core Python 3.12+ is required; standard CPython 3.14 is tested for core and CPU audio. On Ubuntu 26.04, use Python 3.14. Port **8502** remains the default; port 8501 is untouched.
 
 ```bash
 sudo apt update
@@ -26,9 +26,31 @@ python3 -m venv .venv
 bash START_APP.sh
 ```
 
-The setup command explicitly downloads Kokoro and Piper models; normal startup never downloads them. Kokoro narrates with Heart by default; Piper uses the clear English Lessac voice for names. If one local engine is missing, the other is tried before device speech. OpenAI is never selected automatically.
+The setup command explicitly downloads Kokoro and Piper models; normal startup never downloads them. Kokoro runs through Sherpa-ONNX (compatible Python 3.14 wheels) and narrates with Heart by default; Piper uses the clear English Lessac voice for names. If one local engine is missing, the other is tried before device speech. OpenAI is never selected automatically.
 
 Model downloads need GitHub release access and Hugging Face access (including its CDN redirects). Kokoro files occupy about 338 MiB; the selected Piper voice is roughly 60–70 MiB plus its JSON configuration. Allow at least 1–2 GB of disk for models and Python packages, and about 2 GB free RAM for comfortable single-worker CPU use. These are planning allowances, not minimum-hardware guarantees. See [audio setup and troubleshooting](docs/AUDIO.md).
+
+## Ubuntu 26.04 / Python 3.14 upgrade
+
+`kokoro-onnx==0.6.1` excludes Python 3.14. This version uses **sherpa-onnx 2.0.1**, **ONNX Runtime 1.31.1** and maintained **piper-tts 1.8.0**, without ignoring package compatibility checks. Kokoro uses an explicit English IPA phonemizer so words absent from a finite lexicon are not silently skipped.
+
+Stop the app and back up `data/`. Check `.venv/bin/python --version`: if the old environment is broken or uses another Python minor version, preserve it under an unused backup name before creating a new one. Do not delete the creature database, cache or models.
+
+```bash
+sudo apt update
+sudo apt install python3.14 python3.14-venv
+python3.14 -m venv .venv
+.venv/bin/python -m pip install -r requirements-audio.txt
+.venv/bin/python scripts/setup_audio.py kokoro
+.venv/bin/python scripts/setup_audio.py piper
+BBS_PYTHON=python3.14 bash START_APP.sh
+```
+
+Run each setup command separately so a Piper network failure is distinguishable from Kokoro installation. `START_APP.sh` now detects a mismatched/broken virtual environment instead of using it silently. `BBS_VENV` can select another environment directory. Core-only operation still needs only `requirements.txt`.
+
+The new Kokoro bundle goes in **data/models/kokoro-sherpa/**. Use the downloader; do not rename old `kokoro-onnx` files into it. Old models and cached audio are preserved, while model/runtime fingerprints prevent incorrect cache reuse. Model setup is repeatable and not run at startup.
+
+Piper's Python 3.14 package/CLI and native phonemizer work in validation. Its official voice host still returned a proxy-policy 403 in this cloud. That is a network-access issue, not an obsolete package source. Where the voice is unavailable, Kokoro handles both stories and names locally; OpenAI remains opt-in and browser speech is the final fallback. Settings gives the missing-package/model reason and last generation-error type. See [compatibility investigation](docs/PYTHON314.md).
 
 ## Tonight’s adventure
 
@@ -64,6 +86,8 @@ SessionStorage keeps only the current tab’s entrants, seed, settings and compl
 
 | Variable | Default / purpose |
 | --- | --- |
+| `BBS_PYTHON` | `python3`; select `python3.14` explicitly on Ubuntu 26.04 |
+| `BBS_VENV` | `.venv`; startup checks its interpreter matches `BBS_PYTHON` |
 | `BBS_HOST` | `0.0.0.0` for trusted LAN; use `127.0.0.1` for local-only |
 | `BBS_PORT` | `8502` |
 | `BBS_DB_PATH` | `data/creatures.sqlite3` |
@@ -89,7 +113,7 @@ Never point development sample mode at a production database. Unset `BBS_SAMPLE_
 
 Normal tests use temporary data and mocked audio; models and paid API calls are not required. Browser tests use system Chromium (`CHROMIUM_PATH` overrides `/usr/bin/chromium`) and deterministic audio transport. They cover settings persistence, selection/removal, speaker controls, bracket progression, all seven battles, cache confirmation, HTML audio pause/resume/replay, quiet mode and mobile overflow. The older browser-script entry points delegate to this flow.
 
-Real CPU Kokoro generation and cache replay were separately measured in the cloud: Heart generated 7.76 s of audio in 5.94 s; Sarah generated 7.49 s in 4.43 s. Peak process RSS after both was about 794 MiB. See [benchmark details](docs/AUDIO.md#measured-validation). Piper’s actual voice download was blocked by cloud outbound policy, so its adapter is mock-tested but real generation and performance remain unverified. Physical iPhone Safari/Android and the home Ubuntu laptop were not tested. No audible voice-quality comparison is claimed.
+Real CPU Kokoro generation, five voice selections, disk-cache hits and a real HTML pronunciation playback passed against a **Python 3.14.9** server. The suite passes **59 tests** on Python 3.14 with audio dependencies, on Python 3.14 with core dependencies only, and on Python 3.12. Piper’s native extension, CLI and phonemizer were exercised on 3.14; its actual voice model was blocked by outbound policy, so full Piper inference remains unverified. These tests ran on Debian Linux, not a native Ubuntu 26.04 image. Physical iPhone Safari and the home laptop were not tested; no audible-quality claim is made. See [measurements and limitations](docs/PYTHON314.md).
 
 ## Architecture
 

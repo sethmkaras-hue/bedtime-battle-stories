@@ -33,7 +33,8 @@ class AudioService:
     def provider_info(self):
         result = {name: p.get_provider_info() for name, p in self.providers.items()}
         result['browser'] = BrowserProvider().get_provider_info()
-        return {'providers': result}
+        import platform
+        return {'providers': result, 'runtime': {'python': platform.python_version(), 'implementation': platform.python_implementation()}}
 
     def _paths(self, kind, key):
         folder = self.root / kind
@@ -123,6 +124,7 @@ class AudioService:
                             text = text.replace(name, replacement)
                         start = time.monotonic()
                         self.providers[request['provider']].generate_audio(text, request['voice'], request['speed'], temporary)
+                        self.providers[request['provider']].last_error = ''
                         elapsed = time.monotonic() - start
                         with wave.open(str(temporary), 'rb') as wav:
                             duration = wav.getnframes() / wav.getframerate()
@@ -137,6 +139,7 @@ class AudioService:
                 with self.lock:
                     self.jobs[key] = ready
             except Exception as error:
+                self.providers[request['provider']].last_error = f'Last generation failed ({type(error).__name__}). Check installed dependencies and model files; retry after correcting setup.'
                 logging.getLogger(__name__).warning('Audio provider %s failed (%s)', request['provider'], type(error).__name__)
                 with self.lock:
                     self.jobs[key] = {'key': key, 'state': 'failed', 'error': 'Audio generation failed. Check provider setup or choose a device voice.'}

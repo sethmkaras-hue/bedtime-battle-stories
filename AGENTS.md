@@ -25,3 +25,6 @@
 - Cache identity must include provider/model/voice/text/speed/overrides. Publish audio atomically, deduplicate concurrent jobs and require confirmation before clearing. Never commit model binaries or generated audio.
 - Retain HTML5 audio controls and Safari user-gesture recovery. Do not regenerate on pause/resume/replay or reveal the winner before end/read-complete.
 - Report real model generation, mocked adapter tests, browser transport tests, audible quality and physical-device checks separately. Benchmark measured CPU time/duration/RSS without claiming unmeasured improvements.
+
+- Keep Python 3.14 installability tested. Do not bypass Requires-Python; use the maintained Sherpa Kokoro API and external IPA rather than lexicon-only inference that can omit words.
+- Distinguish Piper package/native-extension support from voice-host network access. Missing Piper models must retain an explicit, tested Kokoro fallback and useful Settings diagnostics.

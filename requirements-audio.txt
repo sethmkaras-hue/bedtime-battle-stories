@@ -1,6 +1,10 @@
 -r requirements.txt
-# CPU-only runtime; never install the [gpu] or [train] extras.
-kokoro-onnx==0.6.1
+# Native CPython 3.12–3.14 CPU wheels; no compatibility overrides or GPU extras.
+# sherpa-onnx runs Kokoro without kokoro-onnx's Python <3.14 restriction.
+sherpa-onnx==2.0.1
+phonemizer==3.6.0
+espeakng-loader==0.2.4
+onnxruntime==1.31.1
 piper-tts==1.8.0
 soundfile>=0.13,<1
 openai>=2,<4

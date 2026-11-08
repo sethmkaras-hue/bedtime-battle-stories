@@ -665,14 +665,35 @@ async function refreshProviders() {
     const data = await api("/api/audio/providers");
     providerInfo = data.providers;
     $("provider-status").replaceChildren();
+    if (data.runtime) {
+      const runtime = document.createElement("p");
+      runtime.textContent =
+        "Server: " +
+        data.runtime.implementation +
+        " " +
+        data.runtime.python +
+        " · CPU audio";
+      $("provider-status").append(runtime);
+    }
     Object.entries(providerInfo).forEach(([name, info]) => {
       const p = document.createElement("p");
       p.textContent =
         name +
         ": " +
-        (info.available ? "Ready" : info.reason || "Setup needed");
+        (info.available ? "Ready" : info.reason || "Setup needed") +
+        (info.last_error ? " · " + info.last_error : "");
       $("provider-status").append(p);
     });
+    const fallback = document.createElement("p");
+    fallback.textContent =
+      providerInfo.kokoro?.available && !providerInfo.piper?.available
+        ? "Kokoro will handle both stories and names locally until Piper is ready."
+        : providerInfo.piper?.available && !providerInfo.kokoro?.available
+          ? "Piper will handle local audio until Kokoro is ready."
+          : !providerInfo.kokoro?.available && !providerInfo.piper?.available
+            ? "No local engine is ready. Device speech is the fallback until local setup is complete."
+            : "";
+    if (fallback.textContent) $("provider-status").append(fallback);
   } catch {
     $("provider-status").textContent =
       "Server audio unavailable. Device speech remains available.";

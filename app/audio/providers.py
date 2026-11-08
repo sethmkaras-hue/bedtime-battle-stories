@@ -30,12 +30,22 @@ class TTSProvider(ABC):
         self.model_dir = Path(model_dir)
         self.engine = None
         self._fingerprints = {}
+        self.last_error = ''
 
     def model_files(self):
         return []
 
+    def unavailable_reason(self):
+        missing_packages = [name for name in getattr(self, 'dependencies', [self.package]) if not installed(name)]
+        if missing_packages:
+            return f'Missing dependencies: {", ".join(missing_packages)}. Install requirements-audio.txt with this app’s Python interpreter.'
+        missing = [p.name for p in self.model_files() if not p.is_file()]
+        if missing:
+            return f'Missing model files: {", ".join(missing)}. Run scripts/setup_audio.py {self.name}; check download access if it fails.'
+        return ''
+
     def is_available(self):
-        return installed(self.package) and all(p.is_file() for p in self.model_files())
+        return not self.unavailable_reason()
 
     def list_voices(self):
         return [{'id': v, 'name': label} for v, label in self.voices]
@@ -56,7 +66,7 @@ class TTSProvider(ABC):
     def get_provider_info(self):
         available = self.is_available()
         return {'available': available, 'voices': self.list_voices(), 'cpu_only': True,
-                'reason': '' if available else 'Install optional audio packages and download local models.'}
+                'reason': self.unavailable_reason(), 'last_error': self.last_error}
 
     @abstractmethod
     def generate_audio(self, text, voice, speed, destination):
@@ -65,30 +75,54 @@ class TTSProvider(ABC):
 
 class KokoroProvider(TTSProvider):
     name = 'kokoro'
-    package = 'kokoro_onnx'
+    package = 'sherpa_onnx'
+    dependencies = ['sherpa_onnx', 'phonemizer', 'espeakng_loader', 'soundfile']
     voices = [('af_heart', 'Heart · warm US English'), ('af_sarah', 'Sarah · US English'),
               ('bf_emma', 'Emma · UK English'), ('am_michael', 'Michael · US English'),
               ('bm_george', 'George · UK English')]
+    # Official pinned Kokoro v1.0 Sherpa bundle speaker map. Names remain stable
+    # for saved browser settings; cache identity includes the new model/runtime.
+    speaker_ids = {'af_heart': 3, 'af_sarah': 9, 'bf_emma': 21, 'am_michael': 16, 'bm_george': 26}
 
     def model_files(self):
-        return [self.model_dir / 'kokoro/kokoro-v1.0.onnx', self.model_dir / 'kokoro/voices-v1.0.bin']
+        root = self.model_dir / 'kokoro-sherpa'
+        return [root / name for name in ['model.onnx', 'voices.bin', 'tokens.txt']]
+
+    def version(self):
+        from importlib.metadata import version
+        return hashlib.sha256((super().version() + version('phonemizer') + version('espeakng-loader') + ':ipa-v1').encode()).hexdigest()
 
     def generate_audio(self, text, voice, speed, destination):
         import soundfile as sf
-        from kokoro_onnx import Kokoro
-        if self.engine is None:
-            model, voices = self.model_files()
-            self.engine = Kokoro.from_session(cpu_session(model), str(voices))
-        if voice not in self.engine.get_voices():
+        import sherpa_onnx
+        if voice not in self.speaker_ids:
             raise ValueError('Unknown Kokoro voice')
-        samples, rate = self.engine.create(text, voice=voice, speed=speed,
-                                          lang='en-gb' if voice.startswith('b') else 'en-us')
-        sf.write(str(destination), samples, rate, format='WAV', subtype='PCM_16')
+        language = 'gb' if voice.startswith('b') else 'us'
+        if self.engine is None:
+            model, voices, tokens = self.model_files()
+            config = sherpa_onnx.OfflineTtsConfig(
+                model=sherpa_onnx.OfflineTtsModelConfig(
+                    kokoro=sherpa_onnx.OfflineTtsKokoroModelConfig(
+                        model=str(model), voices=str(voices), tokens=str(tokens)),
+                    provider='cpu', num_threads=max(1, min(4, int(os.environ.get('BBS_TTS_THREADS', '2'))))),
+                max_num_sentences=1)
+            if not config.validate():
+                raise ValueError('Kokoro model configuration is invalid; rerun model setup')
+            self.engine = sherpa_onnx.OfflineTts(config)
+
+        generation = sherpa_onnx.GenerationConfig()
+        generation.sid = self.speaker_ids[voice]
+        generation.speed = speed
+        from .phonemes import phoneme_sentences
+        generation.phoneme_codepoints = phoneme_sentences(text, 'en-gb' if language == 'gb' else 'en-us', self.model_files()[2])
+        audio = self.engine.generate(text, generation)
+        sf.write(str(destination), audio.samples, audio.sample_rate, format='WAV', subtype='PCM_16')
 
 
 class PiperProvider(TTSProvider):
     name = 'piper'
     package = 'piper'
+    dependencies = ['piper', 'onnxruntime']
     voices = [('en_US-lessac-medium', 'Lessac · clear US English')]
 
     def model_files(self):
@@ -98,7 +132,7 @@ class PiperProvider(TTSProvider):
     def version(self):
         # Distribution is called piper-tts; import namespace is piper.
         import importlib.metadata
-        digest = hashlib.sha256(importlib.metadata.version('piper-tts').encode())
+        digest = hashlib.sha256((importlib.metadata.version('piper-tts') + ':' + importlib.metadata.version('onnxruntime')).encode())
         for path in self.model_files():
             stat = path.stat()
             identity = (str(path), stat.st_size, stat.st_mtime_ns)
