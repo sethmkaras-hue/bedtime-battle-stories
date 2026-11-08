@@ -11,9 +11,15 @@ let category = "",
   lastAction = Date.now(),
   busy = false,
   providerInfo = {},
-  loadId = 0;
+  loadId = 0,
+  encyclopediaLibrary = [],
+  activeProfile = null,
+  profileReturn = "selection";
 const screens = [
   "welcome",
+  "encyclopedia",
+  "profile",
+  "attributions",
   "categories",
   "selection",
   "bracket",
@@ -122,6 +128,21 @@ function picture(c) {
   const img = document.createElement("img");
   img.src = illustration(c);
   img.alt = "";
+  if (c.image_variants) {
+    const entries = Object.entries(c.image_variants).filter(
+      ([width, path]) =>
+        /^\d+$/.test(width) &&
+        /^\/static\/[A-Za-z0-9_./-]+$/.test(path) &&
+        !path.includes(".."),
+    );
+    if (entries.length) {
+      img.srcset = entries
+        .map(([width, path]) => path + " " + width + "w")
+        .join(", ");
+      img.sizes = "(max-width:700px)45vw,240px";
+    }
+  }
+  if (c.artwork_placeholder === false) img.dataset.realImage = "true";
   img.loading = "lazy";
   img.onerror = () => {
     img.onerror = null;
@@ -132,6 +153,12 @@ function picture(c) {
 function hear(c) {
   const b = document.createElement("button");
   b.className = "speaker";
+  b.setAttribute("aria-pressed", "false");
+  if (c.pronunciation_audio?.url)
+    b.dataset.audioUrl = c.pronunciation_audio.url;
+  else
+    b.title =
+      "Audio not prepared; written guide available in the creature profile";
   b.setAttribute("aria-label", "Pronounce " + c.name);
   b.innerHTML =
     '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 4 5 9H2v6h3l6 5V4Z"/><path d="M15 8c3 2 3 6 0 8m3-11c5 4 5 10 0 14" stroke-linecap="round"/></svg>';
@@ -220,54 +247,51 @@ function render() {
     ? "Tap a creature to join your adventure."
     : "No creatures found. Try another name.";
   $("creatures").replaceChildren();
-  rows.forEach((c) => {
-    const card = document.createElement("article");
-    const pos = selected.indexOf(c.id);
-    card.className = "creature" + (pos >= 0 ? " selected" : "");
-    const pick = document.createElement("button");
-    pick.className = "creature-pick";
-    pick.setAttribute(
-      "aria-label",
-      (pos >= 0 ? "Remove " : "Select ") + c.name,
-    );
-    pick.setAttribute("aria-pressed", String(pos >= 0));
-    pick.disabled = selected.length === 8 && pos < 0;
-    pick.append(picture(c));
-    const name = document.createElement("strong");
-    name.textContent = c.name;
-    pick.append(name);
-    pick.onclick = () => {
+  rows.forEach((c) => $("creatures").append(creatureCard(c, true)));
+}
+function creatureCard(c, selectable) {
+  const card = document.createElement("article");
+  const pos = selected.indexOf(c.id);
+  card.className = "creature" + (selectable && pos >= 0 ? " selected" : "");
+  const pick = document.createElement("button");
+  pick.className = "creature-pick";
+  pick.setAttribute("aria-label", "Meet " + c.name);
+  pick.append(picture(c));
+  const name = document.createElement("strong");
+  name.textContent = c.name;
+  pick.append(name);
+  pick.onclick = () => openProfile(c);
+  card.append(pick, hear(c));
+  if (c.artwork_placeholder !== false) {
+    const note = document.createElement("p");
+    note.className = "artwork-note";
+    note.textContent = "Illustration placeholder";
+    card.append(note);
+  }
+  if (selectable) {
+    const add = document.createElement("button");
+    add.className = "creature-select";
+    add.textContent = pos >= 0 ? "✓ Remove" : "＋ Add";
+    add.setAttribute("aria-label", (pos >= 0 ? "Remove " : "Select ") + c.name);
+    add.setAttribute("aria-pressed", String(pos >= 0));
+    add.disabled =
+      (selected.length === 8 && pos < 0) || c.eligible_for_tournament === false;
+    add.onclick = () => {
       if (pos >= 0) selected = selected.filter((id) => id !== c.id);
       else if (selected.length < 8) selected.push(c.id);
       render();
     };
-    card.append(pick, hear(c));
+    card.append(add);
     if (pos >= 0) {
       const mark = document.createElement("span");
       mark.className = "selection-mark";
       mark.textContent = "✓ " + (pos + 1);
       card.append(mark);
     }
-    const details = document.createElement("details");
-    const summary = document.createElement("summary");
-    summary.textContent = "Creature notes";
-    details.append(summary);
-    [c.scientific_name, c.description, "Say it: " + (c.pronunciation || c.name)]
-      .filter(Boolean)
-      .forEach((text) => {
-        const p = document.createElement("p");
-        p.textContent = text;
-        details.append(p);
-      });
-    if (c.review_status) {
-      const p = document.createElement("p");
-      p.textContent = "Editorial profile · science review pending";
-      details.append(p);
-    }
-    card.append(details);
-    $("creatures").append(card);
-  });
+  }
+  return card;
 }
+
 async function choose(value) {
   const rows = await api(
     value === "ocean" ? "/api/creatures" : "/api/creatures?category=" + value,
@@ -419,11 +443,15 @@ $("focus-battle").onclick = () => {
 function overrides(participants) {
   const output = {};
   if (settings.get().guidedNames)
-    for (const c of participants)
-      if (c.pronunciation)
+    for (const c of participants) {
+      if (c.profile?.pronunciation?.status === "verified")
+        output[c.name] = c.profile.pronunciation.tts_text;
+      else if (c.pronunciation)
         output[c.name] = c.pronunciation.toLowerCase().replace(/sawr/g, "sore");
+    }
   return output;
 }
+
 async function openStory() {
   if (!current?.chapter) return;
   const c = current.chapter;
@@ -560,6 +588,9 @@ $("back").onclick = () => {
   }
   show(
     {
+      encyclopedia: "welcome",
+      profile: profileReturn,
+      attributions: "settings",
       categories: "welcome",
       selection: "categories",
       bracket: library.length ? "selection" : "welcome",
@@ -716,8 +747,11 @@ window.speechSynthesis?.addEventListener?.("voiceschanged", () => {
   }
 });
 $("preview-name").onclick = () =>
-  audio.pronounce(
-    { name: "Tyrannosaurus", pronunciation: "tie ran oh sore us" },
+  audio.previewPronunciation(
+    {
+      name: "Hello, little explorer.",
+      pronunciation: "Hello, little explorer.",
+    },
     settings.get(),
     $("preview-name"),
   );
@@ -845,4 +879,215 @@ function drawConnectors() {
 }
 window.addEventListener("resize", () => {
   if (screen === "bracket") drawConnectors();
+});
+
+$("browse-encyclopedia").onclick = guarded(async () => {
+  encyclopediaLibrary = await api("/api/creatures");
+  $("encyclopedia-search").value = "";
+  renderEncyclopedia();
+  show("encyclopedia");
+});
+function renderEncyclopedia() {
+  const filter = $("discovery-filter").value,
+    term = $("encyclopedia-search").value.toLowerCase();
+  let rows = encyclopediaLibrary.filter((c) =>
+    (c.name + " " + c.scientific_name).toLowerCase().includes(term),
+  );
+  if (filter === "featured")
+    rows = rows.filter((c) => popularNames.includes(c.name));
+  else if (["dinosaur", "shark", "marine_reptile"].includes(filter))
+    rows = rows.filter((c) => c.category === filter);
+  else if (filter !== "all")
+    rows = rows.filter(
+      (c) =>
+        c.profile?.verification_status === "verified" &&
+        (filter === "carnivores"
+          ? ["meat", "carnivore"].includes(c.profile.diet)
+          : filter === "herbivores"
+            ? ["plants", "herbivore"].includes(c.profile.diet)
+            : c.profile.discovery_tags.includes(filter)),
+    );
+  $("encyclopedia-cards").replaceChildren(
+    ...rows.map((c) => creatureCard(c, false)),
+  );
+  $("encyclopedia-status").textContent = rows.length
+    ? rows.length + " creatures to discover. Tap a picture to meet one."
+    : "No reviewed profiles match this trail yet.";
+}
+$("discovery-filter").onchange = renderEncyclopedia;
+$("encyclopedia-search").oninput = renderEncyclopedia;
+function rangeText(value) {
+  return value?.minimum == null
+    ? "Unknown"
+    : (value.minimum === value.maximum
+        ? value.minimum
+        : value.minimum + "–" + value.maximum) +
+        " " +
+        value.unit;
+}
+function profileParagraph(parent, text) {
+  const p = document.createElement("p");
+  p.textContent = text;
+  parent.append(p);
+}
+function referenceLink(parent, text, url) {
+  if (!/^https:\/\//.test(url || "")) return;
+  const a = document.createElement("a");
+  a.textContent = text;
+  a.href = url;
+  a.target = "_blank";
+  a.rel = "noopener noreferrer";
+  parent.append(a);
+}
+function openProfile(c) {
+  profileReturn = screen;
+  activeProfile = c;
+  const p = c.profile || {};
+  const image = picture(c);
+  image.sizes = "(max-width:700px)90vw,640px";
+  $("profile-image").replaceChildren(image);
+  $("profile-name").textContent = c.name;
+  $("profile-speaker").replaceChildren(hear(c));
+  $("profile-scientific").textContent = c.scientific_name;
+  $("profile-description").textContent =
+    p.description ||
+    c.description ||
+    "This creature’s story is being researched.";
+  $("profile-review").textContent =
+    (p.verification_status === "verified"
+      ? "Reviewed profile."
+      : "Science review pending. Unknown details are left unknown.") +
+    (c.artwork_placeholder !== false
+      ? " The illustration is a decorative placeholder."
+      : "");
+  $("profile-facts").replaceChildren();
+  const facts = {
+    Length: rangeText(p.length),
+    Weight: rangeText(p.weight),
+    Time:
+      p.time_period ||
+      (p.modern_status === "living" ? "Living today" : "Unknown"),
+    Habitat: p.habitat || c.habitat || "Unknown",
+    Distribution: p.geographic_distribution?.join(", ") || "Unknown",
+    Food: p.diet || c.diet || "Unknown",
+    "Animal group": p.taxon_group || "Not yet reviewed",
+    "Taxon rank": p.taxon_rank || "Unknown",
+  };
+  for (const [label, value] of Object.entries(facts)) {
+    const dt = document.createElement("dt"),
+      dd = document.createElement("dd");
+    dt.textContent = label;
+    dd.textContent = value;
+    $("profile-facts").append(dt, dd);
+  }
+  $("profile-fun-facts").replaceChildren();
+  for (const fact of p.fun_facts?.length
+    ? p.fun_facts
+    : ["Three sourced discoveries are still being checked."]) {
+    const li = document.createElement("li");
+    li.textContent = fact;
+    $("profile-fun-facts").append(li);
+  }
+  $("profile-adaptations").replaceChildren();
+  const traits = [
+    ...(p.physical_characteristics || []),
+    ...(p.offensive_adaptations || []),
+    ...(p.defensive_adaptations || []),
+  ];
+  if (!traits.length) traits.push("Adaptations are awaiting source review.");
+  traits.forEach((t) => profileParagraph($("profile-adaptations"), t));
+  $("profile-sources").replaceChildren();
+  const pron = p.pronunciation || {};
+  profileParagraph(
+    $("profile-sources"),
+    "Pronunciation: " +
+      (pron.phonetic || c.pronunciation || "Not researched") +
+      " · " +
+      (pron.status || "unverified"),
+  );
+  if (pron.stress)
+    profileParagraph($("profile-sources"), "Stress: " + pron.stress);
+  referenceLink(
+    $("profile-sources"),
+    "Pronunciation guidance",
+    pron.source_url,
+  );
+  for (const s of p.sources || []) {
+    profileParagraph(
+      $("profile-sources"),
+      s.title +
+        (s.checked_on ? " · checked " + s.checked_on : " · not inspected"),
+    );
+    referenceLink($("profile-sources"), "Reference", s.url);
+  }
+  const art = p.image || {};
+  profileParagraph(
+    $("profile-sources"),
+    art.placeholder !== false
+      ? "Artwork is a project placeholder, not a verified reconstruction."
+      : art.attribution + " · " + art.license + " · " + art.modifications,
+  );
+  referenceLink(
+    $("profile-sources"),
+    "Original image",
+    art.original_source_url,
+  );
+  referenceLink($("profile-sources"), "Image license", art.license_url);
+  $("profile-add").textContent = selected.includes(c.id)
+    ? "Remove from Tournament"
+    : "Add to Tournament";
+  const otherWorld = selected.length > 0 && !library.some((r) => r.id === c.id);
+  $("profile-add").disabled =
+    (selected.length >= 8 && !selected.includes(c.id)) ||
+    otherWorld ||
+    c.eligible_for_tournament === false;
+  if (c.eligible_for_tournament === false)
+    $("profile-add").textContent = "Habitat review needed before competing";
+  else if (otherWorld)
+    $("profile-add").textContent = "Choose this creature’s adventure first";
+  show("profile");
+}
+$("profile-add").onclick = guarded(async () => {
+  const c = activeProfile;
+  if (!library.some((r) => r.id === c.id)) await choose(c.category);
+  if (selected.includes(c.id)) selected = selected.filter((id) => id !== c.id);
+  else if (selected.length < 8) selected.push(c.id);
+  render();
+  show("selection");
+});
+$("open-attributions").onclick = guarded(async () => {
+  const [images, audit] = await Promise.all([
+    api("/api/library/attributions"),
+    api("/api/library/audit"),
+  ]);
+  $("attribution-list").replaceChildren();
+  if (!images.length)
+    profileParagraph(
+      $("attribution-list"),
+      "No licensed species artwork has been imported yet. Current illustrations are explicitly marked project placeholders.",
+    );
+  for (const image of images) {
+    const section = document.createElement("article");
+    profileParagraph(
+      section,
+      image.name + " · " + image.attribution + " · " + image.license,
+    );
+    profileParagraph(section, image.modifications);
+    referenceLink(section, "Original image", image.original_source_url);
+    referenceLink(section, "License", image.license_url);
+    $("attribution-list").append(section);
+  }
+  $("library-audit-summary").textContent = JSON.stringify(
+    {
+      counts: audit.counts,
+      verified: audit.verified_counts,
+      licensed_images: audit.licensed_images,
+      verified_pronunciations: audit.verified_pronunciations,
+      prepared_audio: audit.ready_pronunciations,
+      target_gaps: audit.target_gaps,
+    },
+    null,
+    2,
+  );
+  show("attributions");
 });

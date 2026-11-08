@@ -41,9 +41,65 @@
         <p class="soft-note">
           Eight creatures. Seven stories. One sleepy champion.
         </p>
+        <button id="browse-encyclopedia" class="encyclopedia-entry">
+          Explore the creature book →
+        </button>
         <button id="continue-adventure" hidden>
           Continue tonight’s adventure →
         </button>
+      </section>
+      <section id="encyclopedia" hidden>
+        <p class="eyebrow">LITTLE DISCOVERIES</p>
+        <h1>Meet the creatures</h1>
+        <p class="subtitle">A world of wonderful animals to explore.</p>
+        <label
+          >Explore a trail<select id="discovery-filter">
+            <option value="featured">Featured Creatures</option>
+            <option value="all">All Creatures</option>
+            <option value="dinosaur">Dinosaurs</option>
+            <option value="shark">Sharks</option>
+            <option value="marine_reptile">Prehistoric Ocean</option>
+            <option value="carnivores">Carnivores · reviewed</option>
+            <option value="herbivores">Herbivores · reviewed</option>
+            <option value="giants">Giants · reviewed</option>
+            <option value="fast_swimmers">Fast Swimmers · reviewed</option>
+            <option value="armored">Armored Creatures · reviewed</option>
+          </select></label
+        ><input
+          id="encyclopedia-search"
+          type="search"
+          aria-label="Search encyclopedia"
+          placeholder="Find a favorite…"
+        />
+        <p id="encyclopedia-status" class="soft-note"></p>
+        <div id="encyclopedia-cards" class="creature-grid"></div>
+      </section>
+      <section id="profile" hidden>
+        <p class="eyebrow">A LITTLE CREATURE DISCOVERY</p>
+        <div id="profile-image" class="profile-image"></div>
+        <div class="profile-title">
+          <h1 id="profile-name"></h1>
+          <div id="profile-speaker"></div>
+        </div>
+        <p id="profile-scientific" class="subtitle"></p>
+        <p id="profile-description"></p>
+        <p id="profile-review" class="soft-note"></p>
+        <dl id="profile-facts" class="profile-facts"></dl>
+        <h2>Three little discoveries</h2>
+        <ul id="profile-fun-facts"></ul>
+        <h2>Special adaptations</h2>
+        <div id="profile-adaptations"></div>
+        <button id="profile-add" class="primary">Add to Tournament</button>
+        <details class="profile-credits">
+          <summary>Sources, pronunciation &amp; image credits</summary>
+          <div id="profile-sources"></div>
+        </details>
+      </section>
+      <section id="attributions" hidden>
+        <p class="eyebrow">FOR CURIOUS GROWN-UPS</p>
+        <h1>Image credits &amp; library care</h1>
+        <div id="attribution-list"></div>
+        <pre id="library-audit-summary"></pre>
       </section>
       <section id="categories" hidden>
         <p class="eyebrow">CHAPTER ONE · THE ADVENTURE BEGINS</p>
@@ -284,6 +340,14 @@
             </p>
           </details>
         </form>
+        <button type="button" id="open-attributions">
+          Image credits &amp; library audit
+        </button>
+        <p class="soft-note">
+          Creature speaker icons use prepared, source-reviewed audio only. Voice
+          previews here may generate a short sample. To change prepared voices,
+          a parent runs GENERATE_PRONUNCIATIONS.sh.
+        </p>
         <p class="soft-note">Settings save automatically on this device.</p>
       </section>
       <section id="quiet" class="quiet" hidden>
