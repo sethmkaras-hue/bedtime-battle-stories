@@ -1,0 +1,2 @@
+# Offline image processing only; not required for normal application startup.
+Pillow>=11,<13

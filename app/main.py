@@ -11,6 +11,8 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, StrictInt
 from app.adventure import progress
+from app import library as encyclopedia
+from app.library_routes import router as library_router
 from app.audio.routes import router as audio_router, create_service
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -55,6 +57,9 @@ def initialize_database():
                 conn.execute(f"INSERT OR IGNORE INTO creatures ({','.join(keys)}) VALUES ({','.join('?' for _ in keys)})", list(row.values()))
                 conn.execute("UPDATE creatures SET pronunciation=? WHERE name=? AND scientific_name=? AND (pronunciation IS NULL OR pronunciation='')", (row['pronunciation'], row['name'], row['scientific_name']))
 
+    with sqlite3.connect(DB) as conn:
+        encyclopedia.bootstrap(conn)
+
     _database_ready = (str(DB.resolve()), DB.stat().st_ino, SAMPLE, CATALOG)
 
 
@@ -77,6 +82,7 @@ async def lifespan(app):
 
 app = FastAPI(title='Bedtime Battle Stories', lifespan=lifespan)
 app.include_router(audio_router)
+app.include_router(library_router)
 app.mount('/static', StaticFiles(directory=ROOT / 'static'), name='static')
 
 
@@ -107,8 +113,11 @@ def creatures(category: Literal['dinosaur', 'shark', 'marine_reptile'] | None = 
                 if key in extra:
                     item[key] = extra[key]
             result.append(item)
-        return [r for r in result if (category is None or r['category'] == category)
+        selected=[r for r in result if (category is None or r['category'] == category)
                 and (q.casefold() in r['name'].casefold() or q.casefold() in (r['scientific_name'] or '').casefold())]
+        enriched=encyclopedia.enrich(conn,selected,os.environ.get('BBS_AUDIO_CACHE',ROOT/'data/audio_cache'))
+        for item in enriched:item['eligible_for_tournament']=bool(HABITAT_ARENAS.get(item['habitat'],set()))
+        return enriched
 
 
 def arenas_for(rows):
@@ -121,8 +130,10 @@ def arenas_for(rows):
 @app.get('/api/selection/random')
 def random_selection(category: Literal['dinosaur', 'shark', 'marine_reptile', 'ocean']):
     rows = [r for r in creatures() if r['category'] in {'shark', 'marine_reptile'}] if category == 'ocean' else creatures(category)
+    arena='land' if category=='dinosaur' else 'water'
+    rows=[row for row in rows if arena in arenas_for([row])]
     if len(rows) < 8:
-        raise HTTPException(422, 'At least eight creatures are needed in this category')
+        raise HTTPException(422, 'At least eight compatible creatures with known habitats are needed in this category')
     # Require a shared arena, then sample uniformly without replacement.
     # Mixed incompatible categories need a future explicit arena filter.
     if not arenas_for(rows):

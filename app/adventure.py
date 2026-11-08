@@ -12,6 +12,8 @@ SMALL = {'Compsognathus','Microraptor','Psittacosaurus','Protoceratops',
 
 
 def rating(creature):
+    if 'gameplay_rating' in creature:
+        return creature['gameplay_rating']
     return 5 if creature['name'] in POWERFUL else 2 if creature['name'] in SMALL else 3
 
 
@@ -39,7 +41,16 @@ def chapter(left, right, winner, duration, arena, match_id):
         'Now the last part of the contest begins. Both creatures have tried their best. They have been patient, bold, and curious. Whatever happens next, there will be time to rest afterward. The stars will still be shining, and the world will still be wide.',
     ]
     target = {'short': 130, 'normal': 260, 'long': 390}[duration]
+    verified_context = []
+    for creature in [left,right]:
+        profile = creature.get('profile') or {}
+        if profile.get('verification_status') == 'verified':
+            verified_context.append({'creature_id':creature['id'], 'facts':profile['fun_facts'],
+                                     'offense':profile['offensive_adaptations'], 'defense':profile['defensive_adaptations']})
     paragraphs = [intro]
+    for context in verified_context:
+        if context['facts']:
+            paragraphs.append('A little discovery before our pretend contest: ' + context['facts'][0])
     for scene in scenes:
         if len(' '.join(paragraphs).split()) >= target:
             break
@@ -48,6 +59,7 @@ def chapter(left, right, winner, duration, arena, match_id):
     # Keep the ending separate so the visible player never spoils it early.
     return {'match_id': match_id, 'title': f'{a} and {b}', 'paragraphs': paragraphs,
             'ending': ending, 'participants': [left, right], 'generated_by': 'local_template',
+            'verified_creature_context': verified_context,
             'note': 'A fictional story game. Ratings and upset chances are game rules, not scientific predictions.'}
 
 
