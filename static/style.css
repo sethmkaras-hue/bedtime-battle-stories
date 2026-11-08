@@ -1,1 +1,183 @@
-body{margin:0;background:#101a2a;color:#f2f4fa;font:18px system-ui,sans-serif}main{max-width:760px;margin:auto;padding:24px}h1{font-size:2rem}section{margin:20px 0}button,select,input{font:inherit;border-radius:12px;padding:13px;margin:6px;background:#253954;color:white;border:1px solid #678}button{cursor:pointer}button:disabled{opacity:.4}label{display:block;margin:12px 0}.creature{display:inline-flex;align-items:center;gap:4px;border:1px solid #456;padding:8px;border-radius:10px;margin:4px}.creature button{padding:5px}#rounds article{background:#23344a;border-radius:12px;padding:12px;margin:10px 0}#message{color:#ffda85}*{box-sizing:border-box}[hidden]{display:none!important}button,select,input{min-height:48px;max-width:100%}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #f4ce82;outline-offset:3px}button[aria-pressed=true]{background:#48634f;border-color:#b7d7ab}.creature{display:flex;justify-content:space-between;margin:10px 0}.creature button:first-child{flex:1;text-align:left}.creature button{padding:12px;min-height:48px}#search{width:calc(100% - 12px)}#count{position:sticky;top:0;background:#101a2a;padding:12px;z-index:1}#sample{color:#f4ce82;font-size:.9rem}#quiet{text-align:center;padding:40px 0}#rounds article button{font-size:1rem}nav{display:flex;flex-wrap:wrap}h1{font-size:clamp(1.6rem,7vw,2rem)}@media(max-width:480px){main{padding:16px}button,select,input{margin:4px}#categories button{display:block;width:100%;margin:12px 0}#rounds article span{display:block}}
+body {
+  margin: 0;
+  background: #101a2a;
+  color: #f2f4fa;
+  font:
+    18px system-ui,
+    sans-serif;
+}
+main {
+  max-width: 760px;
+  margin: auto;
+  padding: 24px;
+}
+h1 {
+  font-size: 2rem;
+}
+section {
+  margin: 20px 0;
+}
+button,
+select,
+input {
+  font: inherit;
+  border-radius: 12px;
+  padding: 13px;
+  margin: 6px;
+  background: #253954;
+  color: white;
+  border: 1px solid #678;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.4;
+}
+label {
+  display: block;
+  margin: 12px 0;
+}
+.creature {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #456;
+  padding: 8px;
+  border-radius: 10px;
+  margin: 4px;
+}
+.creature button {
+  padding: 5px;
+}
+#rounds article {
+  background: #23344a;
+  border-radius: 12px;
+  padding: 12px;
+  margin: 10px 0;
+}
+#message {
+  color: #ffda85;
+}
+* {
+  box-sizing: border-box;
+}
+[hidden] {
+  display: none !important;
+}
+button,
+select,
+input {
+  min-height: 48px;
+  max-width: 100%;
+}
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid #f4ce82;
+  outline-offset: 3px;
+}
+button[aria-pressed="true"] {
+  background: #48634f;
+  border-color: #b7d7ab;
+}
+.creature {
+  display: flex;
+  justify-content: space-between;
+  margin: 10px 0;
+}
+.creature button:first-child {
+  flex: 1;
+  text-align: left;
+}
+.creature button {
+  padding: 12px;
+  min-height: 48px;
+}
+#search {
+  width: calc(100% - 12px);
+}
+#count {
+  position: sticky;
+  top: 0;
+  background: #101a2a;
+  padding: 12px;
+  z-index: 1;
+}
+#sample {
+  color: #f4ce82;
+  font-size: 0.9rem;
+}
+#quiet {
+  text-align: center;
+  padding: 40px 0;
+}
+#rounds article button {
+  font-size: 1rem;
+}
+nav {
+  display: flex;
+  flex-wrap: wrap;
+}
+h1 {
+  font-size: clamp(1.6rem, 7vw, 2rem);
+}
+@media (max-width: 480px) {
+  main {
+    padding: 16px;
+  }
+  button,
+  select,
+  input {
+    margin: 4px;
+  }
+  #categories button {
+    display: block;
+    width: 100%;
+    margin: 12px 0;
+  }
+  #rounds article span {
+    display: block;
+  }
+}
+.creature {
+  display: block;
+}
+.creature-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.creature-actions button:first-child {
+  flex: 1;
+}
+.creature details {
+  font-size: 1rem;
+  padding: 8px;
+}
+summary {
+  cursor: pointer;
+  min-height: 44px;
+  padding: 10px;
+}
+a {
+  color: #b8d5fc;
+}
+#voice-settings {
+  background: #19283c;
+  border-radius: 14px;
+  padding: 10px;
+}
+#voice-settings p {
+  font-size: 1rem;
+}
+#chapter-text {
+  line-height: 1.7;
+}
+#version,
+#library-status {
+  color: #bed0e3;
+}
+#champion {
+  color: #f4ce82;
+}

@@ -9,10 +9,12 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, StrictInt
+from app.adventure import progress
 
 ROOT = Path(__file__).resolve().parent.parent
 DB = Path(os.environ.get('BBS_DB_PATH', ROOT / 'data' / ('sample.sqlite3' if os.environ.get('BBS_SAMPLE_DATA') == '1' else 'creatures.sqlite3')))
 SAMPLE = os.environ.get('BBS_SAMPLE_DATA') == '1'
+CATALOG = os.environ.get('BBS_CATALOG', '1') == '1'
 # A matchup needs a shared arena across every participant. Extend here as
 # verified species gain more specific habitat requirements.
 HABITAT_ARENAS = {'land': {'land'}, 'marine': {'water'},
@@ -28,11 +30,25 @@ def initialize_database():
             length_m REAL, weight_kg REAL, diet TEXT, offense TEXT, defense TEXT,
             locomotion TEXT, description TEXT, image_reference TEXT, pronunciation TEXT
         )''')
+        conn.execute('''CREATE TABLE IF NOT EXISTS catalog_metadata (
+            creature_id INTEGER PRIMARY KEY, metadata TEXT NOT NULL)''')
+        if CATALOG and not SAMPLE:
+            catalog = json.loads((ROOT / 'data' / 'catalog.json').read_text())
+            for entry in catalog['creatures']:
+                existing = conn.execute('SELECT id, category FROM creatures WHERE name = ?', (entry['name'],)).fetchone()
+                if existing is None:
+                    fields = ['name','scientific_name','category','habitat','diet','description','pronunciation']
+                    cur = conn.execute(f"INSERT INTO creatures ({','.join(fields)}) VALUES ({','.join('?' for _ in fields)})", [entry[k] for k in fields])
+                    creature_id = cur.lastrowid
+                    conn.execute('INSERT INTO catalog_metadata VALUES (?, ?)', (creature_id, json.dumps(entry)))
+                elif existing[1] == entry['category']:
+                    conn.execute("UPDATE creatures SET pronunciation=? WHERE id=? AND (pronunciation IS NULL OR pronunciation='')", (entry['pronunciation'], existing[0]))
         if SAMPLE:
             rows = json.loads((ROOT / 'data' / 'sample_creatures.json').read_text())
             for row in rows:
                 keys = list(row)
                 conn.execute(f"INSERT OR IGNORE INTO creatures ({','.join(keys)}) VALUES ({','.join('?' for _ in keys)})", list(row.values()))
+                conn.execute("UPDATE creatures SET pronunciation=? WHERE name=? AND scientific_name=? AND (pronunciation IS NULL OR pronunciation='')", (row['pronunciation'], row['name'], row['scientific_name']))
 
 
 @asynccontextmanager
@@ -52,7 +68,8 @@ def home():
 
 @app.get('/api/config')
 def config():
-    return {'sample_data': SAMPLE, 'idle_minutes': 5}
+    return {'sample_data': SAMPLE, 'catalog': CATALOG and not SAMPLE, 'idle_minutes': 5,
+            'version': '2.0', 'catalog_review': 'Reference checks pending; measurements omitted'}
 
 
 @app.get('/api/creatures')
@@ -62,7 +79,16 @@ def creatures(category: Literal['dinosaur', 'shark', 'marine_reptile'] | None = 
     with sqlite3.connect(DB) as conn:
         conn.row_factory = sqlite3.Row
         rows = conn.execute('SELECT * FROM creatures ORDER BY name').fetchall()
-        return [dict(r) for r in rows if (category is None or r['category'] == category)
+        metadata = {r[0]: json.loads(r[1]) for r in conn.execute('SELECT creature_id, metadata FROM catalog_metadata')}
+        result = []
+        for row in rows:
+            item = dict(row)
+            extra = metadata.get(row['id'], {})
+            for key in ['catalog_key','taxon_rank','source_url','review_status','pronunciation_note']:
+                if key in extra:
+                    item[key] = extra[key]
+            result.append(item)
+        return [r for r in result if (category is None or r['category'] == category)
                 and (q.casefold() in r['name'].casefold() or q.casefold() in (r['scientific_name'] or '').casefold())]
 
 
@@ -74,8 +100,8 @@ def arenas_for(rows):
 
 
 @app.get('/api/selection/random')
-def random_selection(category: Literal['dinosaur', 'shark', 'marine_reptile']):
-    rows = creatures(category)
+def random_selection(category: Literal['dinosaur', 'shark', 'marine_reptile', 'ocean']):
+    rows = [r for r in creatures() if r['category'] in {'shark', 'marine_reptile'}] if category == 'ocean' else creatures(category)
     if len(rows) < 8:
         raise HTTPException(422, 'At least eight creatures are needed in this category')
     # Require a shared arena, then sample uniformly without replacement.
@@ -91,6 +117,7 @@ class TournamentRequest(BaseModel):
     shuffle: bool = False
     realism: Literal['realistic', 'balanced', 'anything'] = 'balanced'
     duration: Literal['short', 'normal', 'long'] = 'normal'
+    seed: StrictInt = Field(default_factory=lambda: random.SystemRandom().randrange(2**32), ge=0, lt=2**32)
 
 
 @app.post('/api/tournament')
@@ -105,7 +132,7 @@ def tournament(request: TournamentRequest):
     if not arenas:
         raise HTTPException(422, 'These creatures do not share a suitable habitat')
     if request.shuffle:
-        random.shuffle(selected)
+        random.Random(request.seed).shuffle(selected)
     rounds = []
     for index, (name, count) in enumerate([('Quarterfinals', 4), ('Semifinals', 2), ('Championship', 1)]):
         matches = []
@@ -116,5 +143,17 @@ def tournament(request: TournamentRequest):
                             'winner': None, 'status': 'pending',
                             'sources': [] if index == 0 else [f'r{index-1}m{n*2}', f'r{index-1}m{n*2+1}']})
         rounds.append({'name': name, 'matches': matches})
-    return {'rounds': rounds, 'arena': sorted(arenas)[0], 'realism': request.realism,
-            'duration': request.duration, 'placeholder': True}
+    state = {'rounds': rounds, 'arena': sorted(arenas)[0], 'realism': request.realism,
+             'duration': request.duration, 'entrant_ids': request.creature_ids, 'shuffle': request.shuffle}
+    return progress(state, request.seed, 0, request.realism, request.duration)
+
+
+class AdventureRequest(TournamentRequest):
+    seed: StrictInt = Field(ge=0, lt=2**32)
+    completed: StrictInt = Field(default=0, ge=0, le=7)
+
+
+@app.post('/api/adventure')
+def adventure(request: AdventureRequest):
+    state = tournament(request)
+    return progress(state, request.seed, request.completed, request.realism, request.duration)

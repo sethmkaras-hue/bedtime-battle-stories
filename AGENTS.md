@@ -17,3 +17,6 @@
 - Session-only brackets may use browser sessionStorage; do not add server-side tournament history.
 - Idle timeout must not interrupt active narration; provide explicit resume from quiet mode.
 - For frontend changes, run the optional mobile Chromium regression when available and distinguish it from physical Safari/Android validation.
+- Keep editorial catalog review status explicit. Do not describe unverified reference links, approximate pronunciation guides or game ratings as scientifically validated.
+- Keep version-2 outcomes reproducible from entrants/settings/seed/completion; never trust submitted winners or persist tournament history.
+- Test speech controls with deterministic stubs, and report audible/device validation separately.
