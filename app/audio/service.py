@@ -56,6 +56,12 @@ class AudioService:
             return {'fallback': True, 'reason': 'Device speech selected'}
         provider = self.providers[provider_name]
         if not provider.is_available():
+            # Never select a paid provider automatically. Try the other local
+            # engine before falling back to browser speech.
+            alternate = self.providers.get('piper' if provider_name == 'kokoro' else 'kokoro') if provider_name in {'kokoro', 'piper'} else None
+            if alternate is not None and alternate.is_available():
+                result = self.submit({**request, 'provider': alternate.name, 'voice': alternate.list_voices()[0]['id']})
+                return {**result, 'fallback_from': provider_name}
             return {'fallback': True, 'reason': provider.get_provider_info()['reason']}
         if request['voice'] not in {v['id'] for v in provider.list_voices()}:
             raise ValueError('Choose an available voice for this provider')
@@ -141,7 +147,14 @@ class AudioService:
 
     def stats(self):
         files = [p for kind in ['narration', 'pronunciation'] for p in (self.root / kind).glob('*.wav')]
-        return {'count': len(files), 'bytes': sum(p.stat().st_size for p in files if p.exists())}
+        all_files = [p for kind in ['narration', 'pronunciation'] for p in (self.root / kind).iterdir() if p.is_file()]
+        size = 0
+        for path in all_files:
+            try:
+                size += path.stat().st_size
+            except FileNotFoundError:
+                pass  # A completed temporary file may have just been renamed.
+        return {'count': len(files), 'bytes': size}
 
     def clear(self):
         with self.lock:

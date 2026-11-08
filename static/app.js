@@ -1,48 +1,827 @@
-'use strict';
-const $=id=>document.getElementById(id),settings=window.BedtimeSettings;
-let category='',library=[],selected=[],current=null,screen='welcome',returnScreen='welcome',beforeQuiet='welcome',lastAction=Date.now(),busy=false,providerInfo={},loadId=0;
-const screens=['welcome','categories','selection','bracket','player','celebration','settings','quiet'];
-const audio=new BedtimeAudio($('story-audio'),$('audio-status'),()=>{touch();guarded(finishChapter)();});
-function touch(){lastAction=Date.now();}
-function show(id){if(screen==='player'&&id!=='player')audio.stop();screen=id;screens.forEach(s=>$(s).hidden=s!==id);$('back').hidden=['welcome','quiet'].includes(id);document.body.classList.toggle('sleeping',id==='quiet');$('message').textContent='';touch();window.scrollTo({top:0,behavior:'instant'});}
-function stopAudio(){audio.stop();}
-function checkIdle(){const prefs=settings.get();if(!prefs.timeoutEnabled)return;if(audio.active()||audio.generating&&screen==='player'){touch();return;}if(screen!=='quiet'&&Date.now()-lastAction>=prefs.idleMinutes*60000){beforeQuiet=screen;audio.stop();show('quiet');}}
-document.addEventListener('pointerdown',touch);document.addEventListener('keydown',touch);document.addEventListener('visibilitychange',checkIdle);setInterval(checkIdle,1000);
-function save(){try{sessionStorage.setItem('bedtimeTournament',JSON.stringify(current));}catch{}$('continue-adventure').hidden=!current;}
-async function api(path,options){const r=await fetch(path,options);const data=await r.json();if(!r.ok)throw Error(typeof data.detail==='string'?data.detail:'Please check your choices and try again.');return data;}
-function guarded(fn){return async event=>{if(busy)return;busy=true;const b=event?.currentTarget;if(b?.tagName==='BUTTON'){b.disabled=true;b.classList.add('loading-button');}try{await fn();}catch(e){$('message').textContent=e.message||'Something went wrong. Please try again.';}finally{busy=false;if(b){b.disabled=false;b.classList.remove('loading-button');}if(screen==='selection')updateCount();}};}
-function illustration(c){const ref=c.image_reference;return typeof ref==='string'&&/^\/static\/[a-zA-Z0-9_./-]+$/.test(ref)&&!ref.includes('..')?ref:'/static/assets/'+(c.category==='shark'?'shark':c.category==='marine_reptile'?'marine_reptile':'dinosaur')+'.svg';}
-function picture(c){const img=document.createElement('img');img.src=illustration(c);img.alt='';img.loading='lazy';img.onerror=()=>{img.onerror=null;img.src='/static/assets/dinosaur.svg';};return img;}
-function hear(c){const b=document.createElement('button');b.className='speaker';b.setAttribute('aria-label','Pronounce '+c.name);b.innerHTML='<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 4 5 9H2v6h3l6 5V4Z"/><path d="M15 8c3 2 3 6 0 8m3-11c5 4 5 10 0 14" stroke-linecap="round"/></svg>';b.onclick=e=>{e.stopPropagation();touch();audio.pronounce(c,settings.get(),b);};return b;}
-const popularNames=['Tyrannosaurus','Triceratops','Stegosaurus','Velociraptor','Brachiosaurus','Ankylosaurus','Spinosaurus','Diplodocus','Parasaurolophus','Allosaurus','Great white shark','Whale shark','Tiger shark','Great hammerhead','Bull shark','Blue shark','Shortfin mako','Nurse shark','Mosasaurus','Tylosaurus','Plesiosaurus','Ichthyosaurus','Elasmosaurus','Kronosaurus','Liopleurodon','Ophthalmosaurus'];
-function updateCount(){$('count').textContent=selected.length+' of 8 Selected';$('next').disabled=selected.length!==8;$('random').disabled=library.length<8;}
-function render(){updateCount();$('selection-slots').replaceChildren();for(let i=0;i<8;i++){const c=library.find(c=>c.id===selected[i]);const slot=document.createElement('button');slot.className='selection-slot'+(c?' filled':'');slot.setAttribute('aria-label',c?'Remove '+c.name:'Empty selection slot '+(i+1));if(c){slot.append(picture(c));const label=document.createElement('span');label.textContent=c.name;slot.append(label);slot.onclick=()=>{selected=selected.filter(id=>id!==c.id);render();};}else{slot.textContent='+';slot.disabled=true;}$('selection-slots').append(slot);}const term=$('search').value.toLocaleLowerCase();let rows=library.filter(c=>(c.name+' '+c.scientific_name).toLocaleLowerCase().includes(term));if(!term&&$('browse-group').value==='popular')rows=rows.filter(c=>popularNames.includes(c.name)).sort((a,b)=>popularNames.indexOf(a.name)-popularNames.indexOf(b.name));$('library-heading').textContent=term?'Your search':$('browse-group').value==='popular'?'Popular Creatures':'All Creatures';$('library-status').textContent=rows.length?'Tap a creature to join your adventure.':'No creatures found. Try another name.';$('creatures').replaceChildren();rows.forEach(c=>{const card=document.createElement('article');const pos=selected.indexOf(c.id);card.className='creature'+(pos>=0?' selected':'');const pick=document.createElement('button');pick.className='creature-pick';pick.setAttribute('aria-label',(pos>=0?'Remove ':'Select ')+c.name);pick.setAttribute('aria-pressed',String(pos>=0));pick.disabled=selected.length===8&&pos<0;pick.append(picture(c));const name=document.createElement('strong');name.textContent=c.name;pick.append(name);pick.onclick=()=>{if(pos>=0)selected=selected.filter(id=>id!==c.id);else if(selected.length<8)selected.push(c.id);render();};card.append(pick,hear(c));if(pos>=0){const mark=document.createElement('span');mark.className='selection-mark';mark.textContent='✓ '+(pos+1);card.append(mark);}const details=document.createElement('details');const summary=document.createElement('summary');summary.textContent='Creature notes';details.append(summary);[c.scientific_name,c.description,'Say it: '+(c.pronunciation||c.name)].filter(Boolean).forEach(text=>{const p=document.createElement('p');p.textContent=text;details.append(p);});if(c.review_status){const p=document.createElement('p');p.textContent='Editorial profile · science review pending';details.append(p);}card.append(details);$('creatures').append(card);});}
-async function choose(value){const rows=await api(value==='ocean'?'/api/creatures':'/api/creatures?category='+value);category=value;library=value==='ocean'?rows.filter(c=>['shark','marine_reptile'].includes(c.category)):rows;selected=[];$('search').value='';$('browse-group').value='popular';render();show('selection');}
-document.querySelectorAll('[data-category]').forEach(b=>b.onclick=guarded(()=>choose(b.dataset.category)));
-$('start-adventure').onclick=()=>show('categories');$('search').oninput=render;$('browse-group').onchange=render;$('clear').onclick=()=>{selected=[];render();};$('random').onclick=guarded(async()=>{selected=(await api('/api/selection/random?category='+category)).creature_ids;render();});
-async function createTournament(ids=selected){audio.stop();const p=settings.get();const result=await api('/api/tournament',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({creature_ids:ids,shuffle:p.shuffle,realism:p.realism,duration:p.duration})});current=result;save();renderBracket();show('bracket');}
-$('next').onclick=guarded(()=>createTournament());$('surprise').onclick=guarded(async()=>{const all=await api('/api/creatures');const valid=['dinosaur','shark','marine_reptile'].filter(cat=>all.filter(c=>c.category===cat).length>=8);if(!valid.length)throw Error('Add at least eight compatible creatures to begin.');const cat=valid[Math.floor(Math.random()*valid.length)];const ids=(await api('/api/selection/random?category='+cat)).creature_ids;await createTournament(ids);});
-function renderBracket(){$('rounds').replaceChildren();let activeId=current.chapter?.match_id;current.rounds.forEach((round,ri)=>{const col=document.createElement('div');col.className='round';const h=document.createElement('h2');h.textContent=round.name;col.append(h);const list=document.createElement('div');list.className='round-matches';round.matches.forEach((m,i)=>{const card=document.createElement('article');card.className='match '+(m.status==='complete'?'complete':m.id===activeId?'active':'');card.dataset.match=m.id;const label=document.createElement('p');label.className='match-label';label.textContent='BATTLE '+(ri===0?i+1:ri===1?i+5:7)+(m.id===activeId?' · UP NEXT':m.status==='complete'?' · COMPLETE':'');card.append(label);['left','right'].forEach((side,index)=>{if(index){const vs=document.createElement('div');vs.className='match-vs';vs.textContent='VS';card.append(vs);}const c=m[side];const row=document.createElement('div');row.className='contender'+(m.winner&&c?(m.winner.id===c.id?' winner':' loser'):'');const name=document.createElement('span');name.textContent=c?(m.winner?.id===c.id?'✓ ':'')+c.name:'Waiting for Winner';if(c)row.append(picture(c));row.append(name);if(c)row.append(hear(c));card.append(row);});list.append(card);});col.append(list);$('rounds').append(col);});const winnerCol=document.createElement('div');winnerCol.className='round';const title=document.createElement('h2');title.textContent='Champion';const content=document.createElement('div');content.className='round-matches';const winner=document.createElement('article');winner.className='match';if(current.champion){winner.append(picture(current.champion));const h=document.createElement('h3');h.textContent=current.champion.name;winner.append(h,hear(current.champion));}else winner.textContent='✦ A champion is waiting to be discovered';content.append(winner);winnerCol.append(title,content);$('rounds').append(winnerCol);$('story').hidden=!current.chapter;}
-$('focus-battle').onclick=()=>{$('rounds').querySelector('.active')?.scrollIntoView({behavior:settings.get().reducedMotion?'instant':'smooth',block:'nearest',inline:'center'});};
-function overrides(participants){const output={};if(settings.get().guidedNames)for(const c of participants)if(c.pronunciation)output[c.name]=c.pronunciation.toLowerCase().replace(/sawr/g,'sore');return output;}
-async function openStory(){if(!current?.chapter)return;const c=current.chapter;const ri=current.rounds.findIndex(r=>r.matches.some(m=>m.id===c.match_id));$('battle-label').textContent=current.rounds[ri].name.toUpperCase()+' · BATTLE '+(current.completed+1)+' OF 7';$('chapter-title').textContent='The battle begins!';$('chapter-text').replaceChildren();c.paragraphs.forEach(text=>{const p=document.createElement('p');p.textContent=text;$('chapter-text').append(p);});$('battle-creatures').replaceChildren();c.participants.forEach((creature,i)=>{if(i){const vs=document.createElement('span');vs.className='versus';vs.textContent='VS';$('battle-creatures').append(vs);}const card=document.createElement('div');card.className='battle-portrait';const name=document.createElement('h2');name.textContent=creature.name;card.append(picture(creature),name,hear(creature));$('battle-creatures').append(card);});show('player');const id=++loadId;audio.chunks=[];const prefs=settings.get();$('story-rate').value=String(prefs.narrationRate);const ready=await audio.prepare([...c.paragraphs,c.ending].join('\n\n'),prefs,overrides(c.participants));if(ready&&id===loadId&&screen==='player'&&prefs.autoNarration)audio.play();}
-$('story').onclick=()=>openStory();function context(completed=current.completed){return{creature_ids:current.entrant_ids,seed:current.seed,shuffle:current.shuffle,realism:current.realism,duration:current.duration,completed};}
-async function finishChapter(){if(!current?.chapter)return;const ending=current.chapter.ending;const result=await api('/api/adventure',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(context(current.completed+1))});audio.stop();current=result;save();renderBracket();if(current.champion)celebrate();else{show('bracket');$('message').textContent=ending;}}
-$('finish').onclick=guarded(finishChapter);$('play').onclick=()=>audio.play();$('pause').onclick=()=>{audio.pause();touch();};$('replay').onclick=()=>audio.replay();$('story-rate').onchange=()=>{settings.set('narrationRate',Number($('story-rate').value));if(audio.prefs)audio.prefs.narrationRate=settings.get().narrationRate;$('story-audio').playbackRate=settings.get().narrationRate;};
-function celebrate(){const c=current.champion;$('winner-card').replaceChildren(picture(c));const h=document.createElement('h2');h.textContent=c.name;$('winner-card').append(h,hear(c));show('celebration');}
-$('play-again').onclick=guarded(()=>createTournament(current.entrant_ids));$('new-adventure').onclick=()=>{current=null;save();selected=[];show('categories');};$('view-bracket').onclick=()=>{renderBracket();show('bracket');};$('continue-adventure').onclick=()=>{renderBracket();current.champion?celebrate():show('bracket');};
-$('home').onclick=()=>{loadId++;audio.stop();show('welcome');};$('back').onclick=()=>{loadId++;audio.stop();if(screen==='settings'){const target=returnScreen;if(target==='player')openStory();else show(target);return;}show({categories:'welcome',selection:'categories',bracket:library.length?'selection':'welcome',player:'bracket',celebration:'bracket'}[screen]||'welcome');};$('resume').onclick=()=>show(beforeQuiet);
-const fields={'narration-provider':'narrationProvider','pronunciation-provider':'pronunciationProvider','narration-voice':'narrationVoice','pronunciation-voice':'pronunciationVoice','name-rate':'nameRate','narration-rate':'narrationRate','auto-narration':'autoNarration','pronunciation-buttons':'pronunciationButtons','guided-names':'guidedNames',duration:'duration',realism:'realism',shuffle:'shuffle','timeout-enabled':'timeoutEnabled','idle-minutes':'idleMinutes','reduced-motion':'reducedMotion'};
-function voiceOptions(kind){const provider=settings.get()[kind+'Provider'];const select=$(kind+'-voice'),saved=settings.get()[kind+'Voice'];select.replaceChildren();let voices=provider==='browser'?(window.speechSynthesis?.getVoices?.()||[]).filter(v=>/^en[-_]/i.test(v.lang)).map(v=>({id:v.voiceURI,name:v.name})):providerInfo[provider]?.voices||[];if(!voices.length)voices=[{id:provider==='kokoro'?'af_heart':provider==='piper'?'en_US-lessac-medium':provider==='openai'?'coral':'',name:provider==='browser'?'Device default':provider==='kokoro'?'Heart · American English':provider==='piper'?'Lessac · US English':'Coral'}];voices.forEach(v=>select.add(new Option(v.name,v.id)));if(voices.some(v=>v.id===saved))select.value=saved;else settings.set(kind+'Voice',voices[0].id);}
-function syncSettings(){const p=settings.get();for(const[id,key]of Object.entries(fields)){if(id.endsWith('-voice'))continue;const el=$(id);if(el.type==='checkbox')el.checked=p[key];else el.value=String(p[key]);}voiceOptions('narration');voiceOptions('pronunciation');}
-for(const[id,key]of Object.entries(fields))$(id).addEventListener('change',()=>{const el=$(id);settings.set(key,el.type==='checkbox'?el.checked:['nameRate','narrationRate','idleMinutes'].includes(key)?Number(el.value):el.value);if(id.endsWith('-provider'))voiceOptions(id.startsWith('narration')?'narration':'pronunciation');});
-$('preferences').onsubmit=e=>e.preventDefault();
-async function cacheStats(){try{const data=await api('/api/audio/cache');$('cache-stats').textContent=data.count+' saved audio files · '+(data.bytes/1024/1024).toFixed(1)+' MB';}catch{$('cache-stats').textContent='Audio cache status unavailable.';}}
-async function refreshProviders(){try{const data=await api('/api/audio/providers');providerInfo=data.providers;$('provider-status').replaceChildren();Object.entries(providerInfo).forEach(([name,info])=>{const p=document.createElement('p');p.textContent=name+': '+(info.available?'Ready':info.reason||'Setup needed');$('provider-status').append(p);});}catch{$('provider-status').textContent='Server audio unavailable. Device speech remains available.';}syncSettings();}
-$('settings-open').onclick=()=>{if(screen==='settings')return;returnScreen=screen;audio.stop();show('settings');syncSettings();refreshProviders();cacheStats();};window.speechSynthesis?.addEventListener?.('voiceschanged',()=>{if(screen==='settings'){voiceOptions('narration');voiceOptions('pronunciation');}});
-$('preview-name').onclick=()=>audio.pronounce({name:'Tyrannosaurus',pronunciation:'tie ran oh sore us'},settings.get(),$('preview-name'));
-$('preview-story').onclick=guarded(async()=>{const p=settings.get();await audio.prepare('The moon is shining. A wonderful little adventure is about to begin.',p);await audio.play();});
-$('clear-cache').onclick=()=>{$('cache-confirm').hidden=false;};$('cancel-clear').onclick=()=>{$('cache-confirm').hidden=true;};$('confirm-clear').onclick=guarded(async()=>{await api('/api/audio/cache',{method:'DELETE',headers:{'X-Bedtime-Confirm':'clear'}});$('cache-confirm').hidden=true;cacheStats();});
-$('benchmark').onclick=guarded(async()=>{const p=settings.get();if(!['kokoro','piper'].includes(p.narrationProvider))throw Error('Choose a local provider to benchmark.');$('benchmark-result').textContent='Measuring local audio generation…';const data=await api('/api/audio/benchmark',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider:p.narrationProvider,voice:p.narrationVoice})});let result=data;while(['queued','generating'].includes(result.state)){await new Promise(r=>setTimeout(r,1000));result=await api('/api/audio/jobs/'+data.key);}if(result.state!=='ready')throw Error(result.error||'Benchmark unavailable');$('benchmark-result').textContent=result.cached?'Cached result · '+JSON.stringify(result.metrics):JSON.stringify(result.metrics);});
-async function restore(){try{const cfg=await api('/api/config');$('sample').hidden=!cfg.sample_data;const stored=JSON.parse(sessionStorage.getItem('bedtimeTournament')||'null');if(stored){const ids=stored.entrant_ids||stored.rounds[0].matches.flatMap(m=>[m.left.id,m.right.id]);current=await api('/api/adventure',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({creature_ids:ids,seed:stored.seed??12345,shuffle:stored.shuffle??false,completed:stored.completed??0,realism:stored.realism,duration:stored.duration})});save();}await refreshProviders();}catch{current=null;try{sessionStorage.removeItem('bedtimeTournament');}catch{}}}
+"use strict";
+const $ = (id) => document.getElementById(id),
+  settings = window.BedtimeSettings;
+let category = "",
+  library = [],
+  selected = [],
+  current = null,
+  screen = "welcome",
+  returnScreen = "welcome",
+  beforeQuiet = "welcome",
+  lastAction = Date.now(),
+  busy = false,
+  providerInfo = {},
+  loadId = 0;
+const screens = [
+  "welcome",
+  "categories",
+  "selection",
+  "bracket",
+  "player",
+  "celebration",
+  "settings",
+  "quiet",
+];
+const audio = new BedtimeAudio($("story-audio"), $("audio-status"), () => {
+  touch();
+  if (screen === "player" && current?.chapter) guarded(finishChapter)();
+});
+function touch() {
+  lastAction = Date.now();
+}
+function show(id) {
+  if (screen === "player" && id !== "player") audio.stop();
+  screen = id;
+  screens.forEach((s) => ($(s).hidden = s !== id));
+  $("back").hidden = ["welcome", "quiet"].includes(id);
+  document.body.classList.toggle("sleeping", id === "quiet");
+  $("message").textContent = "";
+  touch();
+  if (id === "bracket") requestAnimationFrame(drawConnectors);
+  window.scrollTo({ top: 0, behavior: "instant" });
+}
+function stopAudio() {
+  audio.stop();
+}
+function checkIdle() {
+  const prefs = settings.get();
+  if (!prefs.timeoutEnabled) return;
+  if (audio.active() || (audio.generating && screen === "player")) {
+    touch();
+    return;
+  }
+  if (
+    screen !== "quiet" &&
+    Date.now() - lastAction >= prefs.idleMinutes * 60000
+  ) {
+    beforeQuiet = screen;
+    audio.stop();
+    show("quiet");
+  }
+}
+document.addEventListener("pointerdown", touch);
+document.addEventListener("keydown", touch);
+document.addEventListener("visibilitychange", checkIdle);
+setInterval(checkIdle, 1000);
+function save() {
+  try {
+    sessionStorage.setItem("bedtimeTournament", JSON.stringify(current));
+  } catch {}
+  $("continue-adventure").hidden = !current;
+}
+async function api(path, options) {
+  const r = await fetch(path, options);
+  const data = await r.json();
+  if (!r.ok)
+    throw Error(
+      typeof data.detail === "string"
+        ? data.detail
+        : "Please check your choices and try again.",
+    );
+  return data;
+}
+function guarded(fn) {
+  return async (event) => {
+    if (busy) return;
+    busy = true;
+    const b = event?.currentTarget;
+    if (b?.tagName === "BUTTON") {
+      b.disabled = true;
+      b.classList.add("loading-button");
+    }
+    try {
+      await fn();
+    } catch (e) {
+      $("message").textContent =
+        e.message || "Something went wrong. Please try again.";
+    } finally {
+      busy = false;
+      if (b) {
+        b.disabled = false;
+        b.classList.remove("loading-button");
+      }
+      if (screen === "selection") updateCount();
+    }
+  };
+}
+function illustration(c) {
+  const ref = c.image_reference;
+  return typeof ref === "string" &&
+    /^\/static\/[a-zA-Z0-9_./-]+$/.test(ref) &&
+    !ref.includes("..")
+    ? ref
+    : "/static/assets/" +
+        (c.category === "shark"
+          ? "shark"
+          : c.category === "marine_reptile"
+            ? "marine_reptile"
+            : "dinosaur") +
+        ".svg";
+}
+function picture(c) {
+  const img = document.createElement("img");
+  img.src = illustration(c);
+  img.alt = "";
+  img.loading = "lazy";
+  img.onerror = () => {
+    img.onerror = null;
+    img.src = illustration({ ...c, image_reference: null });
+  };
+  return img;
+}
+function hear(c) {
+  const b = document.createElement("button");
+  b.className = "speaker";
+  b.setAttribute("aria-label", "Pronounce " + c.name);
+  b.innerHTML =
+    '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 4 5 9H2v6h3l6 5V4Z"/><path d="M15 8c3 2 3 6 0 8m3-11c5 4 5 10 0 14" stroke-linecap="round"/></svg>';
+  b.onclick = (e) => {
+    e.stopPropagation();
+    touch();
+    audio.pronounce(c, settings.get(), b);
+  };
+  return b;
+}
+const popularNames = [
+  "Tyrannosaurus",
+  "Triceratops",
+  "Stegosaurus",
+  "Velociraptor",
+  "Brachiosaurus",
+  "Ankylosaurus",
+  "Spinosaurus",
+  "Diplodocus",
+  "Parasaurolophus",
+  "Allosaurus",
+  "Great white shark",
+  "Whale shark",
+  "Tiger shark",
+  "Great hammerhead",
+  "Bull shark",
+  "Blue shark",
+  "Shortfin mako",
+  "Nurse shark",
+  "Mosasaurus",
+  "Tylosaurus",
+  "Plesiosaurus",
+  "Ichthyosaurus",
+  "Elasmosaurus",
+  "Kronosaurus",
+  "Liopleurodon",
+  "Ophthalmosaurus",
+];
+function updateCount() {
+  $("count").textContent = selected.length + " of 8 Selected";
+  $("next").disabled = selected.length !== 8;
+  $("random").disabled = library.length < 8;
+}
+function render() {
+  updateCount();
+  $("selection-slots").replaceChildren();
+  for (let i = 0; i < 8; i++) {
+    const c = library.find((c) => c.id === selected[i]);
+    const slot = document.createElement("button");
+    slot.className = "selection-slot" + (c ? " filled" : "");
+    slot.setAttribute(
+      "aria-label",
+      c ? "Remove " + c.name : "Empty selection slot " + (i + 1),
+    );
+    if (c) {
+      slot.append(picture(c));
+      const label = document.createElement("span");
+      label.textContent = c.name;
+      slot.append(label);
+      slot.onclick = () => {
+        selected = selected.filter((id) => id !== c.id);
+        render();
+      };
+    } else {
+      slot.textContent = "+";
+      slot.disabled = true;
+    }
+    $("selection-slots").append(slot);
+  }
+  const term = $("search").value.toLocaleLowerCase();
+  let rows = library.filter((c) =>
+    (c.name + " " + c.scientific_name).toLocaleLowerCase().includes(term),
+  );
+  if (!term && $("browse-group").value === "popular")
+    rows = rows
+      .filter((c) => popularNames.includes(c.name))
+      .sort(
+        (a, b) => popularNames.indexOf(a.name) - popularNames.indexOf(b.name),
+      );
+  $("library-heading").textContent = term
+    ? "Your search"
+    : $("browse-group").value === "popular"
+      ? "Popular Creatures"
+      : "All Creatures";
+  $("library-status").textContent = rows.length
+    ? "Tap a creature to join your adventure."
+    : "No creatures found. Try another name.";
+  $("creatures").replaceChildren();
+  rows.forEach((c) => {
+    const card = document.createElement("article");
+    const pos = selected.indexOf(c.id);
+    card.className = "creature" + (pos >= 0 ? " selected" : "");
+    const pick = document.createElement("button");
+    pick.className = "creature-pick";
+    pick.setAttribute(
+      "aria-label",
+      (pos >= 0 ? "Remove " : "Select ") + c.name,
+    );
+    pick.setAttribute("aria-pressed", String(pos >= 0));
+    pick.disabled = selected.length === 8 && pos < 0;
+    pick.append(picture(c));
+    const name = document.createElement("strong");
+    name.textContent = c.name;
+    pick.append(name);
+    pick.onclick = () => {
+      if (pos >= 0) selected = selected.filter((id) => id !== c.id);
+      else if (selected.length < 8) selected.push(c.id);
+      render();
+    };
+    card.append(pick, hear(c));
+    if (pos >= 0) {
+      const mark = document.createElement("span");
+      mark.className = "selection-mark";
+      mark.textContent = "✓ " + (pos + 1);
+      card.append(mark);
+    }
+    const details = document.createElement("details");
+    const summary = document.createElement("summary");
+    summary.textContent = "Creature notes";
+    details.append(summary);
+    [c.scientific_name, c.description, "Say it: " + (c.pronunciation || c.name)]
+      .filter(Boolean)
+      .forEach((text) => {
+        const p = document.createElement("p");
+        p.textContent = text;
+        details.append(p);
+      });
+    if (c.review_status) {
+      const p = document.createElement("p");
+      p.textContent = "Editorial profile · science review pending";
+      details.append(p);
+    }
+    card.append(details);
+    $("creatures").append(card);
+  });
+}
+async function choose(value) {
+  const rows = await api(
+    value === "ocean" ? "/api/creatures" : "/api/creatures?category=" + value,
+  );
+  category = value;
+  library =
+    value === "ocean"
+      ? rows.filter((c) => ["shark", "marine_reptile"].includes(c.category))
+      : rows;
+  selected = [];
+  $("search").value = "";
+  $("browse-group").value = "popular";
+  render();
+  show("selection");
+}
+document
+  .querySelectorAll("[data-category]")
+  .forEach((b) => (b.onclick = guarded(() => choose(b.dataset.category))));
+$("start-adventure").onclick = () => show("categories");
+$("search").oninput = render;
+$("browse-group").onchange = render;
+$("clear").onclick = () => {
+  selected = [];
+  render();
+};
+$("random").onclick = guarded(async () => {
+  selected = (await api("/api/selection/random?category=" + category))
+    .creature_ids;
+  render();
+});
+async function createTournament(ids = selected) {
+  audio.stop();
+  const p = settings.get();
+  const result = await api("/api/tournament", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      creature_ids: ids,
+      shuffle: p.shuffle,
+      realism: p.realism,
+      duration: p.duration,
+    }),
+  });
+  current = result;
+  save();
+  renderBracket();
+  show("bracket");
+  requestAnimationFrame(drawConnectors);
+}
+$("next").onclick = guarded(() => createTournament());
+$("surprise").onclick = guarded(async () => {
+  const all = await api("/api/creatures");
+  const valid = ["dinosaur", "shark", "marine_reptile"].filter(
+    (cat) => all.filter((c) => c.category === cat).length >= 8,
+  );
+  if (!valid.length)
+    throw Error("Add at least eight compatible creatures to begin.");
+  const cat = valid[Math.floor(Math.random() * valid.length)];
+  const ids = (await api("/api/selection/random?category=" + cat)).creature_ids;
+  await createTournament(ids);
+});
+function renderBracket() {
+  $("rounds").replaceChildren();
+  let activeId = current.chapter?.match_id;
+  current.rounds.forEach((round, ri) => {
+    const col = document.createElement("div");
+    col.className = "round";
+    const h = document.createElement("h2");
+    h.textContent = round.name;
+    col.append(h);
+    const list = document.createElement("div");
+    list.className = "round-matches";
+    round.matches.forEach((m, i) => {
+      const card = document.createElement("article");
+      card.className =
+        "match " +
+        (m.status === "complete"
+          ? "complete"
+          : m.id === activeId
+            ? "active"
+            : "");
+      card.dataset.match = m.id;
+      const label = document.createElement("p");
+      label.className = "match-label";
+      label.textContent =
+        "BATTLE " +
+        (ri === 0 ? i + 1 : ri === 1 ? i + 5 : 7) +
+        (m.id === activeId
+          ? " · UP NEXT"
+          : m.status === "complete"
+            ? " · COMPLETE"
+            : "");
+      card.append(label);
+      ["left", "right"].forEach((side, index) => {
+        if (index) {
+          const vs = document.createElement("div");
+          vs.className = "match-vs";
+          vs.textContent = "VS";
+          card.append(vs);
+        }
+        const c = m[side];
+        const row = document.createElement("div");
+        row.className =
+          "contender" +
+          (m.winner && c ? (m.winner.id === c.id ? " winner" : " loser") : "");
+        const name = document.createElement("span");
+        name.textContent = c
+          ? (m.winner?.id === c.id ? "✓ " : "") + c.name
+          : "Waiting for Winner";
+        if (c) row.append(picture(c));
+        row.append(name);
+        if (c) row.append(hear(c));
+        card.append(row);
+      });
+      list.append(card);
+    });
+    col.append(list);
+    $("rounds").append(col);
+  });
+  const winnerCol = document.createElement("div");
+  winnerCol.className = "round";
+  const title = document.createElement("h2");
+  title.textContent = "Champion";
+  const content = document.createElement("div");
+  content.className = "round-matches";
+  const winner = document.createElement("article");
+  winner.className = "match";
+  if (current.champion) {
+    winner.append(picture(current.champion));
+    const h = document.createElement("h3");
+    h.textContent = current.champion.name;
+    winner.append(h, hear(current.champion));
+  } else winner.textContent = "✦ A champion is waiting to be discovered";
+  content.append(winner);
+  winnerCol.append(title, content);
+  $("rounds").append(winnerCol);
+  $("story").hidden = !current.chapter;
+  requestAnimationFrame(drawConnectors);
+}
+$("focus-battle").onclick = () => {
+  $("rounds")
+    .querySelector(".active")
+    ?.scrollIntoView({
+      behavior: settings.get().reducedMotion ? "instant" : "smooth",
+      block: "nearest",
+      inline: "center",
+    });
+};
+function overrides(participants) {
+  const output = {};
+  if (settings.get().guidedNames)
+    for (const c of participants)
+      if (c.pronunciation)
+        output[c.name] = c.pronunciation.toLowerCase().replace(/sawr/g, "sore");
+  return output;
+}
+async function openStory() {
+  if (!current?.chapter) return;
+  const c = current.chapter;
+  const ri = current.rounds.findIndex((r) =>
+    r.matches.some((m) => m.id === c.match_id),
+  );
+  $("battle-label").textContent =
+    current.rounds[ri].name.toUpperCase() +
+    " · BATTLE " +
+    (current.completed + 1) +
+    " OF 7";
+  $("chapter-title").textContent = c.title;
+  $("chapter-text").replaceChildren();
+  c.paragraphs.forEach((text) => {
+    const p = document.createElement("p");
+    p.textContent = text;
+    $("chapter-text").append(p);
+  });
+  $("battle-creatures").replaceChildren();
+  c.participants.forEach((creature, i) => {
+    if (i) {
+      const vs = document.createElement("span");
+      vs.className = "versus";
+      vs.textContent = "VS";
+      $("battle-creatures").append(vs);
+    }
+    const card = document.createElement("div");
+    card.className = "battle-portrait";
+    const name = document.createElement("h2");
+    name.textContent = creature.name;
+    card.append(picture(creature), name, hear(creature));
+    $("battle-creatures").append(card);
+  });
+  show("player");
+  const id = ++loadId;
+  audio.chunks = [];
+  const prefs = settings.get();
+  $("story-rate").value = String(prefs.narrationRate);
+  const ready = await audio.prepare(
+    [...c.paragraphs, c.ending].join("\n\n"),
+    prefs,
+    overrides(c.participants),
+  );
+  if (
+    ready &&
+    id === loadId &&
+    screen === "player" &&
+    prefs.autoNarration &&
+    !audio.pronouncing &&
+    !audio.active()
+  )
+    audio.play();
+}
+$("story").onclick = () => openStory();
+function context(completed = current.completed) {
+  return {
+    creature_ids: current.entrant_ids,
+    seed: current.seed,
+    shuffle: current.shuffle,
+    realism: current.realism,
+    duration: current.duration,
+    completed,
+  };
+}
+async function finishChapter() {
+  if (!current?.chapter) return;
+  const ending = current.chapter.ending;
+  const result = await api("/api/adventure", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(context(current.completed + 1)),
+  });
+  audio.stop();
+  current = result;
+  save();
+  renderBracket();
+  if (current.champion) celebrate();
+  else {
+    show("bracket");
+    requestAnimationFrame(drawConnectors);
+    $("message").textContent = ending;
+  }
+}
+$("finish").onclick = guarded(finishChapter);
+$("play").onclick = () => audio.play();
+$("pause").onclick = () => {
+  audio.pause();
+  touch();
+};
+$("replay").onclick = () => audio.replay();
+$("story-rate").onchange = () => {
+  settings.set("narrationRate", Number($("story-rate").value));
+  if (audio.prefs) audio.prefs.narrationRate = settings.get().narrationRate;
+  $("story-audio").playbackRate = settings.get().narrationRate;
+};
+function celebrate() {
+  const c = current.champion;
+  $("winner-card").replaceChildren(picture(c));
+  const h = document.createElement("h2");
+  h.textContent = c.name;
+  $("winner-card").append(h, hear(c));
+  show("celebration");
+}
+$("play-again").onclick = guarded(() => createTournament(current.entrant_ids));
+$("new-adventure").onclick = () => {
+  current = null;
+  save();
+  selected = [];
+  show("categories");
+};
+$("view-bracket").onclick = () => {
+  renderBracket();
+  show("bracket");
+  requestAnimationFrame(drawConnectors);
+};
+$("continue-adventure").onclick = () => {
+  renderBracket();
+  current.champion ? celebrate() : show("bracket");
+  requestAnimationFrame(drawConnectors);
+};
+$("home").onclick = () => {
+  loadId++;
+  audio.stop();
+  show("welcome");
+};
+$("back").onclick = () => {
+  loadId++;
+  audio.stop();
+  if (screen === "settings") {
+    const target = returnScreen;
+    if (target === "player") openStory();
+    else show(target);
+    return;
+  }
+  show(
+    {
+      categories: "welcome",
+      selection: "categories",
+      bracket: library.length ? "selection" : "welcome",
+      player: "bracket",
+      celebration: "bracket",
+    }[screen] || "welcome",
+  );
+};
+$("resume").onclick = () => show(beforeQuiet);
+const fields = {
+  "narration-provider": "narrationProvider",
+  "pronunciation-provider": "pronunciationProvider",
+  "narration-voice": "narrationVoice",
+  "pronunciation-voice": "pronunciationVoice",
+  "name-rate": "nameRate",
+  "narration-rate": "narrationRate",
+  "auto-narration": "autoNarration",
+  "pronunciation-buttons": "pronunciationButtons",
+  "guided-names": "guidedNames",
+  duration: "duration",
+  realism: "realism",
+  shuffle: "shuffle",
+  "timeout-enabled": "timeoutEnabled",
+  "idle-minutes": "idleMinutes",
+  "reduced-motion": "reducedMotion",
+};
+function voiceOptions(kind) {
+  const provider = settings.get()[kind + "Provider"];
+  const select = $(kind + "-voice"),
+    saved = settings.get()[kind + "Voice"];
+  select.replaceChildren();
+  let voices =
+    provider === "browser"
+      ? (window.speechSynthesis?.getVoices?.() || [])
+          .filter((v) => /^en[-_]/i.test(v.lang))
+          .map((v) => ({ id: v.voiceURI, name: v.name }))
+      : providerInfo[provider]?.voices || [];
+  if (!voices.length)
+    voices = [
+      {
+        id:
+          provider === "kokoro"
+            ? "af_heart"
+            : provider === "piper"
+              ? "en_US-lessac-medium"
+              : provider === "openai"
+                ? "coral"
+                : "",
+        name:
+          provider === "browser"
+            ? "Device default"
+            : provider === "kokoro"
+              ? "Heart · American English"
+              : provider === "piper"
+                ? "Lessac · US English"
+                : "Coral",
+      },
+    ];
+  voices.forEach((v) => select.add(new Option(v.name, v.id)));
+  if (voices.some((v) => v.id === saved)) select.value = saved;
+  else settings.set(kind + "Voice", voices[0].id);
+}
+function syncSettings() {
+  const p = settings.get();
+  for (const [id, key] of Object.entries(fields)) {
+    if (id.endsWith("-voice")) continue;
+    const el = $(id);
+    if (el.type === "checkbox") el.checked = p[key];
+    else el.value = String(p[key]);
+  }
+  voiceOptions("narration");
+  voiceOptions("pronunciation");
+}
+for (const [id, key] of Object.entries(fields))
+  $(id).addEventListener("change", () => {
+    const el = $(id);
+    settings.set(
+      key,
+      el.type === "checkbox"
+        ? el.checked
+        : ["nameRate", "narrationRate", "idleMinutes"].includes(key)
+          ? Number(el.value)
+          : el.value,
+    );
+    if (id.endsWith("-provider"))
+      voiceOptions(id.startsWith("narration") ? "narration" : "pronunciation");
+  });
+$("preferences").onsubmit = (e) => e.preventDefault();
+async function cacheStats() {
+  try {
+    const data = await api("/api/audio/cache");
+    $("cache-stats").textContent =
+      data.count +
+      " saved audio files · " +
+      (data.bytes / 1024 / 1024).toFixed(1) +
+      " MB";
+  } catch {
+    $("cache-stats").textContent = "Audio cache status unavailable.";
+  }
+}
+async function refreshProviders() {
+  try {
+    const data = await api("/api/audio/providers");
+    providerInfo = data.providers;
+    $("provider-status").replaceChildren();
+    Object.entries(providerInfo).forEach(([name, info]) => {
+      const p = document.createElement("p");
+      p.textContent =
+        name +
+        ": " +
+        (info.available ? "Ready" : info.reason || "Setup needed");
+      $("provider-status").append(p);
+    });
+  } catch {
+    $("provider-status").textContent =
+      "Server audio unavailable. Device speech remains available.";
+  }
+  syncSettings();
+}
+$("settings-open").onclick = () => {
+  if (screen === "settings") return;
+  returnScreen = screen;
+  audio.stop();
+  show("settings");
+  syncSettings();
+  refreshProviders();
+  cacheStats();
+};
+window.speechSynthesis?.addEventListener?.("voiceschanged", () => {
+  if (screen === "settings") {
+    voiceOptions("narration");
+    voiceOptions("pronunciation");
+  }
+});
+$("preview-name").onclick = () =>
+  audio.pronounce(
+    { name: "Tyrannosaurus", pronunciation: "tie ran oh sore us" },
+    settings.get(),
+    $("preview-name"),
+  );
+$("preview-story").onclick = guarded(async () => {
+  const p = settings.get();
+  await audio.prepare(
+    "The moon is shining. A wonderful little adventure is about to begin.",
+    p,
+  );
+  await audio.play();
+});
+$("clear-cache").onclick = () => {
+  $("cache-confirm").hidden = false;
+};
+$("cancel-clear").onclick = () => {
+  $("cache-confirm").hidden = true;
+};
+$("confirm-clear").onclick = guarded(async () => {
+  await api("/api/audio/cache", {
+    method: "DELETE",
+    headers: { "X-Bedtime-Confirm": "clear" },
+  });
+  $("cache-confirm").hidden = true;
+  cacheStats();
+});
+$("benchmark").onclick = guarded(async () => {
+  const p = settings.get();
+  if (!["kokoro", "piper"].includes(p.narrationProvider))
+    throw Error("Choose a local provider to benchmark.");
+  $("benchmark-result").textContent = "Measuring local audio generation…";
+  const data = await api("/api/audio/benchmark", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      provider: p.narrationProvider,
+      voice: p.narrationVoice,
+    }),
+  });
+  let result = data;
+  while (["queued", "generating"].includes(result.state)) {
+    await new Promise((r) => setTimeout(r, 1000));
+    result = await api("/api/audio/jobs/" + data.key);
+  }
+  if (result.state !== "ready")
+    throw Error(result.error || "Benchmark unavailable");
+  $("benchmark-result").textContent = result.cached
+    ? "Cached result · " + JSON.stringify(result.metrics)
+    : JSON.stringify(result.metrics);
+});
+async function restore() {
+  try {
+    const cfg = await api("/api/config");
+    $("sample").hidden = !cfg.sample_data;
+    const stored = JSON.parse(
+      sessionStorage.getItem("bedtimeTournament") || "null",
+    );
+    if (stored) {
+      const ids =
+        stored.entrant_ids ||
+        stored.rounds[0].matches.flatMap((m) => [m.left.id, m.right.id]);
+      current = await api("/api/adventure", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          creature_ids: ids,
+          seed: stored.seed ?? 12345,
+          shuffle: stored.shuffle ?? false,
+          completed: stored.completed ?? 0,
+          realism: stored.realism,
+          duration: stored.duration,
+        }),
+      });
+      save();
+    }
+    await refreshProviders();
+  } catch {
+    current = null;
+    try {
+      sessionStorage.removeItem("bedtimeTournament");
+    } catch {}
+  }
+}
 restore();
+
+function drawConnectors() {
+  const root = $("rounds");
+  if (!current || !root.children.length) return;
+  root.querySelector(".bracket-links")?.remove();
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.classList.add("bracket-links");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("width", root.scrollWidth);
+  svg.setAttribute("height", root.scrollHeight);
+  const origin = root.getBoundingClientRect();
+  function connect(source, target) {
+    if (!source || !target) return;
+    const a = source.getBoundingClientRect(),
+      b = target.getBoundingClientRect(),
+      sx = a.right - origin.left,
+      sy = a.top + a.height / 2 - origin.top,
+      dx = b.left - origin.left,
+      dy = b.top + b.height / 2 - origin.top;
+    const path = document.createElementNS(svg.namespaceURI, "path");
+    path.setAttribute("d", `M ${sx} ${sy} H ${(sx + dx) / 2} V ${dy} H ${dx}`);
+    path.setAttribute("fill", "none");
+    path.setAttribute("stroke", "#596582");
+    path.setAttribute("stroke-width", "2");
+    svg.append(path);
+  }
+  current.rounds.forEach((r) =>
+    r.matches.forEach((m) =>
+      (m.sources || []).forEach((id) =>
+        connect(
+          root.querySelector(`[data-match="${id}"]`),
+          root.querySelector(`[data-match="${m.id}"]`),
+        ),
+      ),
+    ),
+  );
+  connect(
+    root.querySelector('[data-match="r2m0"]'),
+    root.querySelector(".round:last-child .match"),
+  );
+  root.prepend(svg);
+}
+window.addEventListener("resize", () => {
+  if (screen === "bracket") drawConnectors();
+});

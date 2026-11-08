@@ -1,10 +1,10 @@
-# Bedtime Battle Stories · Version 2
+# Bedtime Battle Stories
 
-A mobile-first bedtime adventure game for an Ubuntu home server. Choose eight creatures, play a friendly story tournament, and advance through seven chapters to a champion. Everything runs locally: no accounts, paid APIs, AI generation, or permanent tournament history.
+A little adventure book for bedtime. Pick eight dinosaurs, sharks or ancient sea creatures, listen to seven friendly story battles, and discover tonight’s champion. Built for a child and supervising parent on a home network: FastAPI, SQLite, vanilla JavaScript, no accounts and no saved tournament history.
 
-## Ubuntu installation and startup
+## Start on Ubuntu 24.04
 
-Requires Python 3.12+ (Ubuntu 24.04 provides it).
+Python 3.12+ is required. Port **8502** remains the default; port 8501 is untouched.
 
 ```bash
 sudo apt update
@@ -13,70 +13,91 @@ cd bedtime-battle-stories
 bash START_APP.sh
 ```
 
-Open `http://SERVER_LAN_IP:8502` on the same home network. Port 8501 is untouched. Stop with Ctrl+C; restart with the same command. Do not forward this port from your router: this app has no authentication and is intended for a trusted home LAN. If using UFW, allow port 8502 only from your actual home subnet.
+Visit `http://SERVER_LAN_IP:8502` on your home Wi-Fi. Stop with Ctrl+C; restart with the same command. This basic setup uses device speech until local models are installed. Do not expose the unauthenticated app publicly or forward its port from your router. If using UFW, restrict access to your actual home subnet.
 
-The default library now loads 164 editorial catalog records: 110 dinosaur genera, 42 shark species, and 12 marine reptiles. Existing creature IDs and profiles are preserved. Missing pronunciation guides can be filled; custom guides are retained. New catalog entries are added, not used to replace existing user profiles. Back up `data/` before an upgrade. Database schema additions are additive; no tournament history is stored there.
+## Free CPU narration and pronunciation
 
-To update from Version 1 after this branch is merged, stop the app, back up `data/`, run `git pull --ff-only` on main, then run `bash START_APP.sh`. If you previously enabled `BBS_SAMPLE_DATA=1`, unset it for the full library. An explicitly configured `BBS_DB_PATH` is retained; do not accidentally reuse the development sample database as your production database.
+No GPU, CUDA, paid API or account is needed. Install these once, from the repository:
 
-Configuration:
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements-audio.txt
+.venv/bin/python scripts/setup_audio.py all
+bash START_APP.sh
+```
 
-- `BBS_HOST`: defaults to `0.0.0.0` for home LAN access; use `127.0.0.1` for server-only access.
-- `BBS_PORT`: defaults to 8502.
-- `BBS_DB_PATH`: database override, default `data/creatures.sqlite3`.
-- `BBS_CATALOG=0`: disables bundled catalog additions (does not delete already loaded records).
-- `BBS_SAMPLE_DATA=1`: uses the separate 24-creature development sample library at `data/sample.sqlite3` unless a database override is set. Never point sample mode at production data.
+The setup command explicitly downloads Kokoro and Piper models; normal startup never downloads them. Kokoro narrates with Heart by default; Piper uses the clear English Lessac voice for names. If one local engine is missing, the other is tried before device speech. OpenAI is never selected automatically.
 
-## Play
+Model downloads need GitHub release access and Hugging Face access (including its CDN redirects). Kokoro files occupy about 338 MiB; the selected Piper voice is roughly 60–70 MiB plus its JSON configuration. Allow at least 1–2 GB of disk for models and Python packages, and about 2 GB free RAM for comfortable single-worker CPU use. These are planning allowances, not minimum-hardware guarantees. See [audio setup and troubleshooting](docs/AUDIO.md).
 
-Choose Dinosaurs, Sharks, Prehistoric Sea Creatures, or Ocean Mix. Search common/scientific names, open a creature's details, then select eight in pairing order or pick eight randomly. Ocean Mix lets sharks meet marine reptiles; every tournament must share a supported arena. Land-only creatures cannot enter water tournaments. Semi-aquatic habitat rules are supported; specific disputed swimming abilities are not assumed for catalog dinosaurs.
+## Tonight’s adventure
 
-Choose realism, chapter length, and optional shuffled matchups. Listen to the next chapter or read along. Play, pause/resume, replay, stop, and story-speed controls use device speech synthesis. The winner remains hidden in the visible player until the narration finishes or you tap “Reveal the ending.” Winners automatically populate the semifinals and championship. Finishing all seven chapters shows the champion.
+1. **Start Adventure** → choose dinosaurs, sharks, prehistoric ocean creatures, or a compatible Ocean Mix. **Surprise Me!** creates a random valid tournament directly.
+2. Pick eight large creature cards, or use **Random 8**. Eight visible slots preserve selection order and let you remove a creature. Popular creatures appear first; adult search and the full library are expandable.
+3. Follow the connected quarterfinal → semifinal → championship → winner bracket. **Focus on Current Battle** finds the next match without shrinking names.
+4. **Watch This Battle!** opens the illustrations, audio player and optional read-along text. Audio preparation runs in the background. Play, pause/resume, replay, speed, seeking and time/duration use HTML5 audio. On iPhone, tap Play if automatic playback is blocked.
+5. The winner is shown only after narration finishes or the parent chooses **I’ve read it · reveal the ending**. After seven battles, celebrate the champion. Play Again and New Adventure never start automatically.
 
-Chapters use locally written, non-graphic templates. Everyone stays safe. The 1/2/3-minute choices scale word count; actual playback time depends on the chosen voice and speed. No images are supplied yet. These are fictional adventure contests, not scientific combat simulations: editorial game ratings and 10%/30%/50% upset chances for unequal ratings distinguish Realistic/Balanced/Anything Can Happen. Equal ratings use an even choice. Outcomes are reproducible for a given seed, match, ratings, realism and entrant ordering.
+The gear stays available throughout the experience. Settings save on that device: separate narration/name providers, voices, previews and speeds; automatic narration; speaker buttons; pronunciation guides; 1–3 minute chapter defaults; realism; shuffle; bedtime timeout; reduced motion; and audio-cache management. Opening settings preserves the tournament. Story-setting changes apply to the next tournament. Names on cards remain unchanged when pronunciation overrides are used.
 
-Your bracket, seed and completed-chapter count are retained in this tab's sessionStorage and reconstructed after reload. Browser session restoration may retain this storage. Starting a new tournament replaces the current one; no server-side tournament history is saved. After five idle minutes, quiet mode stops paused/idle playback. Active speech or audio defers the timeout. Resume manually.
+Quiet mode defaults to five idle minutes, preserves progress, and offers a large Wake Up button. Active playback and audio preparation for the current battle defer it. Operating-system reduced motion is respected alongside the app preference.
 
-## Pronunciation
+## Data and upgrades
 
-Open **Voice & pronunciation** to select an English voice, slow down names, and toggle guided pronunciation. Dinosaur and marine-reptile entries have written approximate English pronunciation guides. Shark buttons use their common names. The same adapter replaces creature names in narrated stories. Voice preferences are saved locally; Hear buttons remain available in the library and bracket.
+Before updating, stop the app and back up `data/` (SQLite plus any models/cache you want to retain). After merging a reviewed PR:
 
-Existing Version 1 sample databases receive missing guides without replacing custom pronunciation. Guides are approximate, not verified scientific audio. Browser engines interpret respellings differently. Choose the clearest voice on the actual device; some voices may require a device-managed download or network connection. If speech is unavailable, the written story and guides still work. No guarantee of natural audio quality is claimed from headless tests.
+```bash
+git switch main
+git pull --ff-only
+bash START_APP.sh
+```
 
-## Catalog quality
+If audio dependencies changed, refresh them with `.venv/bin/python -m pip install -r requirements-audio.txt`. Existing profiles/IDs, custom pronunciation guides, models and cached audio are preserved. New models require a deliberate setup command, not an application restart. Restart the app after changing model files.
 
-`data/catalog.json` is an initial editorial catalog, **not a scientifically verified catalog**. It records taxonomic rank, broad diet/habitat, a pronunciation guide, and suggested museum reference links. Source checks were blocked by the build environment's outbound policy; links are reference starting points, not per-claim citations. Every newly inserted catalog profile is marked `reference_check_pending`. All measurements remain unknown. Existing parent-entered profiles are not silently replaced by catalog descriptions.
+The catalog still contains **110 dinosaur genera, 42 shark species and 12 marine reptiles**. It is editorial, not a verified 100-species dinosaur catalog. Scientific reference checks, measurements and fine habitat constraints remain pending. Existing data and deterministic game ratings are preserved. Game outcomes are fictional rules, not scientifically validated predictions. Stories are locally authored templates, not AI-generated narratives. Generic local illustrations are decorative placeholders, not species-accurate reconstructions. Existing illustrations can be referenced using safe `/static/...` paths; no external image requests are required.
 
-Scientific review, species-specific provenance, finer habitat constraints, measurements, abilities, and pronunciation recordings remain outstanding. The museum references need review for coverage and current URL validity. Do not treat game ratings as scientific facts.
+SessionStorage keeps only the current tab’s entrants, seed, settings and completed-chapter count. The server reconstructs outcomes; it stores no tournament history. Browser session restoration can retain tab storage. Audio files persist by content hash for reuse; they contain generated story/name audio, not a tournament-history database.
 
-## Tests
+## Configuration
+
+`.env.example` documents optional configuration; it contains no credentials. Export desired values before running START_APP.sh; the app does not silently source `.env`.
+
+| Variable | Default / purpose |
+| --- | --- |
+| `BBS_HOST` | `0.0.0.0` for trusted LAN; use `127.0.0.1` for local-only |
+| `BBS_PORT` | `8502` |
+| `BBS_DB_PATH` | `data/creatures.sqlite3` |
+| `BBS_CATALOG` | `1`; `0` stops adding bundled catalog entries, without deleting data |
+| `BBS_SAMPLE_DATA` | `0`; `1` uses separate `data/sample.sqlite3` unless DB path is overridden |
+| `BBS_MODEL_DIR` | `data/models` |
+| `BBS_AUDIO_CACHE` | `data/audio_cache` |
+| `BBS_TTS_THREADS` | `2`, bounded to 1–4 ONNX CPU threads |
+| `BBS_ENABLE_OPENAI` | `0`; explicit `1` required for paid audio |
+| `OPENAI_API_KEY` | Optional server-only key, never returned to the frontend |
+| `BBS_OPENAI_MODEL` | `gpt-4o-mini-tts`, configurable as provider models evolve |
+
+Never point development sample mode at a production database. Unset `BBS_SAMPLE_DATA` to use the full catalog.
+
+## Tests and evidence
 
 ```bash
 .venv/bin/python -m pytest -q
 .venv/bin/python -m pip check
-```
-
-Mobile browser integration (run the default-catalog server first):
-
-```bash
 .venv/bin/python -m pip install -r requirements-dev.txt
-# Install Chromium with your system package manager if needed.
-.venv/bin/python tests/adventure_smoke.py http://127.0.0.1:8502
+.venv/bin/python tests/redesign_smoke.py http://127.0.0.1:8502 /tmp/bedtime-screenshots
 ```
 
-The script uses `/usr/bin/chromium` (override with `CHROMIUM_PATH`). It covers a 390×844 touch viewport, pronunciation adapter output, speech controls, seven chapters, winner advancement, reload recovery, champion, ocean mixing and timeout. Speech is stubbed for deterministic completion; audible quality and physical iPhone Safari/Android Chrome require device testing. `tests/mobile_smoke.py` retains the older sample-library regression.
+Normal tests use temporary data and mocked audio; models and paid API calls are not required. Browser tests use system Chromium (`CHROMIUM_PATH` overrides `/usr/bin/chromium`) and deterministic audio transport. They cover settings persistence, selection/removal, speaker controls, bracket progression, all seven battles, cache confirmation, HTML audio pause/resume/replay, quiet mode and mobile overflow. The older browser-script entry points delegate to this flow.
+
+Real CPU Kokoro generation and cache replay were separately measured in the cloud: Heart generated 7.76 s of audio in 5.94 s; Sarah generated 7.49 s in 4.43 s. Peak process RSS after both was about 794 MiB. See [benchmark details](docs/AUDIO.md#measured-validation). Piper’s actual voice download was blocked by cloud outbound policy, so its adapter is mock-tested but real generation and performance remain unverified. Physical iPhone Safari/Android and the home Ubuntu laptop were not tested. No audible voice-quality comparison is claimed.
 
 ## Architecture
 
-- `app/main.py`: FastAPI, SQLite initialization, additive catalog loading, search, random sampling, habitat validation and API schemas.
-- `app/adventure.py`: seed-based fictional outcomes, local story templates and canonical bracket progression.
-- `data/catalog.json`: editorial catalog with review status; `data/sample_creatures.json`: isolated development fixtures.
-- `static/`: responsive interface, voice adapter, story player, session state and quiet mode.
-- `tests/`: isolated SQLite/API tests and browser integrations.
-- `START_APP.sh`: virtual environment creation, dependency installation and configurable LAN startup.
+- `app/main.py`, `app/adventure.py`: existing SQLite library, compatibility rules, reproducible game outcomes and local chapters. Catalog loading is initialized once per active database configuration rather than repeated for every request.
+- `app/audio/providers.py`: optional Kokoro, Piper and official OpenAI SDK adapters; CPU sessions and model-aware identity.
+- `app/audio/service.py`: one worker, eight pending jobs, duplicate suppression, atomic WAV publication, persistent content-addressed cache and bounded job metadata.
+- `app/audio/routes.py`: providers, jobs, safe audio URLs, cache management and local benchmark API.
+- `static/settings.js`, `static/audio-player.js`, `static/app.js`: reusable preferences/playback modules and the child-facing flow. No frontend framework, remote fonts or image dependency.
+- `static/assets`: locally bundled illustrative SVGs. `data/catalog.json`: existing editorial library. Models and generated audio are Git-ignored.
 
-API: `GET /api/config`, `GET /api/creatures?category=dinosaur&q=rex`, `GET /api/selection/random?category=ocean`, `POST /api/tournament`, `POST /api/adventure`. A tournament takes eight distinct integer `creature_ids`, `realism`, `duration`, optional `shuffle` and `seed`. Adventure reconstruction adds `completed` (0–7). No client-supplied winner or bracket is trusted; the server reconstructs outcomes. Endings are present in chapter responses to support speech but are not shown early by the normal UI. These are local game controls, not an anti-cheat protocol.
-
-## Next development
-
-Review the catalog against accessible scientific sources and listen to difficult names on real devices. Then replace generic game ratings with reviewed traits and configurable, documented simulation rules; vary authored stories by capabilities and habitat. Generated stories, illustrations, verified pronunciation recordings and narration services remain future work requiring explicit configuration and cost controls. Dependencies currently use version ranges rather than a lockfile.
+Next work: verify catalog facts and scientific names, test pronunciation and native audio on the actual iPhone, vary story templates and add reviewed species-specific illustrations. AI story/image generation remains outside this change.

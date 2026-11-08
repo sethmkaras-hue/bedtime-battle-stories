@@ -136,6 +136,8 @@ def test_audio_api_and_path_validation(tmp_path,monkeypatch,service):
         response=c.post('/api/audio',json=request());assert response.status_code==200
         ready=wait(s,response.json()['key'])
         assert c.get(ready['url']).headers['content-type']=='audio/wav'
+        partial=c.get(ready['url'],headers={'Range':'bytes=0-15'})
+        assert partial.status_code==206 and len(partial.content)==16
         assert c.get('/api/audio/jobs/not-a-key').status_code==404
         assert c.get('/api/audio/files/narration/not-a-key').status_code==404
         assert c.delete('/api/audio/cache').status_code==400
@@ -195,3 +197,23 @@ def test_openai_provider_uses_sdk_mock_without_paid_calls(tmp_path,monkeypatch):
     p=providers.OpenAIProvider(tmp_path)
     p.generate_audio('Good night','coral',1,tmp_path/'test.wav')
     assert calls['response_format']=='wav' and calls['voice']=='coral'
+
+
+def test_unavailable_local_provider_uses_other_local_engine(tmp_path):
+    ready=FakeProvider();ready.name='kokoro'
+    missing=FakeProvider();missing.name='piper';missing.is_available=lambda:False
+    s=AudioService(tmp_path/'cache',tmp_path/'models',providers={'kokoro':ready,'piper':missing})
+    try:
+        job=s.submit(request(provider='piper'))
+        assert job['fallback_from']=='piper' and not job.get('fallback')
+        assert wait(s,job['key'])['metrics']['provider']=='kokoro'
+    finally:s.close()
+
+
+def test_voice_change_creates_another_cache_entry(service):
+    s,p=service
+    p.list_voices=lambda:[{'id':'test','name':'Test'},{'id':'other','name':'Other'}]
+    a=s.submit(request());b=s.submit(request(voice='other'))
+    assert a['key']!=b['key']
+    assert wait(s,a['key'])['state']=='ready'
+    assert wait(s,b['key'])['state']=='ready'
