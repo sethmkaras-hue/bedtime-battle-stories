@@ -25,7 +25,7 @@ PILOT = [
     "Parasaurolophus",
     "Allosaurus",
 ]
-VERSION = 3
+VERSION = 4
 
 
 def digest(record, inputs=None):

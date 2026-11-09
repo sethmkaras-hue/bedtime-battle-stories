@@ -10,6 +10,7 @@ from urllib.parse import urlsplit
 from collections import deque
 import logging
 import httpx
+from .api_policy import metadata_request, POLICY_BASIS, POLICY_REFERENCE
 
 HOSTS = {
     "paleobiodb.org",
@@ -63,6 +64,11 @@ class PoliteClient:
             raise ValueError(
                 "BBS_IMPORT_USER_AGENT must retain BedtimeBattleStoriesImporter/ identification"
             )
+        self.commons_api_policy = os.environ.get(
+            "BBS_COMMONS_API_POLICY", "documented-api"
+        )
+        if self.commons_api_policy not in {"documented-api", "robots"}:
+            raise ValueError("BBS_COMMONS_API_POLICY must be documented-api or robots")
         self.events = deque(maxlen=2000)
         self.robots_metadata = {}
         self.last = {}
@@ -129,10 +135,51 @@ class PoliteClient:
                         content=bytes(body),
                         request=response.request,
                     )
-                if result.status_code in {429, 500, 502, 503, 504}:
+                api_error = None
+                if result.status_code == 200 and metadata_request(url):
+                    try:
+                        data = result.json()
+                    except ValueError as error:
+                        raise SourceUnavailable(
+                            "Commons JSON API returned a non-JSON response; not cached"
+                        ) from error
+                    if not isinstance(data, dict):
+                        raise SourceUnavailable(
+                            "Commons API returned an invalid JSON object; not cached"
+                        )
+                    api_error = data.get("error")
+                    if api_error is not None:
+                        self.record(
+                            phase="api_error",
+                            endpoint=url,
+                            http_status=200,
+                            request_sent=True,
+                            error_code=api_error.get("code", "unknown")
+                            if isinstance(api_error, dict)
+                            else "unknown",
+                        )
+                    if api_error is not None and (
+                        not isinstance(api_error, dict)
+                        or api_error.get("code") not in {"maxlag", "ratelimited"}
+                    ):
+                        code = (
+                            api_error.get("code", "unknown")
+                            if isinstance(api_error, dict)
+                            else "unknown"
+                        )
+                        raise SourceUnavailable(
+                            f"Commons API error {code}; request refused, not cached"
+                        )
+                if result.status_code in {429, 500, 502, 503, 504} or api_error:
                     if attempt == 2:
                         raise SourceUnavailable(
-                            f"{host}: HTTP {result.status_code}; retry later"
+                            f"{host}: "
+                            + (
+                                "API " + api_error["code"]
+                                if api_error
+                                else f"HTTP {result.status_code}"
+                            )
+                            + "; retry later"
                         )
                     retry = result.headers.get("Retry-After", "")
                     seconds = int(retry) if retry.isdecimal() else 0
@@ -148,7 +195,12 @@ class PoliteClient:
                         raise SourceUnavailable(
                             f"{host}: Retry-After requires a longer delay; resume later"
                         )
-                    self.sleep(max(2**attempt, seconds))
+                    self.sleep(
+                        max(
+                            5 * 2**attempt if metadata_request(url) else 2**attempt,
+                            seconds,
+                        )
+                    )
                     continue
                 if result.status_code in {401, 403}:
                     raise SourceUnavailable(
@@ -245,9 +297,31 @@ class PoliteClient:
                 f"{host}: robots.txt disallows GET {url}; {result['robots_rule']}; User-Agent: {self.user_agent}; API request not sent (HTTP status: none)"
             )
 
+    def _access_policy(self, url):
+        self.validate_url(url)
+        if self.commons_api_policy == "documented-api" and metadata_request(url):
+            self.record(
+                phase="api_policy",
+                endpoint=url,
+                http_status=None,
+                request_sent=False,
+                allowed=True,
+                policy_basis=POLICY_BASIS,
+                policy_reference=POLICY_REFERENCE,
+                robots_applied=False,
+            )
+            return
+        self._robots(url)
+
+    def _prepare_url(self, url):
+        self.validate_url(url)
+        if metadata_request(url) and "maxlag" not in httpx.URL(url).params:
+            url = str(httpx.URL(url).copy_merge_params({"maxlag": "5"}))
+        return url
+
     def get(self, url, params=None, limit=2_000_000):
         url = str(httpx.URL(url, params=params)) if params else url
-        self.validate_url(url)
+        url = self._prepare_url(url)
         key = hashlib.sha256(url.encode()).hexdigest()
         meta = self.root / (key + ".json")
         bodyfile = self.root / (key + ".body")
@@ -266,7 +340,8 @@ class PoliteClient:
                     cached = None
             except (OSError, ValueError, KeyError, SourceUnavailable):
                 cached = None
-        # robots is always checked for online use, including conditional refreshes.
+        # Select the documented API policy only for scoped Commons metadata reads.
+        # All other online requests, including redirects, retain robots checks.
         # A previously fetched response can be reused offline without another request.
         if cached and not self.refresh and self.clock() - cached["fetched"] < 86400:
             self.cache_hits += 1
@@ -276,7 +351,7 @@ class PoliteClient:
                 headers=cached["headers"],
                 request=httpx.Request("GET", cached["url"]),
             )
-        self._robots(url)
+        self._access_policy(url)
         headers = {}
         if cached:
             if cached["headers"].get("etag"):
@@ -287,9 +362,10 @@ class PoliteClient:
         for _ in range(4):
             if result.status_code not in {301, 302, 303, 307, 308}:
                 break
-            url = str(result.request.url.join(result.headers.get("location", "")))
-            self.validate_url(url)
-            self._robots(url)
+            url = self._prepare_url(
+                str(result.request.url.join(result.headers.get("location", "")))
+            )
+            self._access_policy(url)
             result = self._wire(url, limit=limit)
         if result.status_code == 304 and cached:
             self.cache_hits += 1

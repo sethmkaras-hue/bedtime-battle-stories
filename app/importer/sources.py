@@ -7,10 +7,11 @@ import re
 from urllib.parse import quote, urlsplit
 from app.library import normalize
 from .network import SourceUnavailable
+from .api_policy import COMMONS_API
 
 PBDB = "https://paleobiodb.org/data1.2/taxa/list.json"
 GBIF = "https://api.gbif.org/v1/species/match"
-COMMONS = "https://commons.wikimedia.org/w/api.php"
+COMMONS = COMMONS_API
 WIKIDATA = "https://www.wikidata.org/w/api.php"
 
 

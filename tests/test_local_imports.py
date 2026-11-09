@@ -24,6 +24,7 @@ WMF_RULES = "User-agent: *\nAllow: /w/api.php?action=mobileview&\nAllow: /w/load
 def test_wikimedia_rule_logs_endpoint_method_status_rule_and_identity(
     tmp_path, monkeypatch
 ):
+    monkeypatch.setenv("BBS_COMMONS_API_POLICY", "robots")
     ua = "BedtimeBattleStoriesImporter/1.0 (+https://example.test/contact)"
     monkeypatch.setenv("BBS_IMPORT_USER_AGENT", ua)
     calls = []
@@ -44,7 +45,9 @@ def test_wikimedia_rule_logs_endpoint_method_status_rule_and_identity(
                 {"action": "query", "format": "json"},
             )
         event = client.events[-1]
-        assert event["endpoint"].endswith("/w/api.php?action=query&format=json")
+        assert event["endpoint"].endswith(
+            "/w/api.php?action=query&format=json&maxlag=5"
+        )
         assert event["method"] == "GET" and event["user_agent"] == ua
         assert event["http_status"] is None and event["request_sent"] is False
         assert event["robots_http_status"] == 200 and event["robots_group"] == "*"
@@ -61,7 +64,7 @@ def test_policy_uses_actual_ua_wildcards_and_most_specific_allow(tmp_path, monke
         "BBS_IMPORT_USER_AGENT",
         "BedtimeBattleStoriesImporter/2.0 (+https://example.test)",
     )
-    policy = "User-agent: *\nDisallow: /\n\nUser-agent: BedtimeBattleStoriesImporter\nDisallow: /w/*\nAllow: /w/api.php?action=query&*\n"
+    policy = "User-agent: *\nDisallow: /\n\nUser-agent: BedtimeBattleStoriesImporter\nDisallow: /w/*\nAllow: /w/index.php?action=query&*\n"
     calls = []
 
     def handler(request):
@@ -77,14 +80,14 @@ def test_policy_uses_actual_ua_wildcards_and_most_specific_allow(tmp_path, monke
     )
     try:
         assert client.json(
-            "https://commons.wikimedia.org/w/api.php",
+            "https://commons.wikimedia.org/w/index.php",
             {"action": "query", "format": "json"},
         ) == {"ok": True}
         event = next(e for e in client.events if e["phase"] == "robots")
         assert (
             event["allowed"] and event["robots_group"] == "bedtimebattlestoriesimporter"
         )
-        assert event["robots_rule"].startswith("Allow: /w/api.php")
+        assert event["robots_rule"].startswith("Allow: /w/index.php")
         assert len(calls) == 2
     finally:
         client.close()
