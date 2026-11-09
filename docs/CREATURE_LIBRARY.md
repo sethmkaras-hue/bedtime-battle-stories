@@ -246,3 +246,109 @@ All supplied guides enter the pending queue as unverified. Existing approved pro
 Offline regression tests cover Commons-only search/download/WebP reuse, optional Wikidata robots denial, exact-species and license rejection, missing-image fallback, JSON and saved-HTML references, section isolation, checkpoint changes, reviewed-data preservation, and parent-approved generation/cache reuse. Network probes for Commons, NHM and Usborne were blocked by the cloud proxy. These mocked tests do not claim any newly acquired real images, researched guidance or audible quality validation.
 
 Validation for this discovery fix: **117 tests passed on Python 3.14** with media dependencies. Core-only Python 3.14 and Python 3.12 each passed 114 tests with three optional media checks skipped. The mobile Chromium parent-review regression also passed, including supplied-reference metadata display, deliberate approval and logout. Audio generation in the new integration test uses a deterministic local fixture provider, not a real pronunciation-quality assessment.
+
+## Access-policy diagnosis, local images and CSV guidance
+
+Update the Python 3.14 environment first. Protego 0.6.0 is now a core dependency for robots wildcard/specificity handling; its version is pinned because diagnostic reporting inspects the winning rule. The app still starts without media/audio dependencies or local models.
+
+```bash
+.venv/bin/python -m pip install -r requirements.txt -r requirements-media.txt
+./IMPORT_CREATURE_LIBRARY.sh --diagnose-commons \
+  --scientific-name 'Tyrannosaurus' --report /tmp/commons-access.json
+```
+
+The diagnostic does not initialize or modify the app database, import content or generate audio. It uses a fresh temporary HTTP cache and writes only an explicitly requested report. The report identifies the complete requested URL/query, GET method, actual importer User-Agent, robots URL/status, winning user-agent group/rule, policy snapshot hash, whether the request was sent, and actual HTTP status for attempted requests. The ordinary importer also includes an `access_log` (latest 2,000 events); normal HTTP caches retain `robots-<sha256>.txt` snapshots. Robots and API responses are separate events: **a robots rejection means the API was never sent and has no HTTP status**, even if robots.txt returned 200. Proxy/transport failures are reported separately. Diagnostic temporary snapshots are removed when it exits; the report retains the matching rule and hash.
+
+The requested endpoint is Wikimedia's documented [Action API](https://www.mediawiki.org/wiki/API:Main_page), `https://commons.wikimedia.org/w/api.php`, using `action=query`, `generator=search` and `prop=imageinfo`, as described by [API:Search](https://www.mediawiki.org/wiki/API:Search) and [API:Imageinfo](https://www.mediawiki.org/wiki/API:Imageinfo). GET is supported; this is not an HTML search scrape. Wikimedia provides [API etiquette](https://www.mediawiki.org/wiki/API:Etiquette) and a [User-Agent policy](https://foundation.wikimedia.org/wiki/Policy:Wikimedia_Foundation_User-Agent_Policy) for programmatic clients. That does not establish that this importer can fetch a particular URL under your instruction to honor robots.
+
+The [published Wikimedia deployment template](https://github.com/wikimedia/operations-mediawiki-config/blob/38b99ce210bb6d2e09319dce76848f74c5fc90b3/robots.txt#L148) contains:
+
+```text
+User-agent: *
+Allow: /w/api.php?action=mobileview&
+Allow: /w/load.php?
+Disallow: /w/
+```
+
+The broad `/w/` rule covers our `action=query` image request. The mobileview exception is a different API operation; it does not authorize image search. Wikimedia's deployment script appends per-wiki rules, so the actual fetched Commons policy remains authoritative. This source-template inspection explains the reported rejection but is not a capture of your server's live robots.txt. Cloud access is still blocked by the proxy before robots retrieval; no live Commons HTTP status or site-specific winning rule is claimed here. Run the diagnostic above on the Ubuntu server to capture that distinction precisely.
+
+The importer checks the **same actual identity** used on the wire, handles the most specific matching group/rule, and keeps access fail-closed when policy is unavailable. A custom `BBS_IMPORT_USER_AGENT` must start with `BedtimeBattleStoriesImporter/`; add a truthful version/contact, for example `BedtimeBattleStoriesImporter/1.0 (+https://YOUR-CONTACT-PAGE)`. Do not substitute a browser identity. The code does not switch verbs, actions, hosts or paths to evade a prohibition, and does not reinterpret API documentation as permission to ignore robots.
+
+### Local Commons and alternative licensed images
+
+Use images and metadata acquired through an authorized interface or otherwise supplied with clear reuse rights. This import path does not fetch the cited site. Keep the image, metadata and manifest together; relative paths must resolve inside the manifest directory. Manifests/metadata are limited to 2 MB, originals to 20 MB, and decoded images to 25 megapixels. Source and image SHA-256 values become part of resume identity; modified originals are rejected if they change during acquisition. Existing approved artwork is protected until another explicit parent decision.
+
+A manifest template (replace all placeholders with actual researched values):
+
+```json
+{
+  "schema_version": 1,
+  "entries": [{
+    "scientific_name": "EXACT NAME FROM YOUR LIBRARY",
+    "image_file": "original.jpg",
+    "metadata_file": "commons-metadata.json",
+    "source_kind": "commons",
+    "title": "File:EXACT COMMONS FILE TITLE.jpg",
+    "retrieved_on": "YYYY-MM-DD"
+  }]
+}
+```
+
+For Commons, metadata is a saved Action API query response with `pages` and `imageinfo` including `extmetadata`, or a single page object with `title` and `imageinfo`. Both dictionary and list `pages` formats are accepted. `title` selects exactly one file when an export has multiple pages. Its original Commons file page, download URL, exact described taxon, creator, supported license and matching license URL must be present. A filename alone remains insufficient. The local original is treated as supplied evidence for adult inspection, not cryptographic proof of remote provenance.
+
+Alternative sources investigated include [Smithsonian Open Access](https://www.si.edu/openaccess) and its [official metadata repository](https://github.com/Smithsonian/OpenAccess). The repository documents NMNH fish/paleobiology units and downloadable metadata, with archives now hosted on AWS rather than GitHub. Only individually marked CC0/open media qualify; an institution name or open metadata license does **not** establish image rights. Many museum records depict preserved specimens/fossils, which may not suit these cards. Government/NOAA shark photographs and creator-published paleoart are also research leads only: inspect each work's actual rights, authorship, taxon and reuse conditions. Do not assume all government-hosted or museum-hosted works are public domain. No bulk museum/NOAA crawler was added or rights asserted for inaccessible images.
+
+For an alternative source, set `source_kind` to `licensed_reference` and supply a normalized metadata JSON file with these fields (again replace every placeholder):
+
+```json
+{
+  "title": "ACTUAL WORK TITLE",
+  "identified_taxon": "EXACT NAME FROM YOUR LIBRARY",
+  "source_url": "https://PUBLISHER/ACTUAL-WORK-PAGE",
+  "creator": "ACTUAL CREATOR",
+  "license": "CC0-1.0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "description": "LITERAL TAXON-IDENTIFYING SOURCE CAPTION",
+  "identity_evidence": "WHERE THE SOURCE IDENTIFIES THE DEPICTED TAXON",
+  "identity_status": "uncertain"
+}
+```
+
+Use the **actual** license, never the example's CC0 by default. The supported identifiers remain CC0-1.0, Public-Domain, CC-BY-3.0/4.0 and CC-BY-SA-3.0/4.0, with matching Creative Commons declaration URLs. Set identity_status to `supported` only after inspecting exact source evidence; unknown/mismatched identification stays queued. Descriptive captions still undergo subject and image-medium screening. All candidates remain pending until an adult inspects the image, evidence, credit and license. Parent review shows the supplied caption/evidence; it cannot approve unsupported candidates merely by ticking a box. Correct the source-backed metadata and rerun after resolving uncertainty.
+
+```bash
+# Entirely offline; no robots/source/image requests:
+./IMPORT_CREATURE_LIBRARY.sh --pilot 10 --offline \
+  --image-references /path/to/bundle/images.json --skip-audio --dry-run
+./IMPORT_CREATURE_LIBRARY.sh --pilot 10 --offline \
+  --image-references /path/to/bundle/images.json --skip-audio
+```
+
+`--offline --all` processes existing records only and does not discover new remote taxa. Local references for unknown scientific identities do not create invented records. Without --offline, supplied images take precedence for matching creatures; other records still use normal policy-checked acquisition. Supported supplied originals enter the same quarantined WebP preview and authenticated parent-approval pipeline. Approval publishes the existing optimized 320/640/960 WebP variants and attribution. Unsuitable images preserve the prior image/placeholder. Dry runs do not write previews or importer state. Exit code 2 remains expected while review or other coverage is unresolved.
+
+### CSV pronunciation references
+
+The existing `--pronunciation-references` now accepts UTF-8 CSV (including BOM) as well as JSON/saved-HTML manifests. Columns use the JSON entry names. Required structured-guidance columns are `scientific_name,source_url,publisher,retrieved_on,phonetic,stress,tts_text`. Optional columns are `status,verified_by,checked_on,alternatives`; CSV alternatives use semicolon separators. `status` defaults to unverified. A supplied verified assertion requires both reviewer and review date. Duplicate columns/identities, extra row fields, missing stress/guide and non-HTTPS citations are rejected. There is no AI pronunciation invention.
+
+```bash
+./IMPORT_CREATURE_LIBRARY.sh --pilot 10 --offline \
+  --image-references /path/to/bundle/images.json \
+  --pronunciation-references /path/to/guidance.csv --skip-audio
+# Settings → Parent content review: inspect and approve each sourced guide/image.
+bash GENERATE_PRONUNCIATIONS.sh --provider kokoro
+```
+
+Literal phonetic spelling, stress, source URL, alternatives and original source verification status/reviewer/date are retained. App verification remains pending until explicit parent approval. The existing verified-only CPU generator and persistent cache are unchanged; a child's speaker tap never invokes synthesis. No genuinely verified new guidance is bundled in this change.
+
+### Default browsing and regression coverage
+
+Selection now starts at **All Creatures within the chosen world**, rather than its short popular list. The creature book starts with all categories. Popular/featured trails, category worlds and search still work; exactly eight compatible eligible entrants are still required. Unknown-habitat creatures remain browseable but cannot become invalid tournament entrants. All cards are in the DOM, with lazy/asynchronous images, batched insertion and CSS off-screen rendering where supported. Browsers without that CSS feature still show the entire grid. No Show All action is required.
+
+Python 3.14 with media dependencies passes 135 tests. Core-only Python 3.14 and Python 3.12 each pass 124 with 11 optional media tests skipped. Offline fixtures cover Wikimedia policy matching/HTTP distinctions, source identity/license checks, alternative and manual Commons imports, dry runs, protected artwork, parent publication, and CSV guidance. The live diagnostic reports a cloud ProxyError and no API request. Mobile Chromium passes full-catalog visibility (110 dinosaur cards and 164 book entries), search/category filters, scrolling/lazy images, eight-selection enforcement, parent review, prepared-file playback and the complete seven-battle regression. These checks do not claim real licensed image acquisition, audible pronunciation quality or physical Safari/Android validation.
+
+To repeat the browser checks with development dependencies and Chromium installed:
+
+```bash
+PYTHONPATH=. .venv/bin/python tests/selection_visibility_smoke.py --full-regression
+PYTHONPATH=. .venv/bin/python tests/import_review_smoke.py
+```

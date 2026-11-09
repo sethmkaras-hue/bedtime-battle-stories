@@ -118,6 +118,19 @@
           (image.issues || []).join("; "),
       );
       text(card, image.attribution || "Attribution missing");
+      text(
+        card,
+        image.description || "No descriptive identity evidence supplied",
+      );
+      if (image.identity_evidence)
+        text(card, "Identity evidence: " + image.identity_evidence);
+      if (image.acquisition === "supplied_image")
+        text(
+          card,
+          "Locally supplied image · " +
+            image.source_kind +
+            " · source and reuse rights still require adult inspection.",
+        );
       link(card, "Original image and credit", image.original_source_url);
       link(card, "License", image.license_url);
       if (image.preview_url) {

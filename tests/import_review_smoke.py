@@ -85,7 +85,17 @@ def run():
                             "supports": ["time_period"],
                         }
                     ],
-                    "images": [],
+                    "images": [
+                        {
+                            "title": "Synthetic unresolved image",
+                            "description": "Synthetic caption, not real research",
+                            "identity_evidence": "Fixture identity evidence",
+                            "acquisition": "supplied_image",
+                            "source_kind": "licensed_reference",
+                            "supported": False,
+                            "issues": ["Awaiting exact identity research"],
+                        }
+                    ],
                     "pronunciation": {
                         "phonetic": "fixture-GUIDE",
                         "stress": "GUIDE",
@@ -127,6 +137,7 @@ def run():
                 card = page.locator(".parent-proposal").first
                 assert "Synthetic educational fixture" in card.inner_text()
                 assert "Fixture alternate" in card.inner_text()
+                assert "Fixture identity evidence" in card.inner_text()
                 card.locator("input[data-scope=science]").check()
                 card.locator("input[type=checkbox]").last.check()
                 card.get_by_role("button", name="Approve inspected updates").click()

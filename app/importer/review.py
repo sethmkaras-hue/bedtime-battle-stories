@@ -138,7 +138,11 @@ def approve(db, store, pid, scopes, image_index=0, pron_edits=None):
         metadata.update(
             placeholder=False,
             path="/static/creatures/pending.webp",
-            modifications="Source downloaded without altering species identity",
+            modifications=(
+                "Locally supplied source; taxon identity inspected by parent"
+                if image.get("acquisition") == "supplied_image"
+                else "Source downloaded without altering species identity"
+            ),
             verified_by="parent-review",
             checked_on=date.today().isoformat(),
         )
