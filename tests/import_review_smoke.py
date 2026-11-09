@@ -86,7 +86,17 @@ def run():
                         }
                     ],
                     "images": [],
-                    "pronunciation": None,
+                    "pronunciation": {
+                        "phonetic": "fixture-GUIDE",
+                        "stress": "GUIDE",
+                        "tts_text": "fixture guide",
+                        "source_url": "https://example.test/reference",
+                        "acquisition": "supplied_reference",
+                        "publisher": "Synthetic educational fixture",
+                        "retrieved_on": "2026-11-01",
+                        "source_verification": {"status": "unverified"},
+                        "alternatives": ["Fixture alternate"],
+                    },
                     "issues": [],
                     "stage": "imported_candidates",
                 },
@@ -115,6 +125,8 @@ def run():
                 page.locator("#parent-login button").click()
                 page.locator(".parent-proposal").wait_for()
                 card = page.locator(".parent-proposal").first
+                assert "Synthetic educational fixture" in card.inner_text()
+                assert "Fixture alternate" in card.inner_text()
                 card.locator("input[data-scope=science]").check()
                 card.locator("input[type=checkbox]").last.check()
                 card.get_by_role("button", name="Approve inspected updates").click()

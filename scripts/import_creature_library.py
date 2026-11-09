@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app import main, library
 from app.importer.runner import execute
 from app.importer.store import Store, root, backup
-from app.importer.network import atomic
+from app.importer.network import atomic, SourceUnavailable
 
 
 def cli():
@@ -47,9 +47,27 @@ def cli():
     p.add_argument("--work-dir", type=Path, default=root())
     p.add_argument("--report", type=Path)
     p.add_argument("--pronunciation-index", type=Path)
+    p.add_argument(
+        "--pronunciation-references",
+        type=Path,
+        help="Local JSON manifest containing sourced guidance or saved HTML references; no source requests",
+    )
+    p.add_argument(
+        "--use-wikidata",
+        action="store_true",
+        help="Optionally corroborate Commons descriptions with Wikidata/structured depicts",
+    )
     args = p.parse_args()
     if args.pilot is not None and not 1 <= args.pilot <= 50:
         p.error("--pilot must be between 1 and 50")
+    references = None
+    if args.pronunciation_references:
+        from app.importer.pronunciation_files import load_references
+
+        try:
+            references = load_references(args.pronunciation_references)
+        except (ValueError, OSError, SourceUnavailable) as error:
+            p.error(str(error))
     if args.review:
         store = Store(args.work_dir)
         try:
@@ -81,6 +99,8 @@ def cli():
             not args.propose_only,
             pronunciation_index=index,
             museum_pages=args.allow_museum_pages,
+            pronunciation_references=references,
+            use_wikidata=args.use_wikidata,
         )
         result["backup_created"] = saved is not None
         if not args.skip_audio and not args.dry_run:

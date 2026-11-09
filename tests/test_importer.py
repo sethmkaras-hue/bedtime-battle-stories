@@ -456,6 +456,7 @@ def test_image_acquisition_is_cached_and_staged_not_canonical(database, tmp_path
         a["images"][0]["supported"]
         and (tmp_path / "staging" / a["images"][0]["preview_file"]).is_file()
     )
+    assert not any("wikidata.org" in url for url in calls)
     before = len(calls)
     collect(client, record, tmp_path / "staging", museum_pages=True)
     assert len(calls) == before  # All response and original-image bytes reused.

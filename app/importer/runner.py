@@ -25,12 +25,16 @@ PILOT = [
     "Parasaurolophus",
     "Allosaurus",
 ]
-VERSION = 1
+VERSION = 2
 
 
-def digest(record):
+def digest(record, inputs=None):
     return hashlib.sha256(
-        (str(VERSION) + json.dumps(record, sort_keys=True)).encode()
+        (
+            str(VERSION)
+            + json.dumps(record, sort_keys=True)
+            + (json.dumps(inputs, sort_keys=True) if inputs else "")
+        ).encode()
     ).hexdigest()
 
 
@@ -74,7 +78,14 @@ def preview_image(client, candidate, folder):
 
 
 def collect(
-    client, record, folder, dry_run=False, pronunciation_index=None, museum_pages=False
+    client,
+    record,
+    folder,
+    dry_run=False,
+    pronunciation_index=None,
+    museum_pages=False,
+    pronunciation_references=None,
+    use_wikidata=False,
 ):
     patch, evidence, issues = sources.science(client, record)
     if museum_pages:
@@ -82,15 +93,30 @@ def collect(
         patch.update(museum)
         evidence += refs
         issues += errors
-        pron, errors = sources.pronunciation(client, record, pronunciation_index)
-        issues += errors
     else:
-        pron = None
         issues.append(
             "Museum/educational page acquisition needs a source-terms review; enable --allow-museum-pages after reviewing site terms."
         )
+    pron = (pronunciation_references or {}).get(
+        library.normalize(record["scientific_name"])
+    )
+    if pron is None and museum_pages:
+        pron, errors = sources.pronunciation(client, record, pronunciation_index)
+        issues += errors
+    if pron is None:
+        issues.append(
+            "No sourced pronunciation guidance; supply --pronunciation-references or review permitted educational sources."
+        )
     try:
-        candidates = sources.images(client, record)
+        candidates = (
+            sources.images(client, record, use_wikidata=True)
+            if use_wikidata
+            else sources.images(client, record)
+        )
+        if not candidates:
+            issues.append(
+                "No Commons image candidates; retain the existing image or placeholder."
+            )
     except (SourceUnavailable, ValueError, KeyError) as error:
         candidates = []
         issues.append(str(error))
@@ -199,7 +225,22 @@ def execute(
     pronunciation_index=None,
     progress=print,
     museum_pages=False,
+    pronunciation_references=None,
+    use_wikidata=False,
 ):
+    inputs = (
+        {
+            "references": pronunciation_references,
+            "index": pronunciation_index,
+            "museum_pages": museum_pages,
+            "wikidata": use_wikidata,
+        }
+        if pronunciation_references
+        or pronunciation_index
+        or museum_pages
+        or use_wikidata
+        else None
+    )
     folder = Path(folder)
     store = Store(folder, memory=dry_run)
     own_client = client is None
@@ -293,7 +334,7 @@ def execute(
                 and record["pronunciation"]["status"] == "verified"
             ):
                 continue
-            fingerprint = digest(record)
+            fingerprint = digest(record, inputs)
             checkpoint = store.checkpoint(record["stable_key"], fingerprint)
             if not refresh and checkpoint:
                 report["resumed"] += 1
@@ -320,13 +361,20 @@ def execute(
                         with store.conn:
                             store.conn.execute(
                                 "UPDATE checkpoints SET input_hash=? WHERE stable_key=?",
-                                (digest(updated), record["stable_key"]),
+                                (digest(updated, inputs), record["stable_key"]),
                             )
                 continue
             progress(f"[{n + 1}/{len(records)}] {record['display_name']}", flush=True)
             try:
                 proposal = collect(
-                    client, record, folder, dry_run, pronunciation_index, museum_pages
+                    client,
+                    record,
+                    folder,
+                    dry_run,
+                    pronunciation_index,
+                    museum_pages,
+                    pronunciation_references,
+                    use_wikidata,
                 )
                 if dry_run:
                     pid = None
@@ -368,7 +416,7 @@ def execute(
                     with store.conn:
                         store.conn.execute(
                             "UPDATE checkpoints SET input_hash=? WHERE stable_key=?",
-                            (digest(updated), record["stable_key"]),
+                            (digest(updated, inputs), record["stable_key"]),
                         )
             except (SourceUnavailable, ValueError, OSError) as error:
                 report["errors"].append(
