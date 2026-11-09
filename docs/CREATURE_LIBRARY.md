@@ -249,6 +249,8 @@ Validation for this discovery fix: **117 tests passed on Python 3.14** with medi
 
 ## Access-policy diagnosis, local images and CSV guidance
 
+**Current API behavior:** the exact Commons read-only JSON API now has a documented programmatic-interface exception. The strict crawler-policy diagnosis below describes the earlier behavior and remains available with `BBS_COMMONS_API_POLICY=robots`. See [the current API policy, evidence limits and scope](COMMONS_API_POLICY.md). Ordinary webpage scraping still requires robots permission.
+
 Update the Python 3.14 environment first. Protego 0.6.0 is now a core dependency for robots wildcard/specificity handling; its version is pinned because diagnostic reporting inspects the winning rule. The app still starts without media/audio dependencies or local models.
 
 ```bash
@@ -272,7 +274,7 @@ Disallow: /w/
 
 The broad `/w/` rule covers our `action=query` image request. The mobileview exception is a different API operation; it does not authorize image search. Wikimedia's deployment script appends per-wiki rules, so the actual fetched Commons policy remains authoritative. This source-template inspection explains the reported rejection but is not a capture of your server's live robots.txt. Cloud access is still blocked by the proxy before robots retrieval; no live Commons HTTP status or site-specific winning rule is claimed here. Run the diagnostic above on the Ubuntu server to capture that distinction precisely.
 
-The importer checks the **same actual identity** used on the wire, handles the most specific matching group/rule, and keeps access fail-closed when policy is unavailable. A custom `BBS_IMPORT_USER_AGENT` must start with `BedtimeBattleStoriesImporter/`; add a truthful version/contact, for example `BedtimeBattleStoriesImporter/1.0 (+https://YOUR-CONTACT-PAGE)`. Do not substitute a browser identity. The code does not switch verbs, actions, hosts or paths to evade a prohibition, and does not reinterpret API documentation as permission to ignore robots.
+The importer checks the **same actual identity** used on the wire, handles the most specific matching group/rule, and keeps access fail-closed when policy is unavailable. A custom `BBS_IMPORT_USER_AGENT` must start with `BedtimeBattleStoriesImporter/`; add a truthful version/contact, for example `BedtimeBattleStoriesImporter/1.0 (+https://YOUR-CONTACT-PAGE)`. Do not substitute a browser identity. The code does not switch verbs, actions, hosts or paths to evade a prohibition. The newer scoped API policy is a separate programmatic-interface decision; it does not disable robots for webpage scraping.
 
 ### Local Commons and alternative licensed images
 
@@ -352,3 +354,8 @@ To repeat the browser checks with development dependencies and Chromium installe
 PYTHONPATH=. .venv/bin/python tests/selection_visibility_smoke.py --full-regression
 PYTHONPATH=. .venv/bin/python tests/import_review_smoke.py
 ```
+
+
+### Commons API-policy update
+
+The scoped API exception, maxlag/rate-limit behavior, strict fallback and current test evidence are documented in [COMMONS_API_POLICY.md](COMMONS_API_POLICY.md). API diagnostics now distinguish local programmatic-policy allowance (`api_policy`) from HTTP acceptance or proxy failure. A cloud proxy failure does not establish a Wikimedia ban. Existing local imports, license/taxon checks, parent approval and audio caches remain in place.

@@ -81,7 +81,7 @@ def test_commons_search_does_not_require_wikidata(tmp_path, optional):
             and result[0]["taxon_entity"] is None
         )
         assert (
-            calls[1].url.host == "commons.wikimedia.org"
+            calls[0].url.host == "commons.wikimedia.org"
         )  # search precedes optional lookup
         if not optional:
             assert all(r.url.host != "www.wikidata.org" for r in calls)

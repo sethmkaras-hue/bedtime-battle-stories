@@ -163,3 +163,6 @@ Image discovery now searches Commons directly; Wikidata is optional. To retry an
 
 
 Commons robots failures now include endpoint, method, User-Agent, policy rule and HTTP-status diagnostics. Run `./IMPORT_CREATURE_LIBRARY.sh --diagnose-commons --report /tmp/commons-access.json`. When source access is prohibited, use `--offline --image-references /path/to/images.json`; pronunciation references accept CSV and JSON. See [local-image formats, alternatives, policy diagnosis and CSV instructions](docs/CREATURE_LIBRARY.md#access-policy-diagnosis-local-images-and-csv-guidance). Selection and the creature book display all available creatures by default, with lazy images and the eight-entrant limit preserved.
+
+
+Documented read-only requests to the exact Commons Action API now use a scoped API policy rather than the webpage crawler restriction on `/w/`. Ordinary scraping still checks robots; server/proxy denials remain blocking. See [policy basis, scope, tests and strict-mode fallback](docs/COMMONS_API_POLICY.md). Retry with `./IMPORT_CREATURE_LIBRARY.sh --pilot 10 --refresh --skip-audio`.
