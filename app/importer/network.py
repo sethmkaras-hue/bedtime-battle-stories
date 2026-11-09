@@ -7,7 +7,8 @@ import os
 from pathlib import Path
 import time
 from urllib.parse import urlsplit
-from urllib.robotparser import RobotFileParser
+from collections import deque
+import logging
 import httpx
 
 HOSTS = {
@@ -57,6 +58,13 @@ class PoliteClient:
         self.delay = max(1, delay)
         self.sleep = sleep
         self.clock = clock
+        self.user_agent = os.environ.get("BBS_IMPORT_USER_AGENT", USER_AGENT)
+        if not self.user_agent.startswith("BedtimeBattleStoriesImporter/"):
+            raise ValueError(
+                "BBS_IMPORT_USER_AGENT must retain BedtimeBattleStoriesImporter/ identification"
+            )
+        self.events = deque(maxlen=2000)
+        self.robots_metadata = {}
         self.last = {}
         self.robots = {}
         self.requests = 0
@@ -65,8 +73,13 @@ class PoliteClient:
             transport=transport,
             timeout=25,
             follow_redirects=False,
-            headers={"User-Agent": os.environ.get("BBS_IMPORT_USER_AGENT", USER_AGENT)},
+            headers={"User-Agent": self.user_agent},
         )
+
+    def record(self, **event):
+        event = {"method": "GET", "user_agent": self.user_agent, **event}
+        self.events.append(event)
+        logging.getLogger(__name__).info("Importer access: %s", json.dumps(event))
 
     def close(self):
         self.client.close()
@@ -93,6 +106,12 @@ class PoliteClient:
             self.requests += 1
             try:
                 with self.client.stream("GET", url, headers=headers or {}) as response:
+                    self.record(
+                        endpoint=url,
+                        http_status=response.status_code,
+                        request_sent=True,
+                        phase="http",
+                    )
                     body = bytearray()
                     for chunk in response.iter_bytes():
                         body.extend(chunk)
@@ -137,10 +156,24 @@ class PoliteClient:
                     )
                 return result
             except httpx.ProxyError as error:
+                self.record(
+                    endpoint=url,
+                    http_status=None,
+                    request_sent=False,
+                    phase="proxy",
+                    error=type(error).__name__,
+                )
                 raise SourceUnavailable(
                     f"{host}: proxy/network policy rejected access ({type(error).__name__})"
                 ) from error
             except (httpx.TimeoutException, httpx.NetworkError) as error:
+                self.record(
+                    endpoint=url,
+                    http_status=None,
+                    request_sent=True,
+                    phase="transport",
+                    error=type(error).__name__,
+                )
                 if attempt == 2:
                     raise SourceUnavailable(
                         f"{host}: {type(error).__name__}; resume later"
@@ -149,28 +182,68 @@ class PoliteClient:
         raise SourceUnavailable("Request failed")
 
     def _robots(self, url):
+        from .policy import Protego, decision
+
         host = self.validate_url(url)
+        robots_url = "https://" + host + "/robots.txt"
         if host not in self.robots:
             try:
-                result = self._wire("https://" + host + "/robots.txt", limit=512_000)
+                result = self._wire(robots_url, limit=512_000)
+                self.robots_metadata[host] = {
+                    "robots_url": robots_url,
+                    "robots_http_status": result.status_code,
+                }
                 if result.status_code == 404:
                     self.robots[host] = None
                 elif result.status_code == 200:
-                    parser = RobotFileParser()
-                    parser.parse(result.text.splitlines())
-                    self.robots[host] = parser
-                    interval = parser.crawl_delay(USER_AGENT) or parser.crawl_delay("*")
+                    self.robots[host] = Protego.parse(result.text)
+                    sha = hashlib.sha256(result.content).hexdigest()
+                    atomic(self.root / ("robots-" + sha + ".txt"), result.content)
+                    self.robots_metadata[host]["robots_sha256"] = sha
+                    interval = self.robots[host].crawl_delay(self.user_agent)
                     if interval:
                         self.delay = max(self.delay, interval)
                 else:
-                    self.robots[host] = "unavailable"
+                    self.robots[host] = "HTTP " + str(result.status_code)
             except SourceUnavailable as error:
+                observed = next(
+                    (
+                        event.get("http_status")
+                        for event in reversed(self.events)
+                        if event.get("endpoint") == robots_url
+                        and event.get("phase") == "http"
+                    ),
+                    None,
+                )
+                self.robots_metadata[host] = {
+                    "robots_url": robots_url,
+                    "robots_http_status": observed,
+                }
                 self.robots[host] = str(error)
         policy = self.robots[host]
+        event = {
+            "phase": "robots",
+            "endpoint": url,
+            "http_status": None,
+            "request_sent": False,
+            "robots_url": robots_url,
+            "robots_http_status": None,
+            "robots_rule": None,
+            **self.robots_metadata.get(host, {}),
+        }
         if isinstance(policy, str):
+            self.record(**event, allowed=False, error=policy)
             raise SourceUnavailable("Robots/access policy unavailable: " + policy)
-        if policy is not None and not policy.can_fetch(USER_AGENT, url):
-            raise SourceUnavailable(f"{host}: robots.txt disallows this URL")
+        result = (
+            decision(policy, url, self.user_agent)
+            if policy
+            else {"allowed": True, "robots_rule": None, "robots_group": None}
+        )
+        self.record(**{**event, **result})
+        if not result["allowed"]:
+            raise SourceUnavailable(
+                f"{host}: robots.txt disallows GET {url}; {result['robots_rule']}; User-Agent: {self.user_agent}; API request not sent (HTTP status: none)"
+            )
 
     def get(self, url, params=None, limit=2_000_000):
         url = str(httpx.URL(url, params=params)) if params else url

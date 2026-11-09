@@ -145,6 +145,7 @@ function picture(c) {
   }
   if (c.artwork_placeholder === false) img.dataset.realImage = "true";
   img.loading = "lazy";
+  img.decoding = "async";
   img.onerror = () => {
     img.onerror = null;
     img.src = illustration({ ...c, image_reference: null });
@@ -245,10 +246,9 @@ function render() {
       ? "Popular Creatures"
       : "All Creatures";
   $("library-status").textContent = rows.length
-    ? "Tap a creature to join your adventure."
+    ? rows.length + " creatures to explore. Tap a creature to join your adventure."
     : "No creatures found. Try another name.";
-  $("creatures").replaceChildren();
-  rows.forEach((c) => $("creatures").append(creatureCard(c, true)));
+  $("creatures").replaceChildren(...rows.map((c) => creatureCard(c, true)));
 }
 function creatureCard(c, selectable) {
   const card = document.createElement("article");
@@ -304,7 +304,7 @@ async function choose(value) {
       : rows;
   selected = [];
   $("search").value = "";
-  $("browse-group").value = "popular";
+  $("browse-group").value = "all";
   render();
   show("selection");
 }
@@ -886,6 +886,7 @@ window.addEventListener("resize", () => {
 $("browse-encyclopedia").onclick = guarded(async () => {
   encyclopediaLibrary = await api("/api/creatures");
   $("encyclopedia-search").value = "";
+  $("discovery-filter").value = "all";
   renderEncyclopedia();
   show("encyclopedia");
 });

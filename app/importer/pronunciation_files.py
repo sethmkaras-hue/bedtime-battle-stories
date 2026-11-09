@@ -4,6 +4,7 @@ A file is evidence for adult review, never permission to scrape or automatic
 pronunciation certification. Paths are only accepted by the local CLI.
 """
 
+import csv
 from datetime import date
 import hashlib
 import json
@@ -45,7 +46,31 @@ def load_references(path):
     path = Path(path).resolve()
     if path.stat().st_size > 2_000_000:
         raise ValueError("Pronunciation manifest exceeds 2 MB")
-    data = json.loads(path.read_text(encoding="utf-8"))
+    if path.suffix.lower() == ".csv":
+        with path.open(encoding="utf-8-sig", newline="") as stream:
+            reader = csv.DictReader(stream)
+            headers = reader.fieldnames or []
+            if (
+                not headers
+                or len(set(headers)) != len(headers)
+                or not set(headers) <= set(Reference.model_fields)
+            ):
+                raise ValueError("CSV requires unique supported reference column names")
+            entries = []
+            for row in reader:
+                if None in row:
+                    raise ValueError("CSV row has more fields than its header")
+                entry = {k: v for k, v in row.items() if v not in {None, ""}}
+                if not entry:
+                    continue
+                if "alternatives" in entry:
+                    entry["alternatives"] = [
+                        s.strip() for s in entry["alternatives"].split(";") if s.strip()
+                    ]
+                entries.append(entry)
+            data = {"schema_version": 1, "entries": entries}
+    else:
+        data = json.loads(path.read_text(encoding="utf-8"))
     if (
         not isinstance(data, dict)
         or set(data) != {"schema_version", "entries"}

@@ -287,7 +287,7 @@ def taxon_entity(client, name):
     return exact[0]
 
 
-def image_candidate(info, page, depicts, qid, name, living):
+def image_candidate(info, page, depicts, qid, name, living, source_kind="commons"):
     ext = info.get("extmetadata", {})
     value = lambda k: plain(ext.get(k, {}).get("value", ""))
     label = value("LicenseShortName")
@@ -353,14 +353,23 @@ def image_candidate(info, page, depicts, qid, name, living):
     }
     source_page = urlsplit(info.get("descriptionurl") or "")
     asset = urlsplit(info.get("url") or "")
-    if (
+    if source_kind == "commons" and (
         source_page.hostname != "commons.wikimedia.org"
         or not source_page.path.startswith("/wiki/File:")
         or source_page.scheme not in {"http", "https"}
     ):
         reason.append("Original Commons file attribution page is missing")
-    if asset.scheme != "https" or asset.hostname != "upload.wikimedia.org":
+    if source_kind == "commons" and (
+        asset.scheme != "https" or asset.hostname != "upload.wikimedia.org"
+    ):
         reason.append("Commons original download URL is missing or unsupported")
+    if source_kind != "commons" and (
+        source_page.scheme != "https"
+        or not source_page.hostname
+        or source_page.username
+        or source_page.password
+    ):
+        reason.append("An HTTPS original attribution/source page is required")
     declaration = urlsplit(license_url)
     if (
         not creator
@@ -388,7 +397,11 @@ def image_candidate(info, page, depicts, qid, name, living):
         + str(info.get("descriptionurl", "")),
         "identified_taxon": name,
         "taxon_entity": qid,
-        "identity_evidence": "Commons file description"
+        "identity_evidence": (
+            "Commons file description"
+            if source_kind == "commons"
+            else "Supplied source description; adult inspection required"
+        )
         + (" and structured depicts" if qid else ""),
         "supported": not reason,
         "issues": reason,

@@ -3,7 +3,7 @@
 
 import argparse
 import json
-import os
+import tempfile
 from pathlib import Path
 import sqlite3
 import sys
@@ -21,6 +21,26 @@ def cli():
     mode.add_argument("--pilot", type=int)
     mode.add_argument("--all", action="store_true")
     mode.add_argument("--review", action="store_true")
+    mode.add_argument(
+        "--diagnose-commons",
+        action="store_true",
+        help="Report endpoint, method, robots rule/status and actual HTTP attempts without app changes",
+    )
+    p.add_argument(
+        "--scientific-name",
+        default="Tyrannosaurus",
+        help="Scientific name for the diagnostic Commons query",
+    )
+    p.add_argument(
+        "--image-references",
+        type=Path,
+        help="Local image manifest with saved Commons or licensed-source metadata and original files",
+    )
+    p.add_argument(
+        "--offline",
+        action="store_true",
+        help="Use supplied references only; make no network requests",
+    )
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--refresh", action="store_true")
     p.add_argument(
@@ -50,7 +70,7 @@ def cli():
     p.add_argument(
         "--pronunciation-references",
         type=Path,
-        help="Local JSON manifest containing sourced guidance or saved HTML references; no source requests",
+        help="Local CSV/JSON sourced guidance or saved-HTML manifest; no source requests",
     )
     p.add_argument(
         "--use-wikidata",
@@ -68,7 +88,46 @@ def cli():
             references = load_references(args.pronunciation_references)
         except (ValueError, OSError, SourceUnavailable) as error:
             p.error(str(error))
-    if args.review:
+    images = None
+    if args.image_references:
+        from app.importer.image_files import load_images
+
+        try:
+            images = load_images(args.image_references)
+        except (ValueError, OSError) as error:
+            p.error(str(error))
+    if args.offline and args.diagnose_commons:
+        p.error("--diagnose-commons requires an online policy check; omit --offline")
+    if args.diagnose_commons:
+        from app.importer.network import PoliteClient
+        from app.importer.sources import images as search_images, COMMONS
+
+        with tempfile.TemporaryDirectory(
+            prefix="bedtime-access-diagnostic-"
+        ) as temporary:
+            client = PoliteClient(temporary, refresh=True)
+            errors = []
+            try:
+                found = search_images(
+                    client,
+                    {"scientific_name": args.scientific_name, "category": "dinosaur"},
+                )
+            except (SourceUnavailable, ValueError) as error:
+                errors.append(str(error))
+                found = []
+            finally:
+                client.close()
+            result = {
+                "endpoint": COMMONS,
+                "method": "GET",
+                "errors": errors,
+                "candidate_count": len(found),
+                "proposals": [],
+                "access_log": list(client.events),
+                "http_requests": client.requests,
+                "user_agent": client.user_agent,
+            }
+    elif args.review:
         store = Store(args.work_dir)
         try:
             result = {"pending": store.proposals()}
@@ -101,6 +160,8 @@ def cli():
             museum_pages=args.allow_museum_pages,
             pronunciation_references=references,
             use_wikidata=args.use_wikidata,
+            image_references=images,
+            offline=args.offline,
         )
         result["backup_created"] = saved is not None
         if not args.skip_audio and not args.dry_run:

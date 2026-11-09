@@ -25,7 +25,7 @@ PILOT = [
     "Parasaurolophus",
     "Allosaurus",
 ]
-VERSION = 2
+VERSION = 3
 
 
 def digest(record, inputs=None):
@@ -39,13 +39,17 @@ def digest(record, inputs=None):
 
 
 def preview_image(client, candidate, folder):
-    from PIL import Image, ImageOps
-    import warnings
-
     response = client.get(candidate["download_url"], limit=20_000_000)
-    sha = hashlib.sha256(response.content).hexdigest()
+    return preview_bytes(response.content, candidate, folder)
+
+
+def preview_bytes(content, candidate, folder):
+    import warnings
+    from PIL import Image, ImageOps
+
+    sha = hashlib.sha256(content).hexdigest()
     original = folder / "originals" / (sha + ".image")
-    atomic(original, response.content)
+    atomic(original, content)
     preview = folder / "previews" / (sha + ".webp")
     preview.parent.mkdir(parents=True, exist_ok=True)
     if not preview.exists():
@@ -86,9 +90,15 @@ def collect(
     museum_pages=False,
     pronunciation_references=None,
     use_wikidata=False,
+    image_references=None,
+    offline=False,
 ):
-    patch, evidence, issues = sources.science(client, record)
-    if museum_pages:
+    patch, evidence, issues = (
+        ({}, [], ["Offline mode: online source research skipped."])
+        if offline
+        else sources.science(client, record)
+    )
+    if museum_pages and not offline:
         museum, refs, errors = sources.museum_facts(client, record)
         patch.update(museum)
         evidence += refs
@@ -100,7 +110,7 @@ def collect(
     pron = (pronunciation_references or {}).get(
         library.normalize(record["scientific_name"])
     )
-    if pron is None and museum_pages:
+    if pron is None and museum_pages and not offline:
         pron, errors = sources.pronunciation(client, record, pronunciation_index)
         issues += errors
     if pron is None:
@@ -108,11 +118,21 @@ def collect(
             "No sourced pronunciation guidance; supply --pronunciation-references or review permitted educational sources."
         )
     try:
-        candidates = (
-            sources.images(client, record, use_wikidata=True)
-            if use_wikidata
-            else sources.images(client, record)
+        supplied = (image_references or {}).get(
+            library.normalize(record["scientific_name"])
         )
+        if supplied:
+            from .image_files import candidates as from_files
+
+            candidates = from_files(record, supplied, folder, dry_run)
+        elif offline:
+            candidates = []
+        else:
+            candidates = (
+                sources.images(client, record, use_wikidata=True)
+                if use_wikidata
+                else sources.images(client, record)
+            )
         if not candidates:
             issues.append(
                 "No Commons image candidates; retain the existing image or placeholder."
@@ -122,11 +142,17 @@ def collect(
         issues.append(str(error))
     downloaded = 0
     for i, candidate in enumerate(candidates):
-        if candidate["supported"] and not dry_run and downloaded < 2:
+        if (
+            candidate["supported"]
+            and not candidate.get("original_file")
+            and candidate.get("acquisition") != "supplied_image"
+            and not dry_run
+            and downloaded < 2
+        ):
             try:
                 candidates[i] = preview_image(client, candidate, folder)
                 downloaded += 1
-            except (SourceUnavailable, ValueError, OSError) as error:
+            except (SourceUnavailable, ValueError, OSError, ImportError) as error:
                 candidate["issues"].append("Preview/download failed: " + str(error))
                 candidate["supported"] = False
     return {
@@ -227,6 +253,8 @@ def execute(
     museum_pages=False,
     pronunciation_references=None,
     use_wikidata=False,
+    image_references=None,
+    offline=False,
 ):
     inputs = (
         {
@@ -234,11 +262,15 @@ def execute(
             "index": pronunciation_index,
             "museum_pages": museum_pages,
             "wikidata": use_wikidata,
+            "images": image_references,
+            "offline": offline,
         }
         if pronunciation_references
         or pronunciation_index
         or museum_pages
         or use_wikidata
+        or image_references
+        or offline
         else None
     )
     folder = Path(folder)
@@ -281,7 +313,7 @@ def execute(
                     r["id"],
                 ),
             )[:pilot]
-        if all_records:
+        if all_records and not offline:
             identities = {library.normalize(r["scientific_name"]) for r in records}
             for category, target in [
                 ("dinosaur", 150),
@@ -375,6 +407,8 @@ def execute(
                     museum_pages,
                     pronunciation_references,
                     use_wikidata,
+                    image_references,
+                    offline,
                 )
                 if dry_run:
                     pid = None
@@ -430,6 +464,7 @@ def execute(
                 ),
             )
         report["pending_review"] = len(store.proposals())
+        report["access_log"] = list(getattr(client, "events", []))
         report["http_requests"] = client.requests
         report["http_cache_hits"] = client.cache_hits
         return report

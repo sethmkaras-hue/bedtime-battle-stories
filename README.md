@@ -80,7 +80,7 @@ Image preparation and real-image import validation use optional `requirements-me
 ## Tonight’s adventure
 
 1. **Start Adventure** → choose dinosaurs, sharks, prehistoric ocean creatures, or a compatible Ocean Mix. **Surprise Me!** creates a random valid tournament directly.
-2. Pick eight large creature cards, or use **Random 8**. Eight visible slots preserve selection order and let you remove a creature. Popular creatures appear first; adult search and the full library are expandable.
+2. Pick eight large creature cards, or use **Random 8**. Eight visible slots preserve selection order and let you remove a creature. All creatures in the chosen world appear immediately. Search and optional popular filtering remain available; the crew is still limited to eight.
 3. Follow the connected quarterfinal → semifinal → championship → winner bracket. **Focus on Current Battle** finds the next match without shrinking names.
 4. **Watch This Battle!** opens the illustrations, audio player and optional read-along text. Audio preparation runs in the background. Play, pause/resume, replay, speed, seeking and time/duration use HTML5 audio. On iPhone, tap Play if automatic playback is blocked.
 5. The winner is shown only after narration finishes or the parent chooses **I’ve read it · reveal the ending**. After seven battles, celebrate the champion. Play Again and New Adventure never start automatically.
@@ -160,3 +160,6 @@ Use `./IMPORT_CREATURE_LIBRARY.sh --pilot 10` before `--all`. The importer resea
 See [exact Ubuntu 26.04 installation, commands, supported sources and limitations](docs/CREATURE_LIBRARY.md#automated-population-on-ubuntu-2604--python-314). The cloud pilot encountered blocked source access: the 164-record encyclopedia remains incomplete, with no newly verified real facts, images or pronunciations claimed.
 
 Image discovery now searches Commons directly; Wikidata is optional. To retry an old pilot, use `./IMPORT_CREATURE_LIBRARY.sh --pilot 10 --refresh`. Import researched written pronunciation guidance without museum requests using `--pronunciation-references /path/to/references.json`. See [reference-file format and review workflow](docs/CREATURE_LIBRARY.md#commons-first-images-and-supplied-pronunciation-references).
+
+
+Commons robots failures now include endpoint, method, User-Agent, policy rule and HTTP-status diagnostics. Run `./IMPORT_CREATURE_LIBRARY.sh --diagnose-commons --report /tmp/commons-access.json`. When source access is prohibited, use `--offline --image-references /path/to/images.json`; pronunciation references accept CSV and JSON. See [local-image formats, alternatives, policy diagnosis and CSV instructions](docs/CREATURE_LIBRARY.md#access-policy-diagnosis-local-images-and-csv-guidance). Selection and the creature book display all available creatures by default, with lazy images and the eight-entrant limit preserved.
