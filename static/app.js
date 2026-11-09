@@ -26,6 +26,7 @@ const screens = [
   "player",
   "celebration",
   "settings",
+  "parent-review",
   "quiet",
 ];
 const audio = new BedtimeAudio($("story-audio"), $("audio-status"), () => {
@@ -591,6 +592,7 @@ $("back").onclick = () => {
       encyclopedia: "welcome",
       profile: profileReturn,
       attributions: "settings",
+      "parent-review": "settings",
       categories: "welcome",
       selection: "categories",
       bracket: library.length ? "selection" : "welcome",
@@ -956,7 +958,7 @@ function openProfile(c) {
   $("profile-review").textContent =
     (p.verification_status === "verified"
       ? "Reviewed profile."
-      : "Science review pending. Unknown details are left unknown.") +
+      : p.import_stage === "source_supported" ? "Source-supported import; parent review pending." : p.import_stage === "manually_reviewed" ? "Some fields were reviewed; this profile is still incomplete." : "Science review pending. Unknown details are left unknown.") +
     (c.artwork_placeholder !== false
       ? " The illustration is a decorative placeholder."
       : "");

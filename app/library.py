@@ -74,6 +74,7 @@ class Source(StrictModel):
     publisher: str | None = None
     checked_on: date | None = None
     supports: list[str] = Field(default_factory=list)
+    retrieved_on: date | None = None
 
 
 class Pronunciation(StrictModel):
@@ -156,6 +157,11 @@ class Image(StrictModel):
         return self
 
 
+class ReviewStamp(StrictModel):
+    reviewer: str
+    checked_on: date
+
+
 class CreatureRecord(StrictModel):
     stable_key: str = Field(pattern=r"^[a-z][a-z0-9_-]*:[a-z0-9-]+$")
     id: int | None = Field(default=None, gt=0, strict=True)
@@ -189,9 +195,13 @@ class CreatureRecord(StrictModel):
     pronunciation: Pronunciation = Field(default_factory=Pronunciation)
     sources: list[Source] = Field(default_factory=list)
     review_notes: list[str] = Field(default_factory=list)
+    import_stage: Literal['editorial','source_supported','manually_reviewed'] = 'editorial'
+    reviewed_fields: dict[str,ReviewStamp] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def scientific_evidence(self):
+        allowed_reviews={'time_period','modern_status','taxon_rank','subcategory','geographic_distribution','diet','length','weight','description','physical_characteristics','offensive_adaptations','defensive_adaptations','fun_facts'}
+        if not set(self.reviewed_fields)<=allowed_reviews:raise ValueError('Unsupported reviewed field')
         if self.image.placeholder and self.image.path is None:
             category = (
                 "shark"
@@ -509,6 +519,10 @@ def import_records(conn, records):
             (creature_id,),
         ).fetchone()
         old_record = json.loads(old[0]) if old else None
+        if old_record:
+            for field,stamp in old_record.get('reviewed_fields',{}).items():
+                setattr(r,field,getattr(CreatureRecord.model_validate(old_record),field))
+                r.reviewed_fields[field]=ReviewStamp.model_validate(stamp)
         old_pron = old_record["pronunciation"] if old_record else None
         if old_pron and old_pron["status"] == "verified":
             r.pronunciation = Pronunciation.model_validate(old_pron)

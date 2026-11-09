@@ -13,6 +13,9 @@ from pydantic import BaseModel, ConfigDict, Field, StrictInt
 from app.adventure import progress
 from app import library as encyclopedia
 from app.library_routes import router as library_router
+from app.admin_routes import router as admin_router
+from app.importer.auth import ParentAuth
+from app.importer.store import root as importer_root
 from app.audio.routes import router as audio_router, create_service
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -74,6 +77,7 @@ def ensure_database():
 async def lifespan(app):
     initialize_database()
     app.state.audio = create_service()
+    app.state.parent_auth = ParentAuth(importer_root())
     try:
         yield
     finally:
@@ -83,6 +87,7 @@ async def lifespan(app):
 app = FastAPI(title='Bedtime Battle Stories', lifespan=lifespan)
 app.include_router(audio_router)
 app.include_router(library_router)
+app.include_router(admin_router)
 app.mount('/static', StaticFiles(directory=ROOT / 'static'), name='static')
 
 

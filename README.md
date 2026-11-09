@@ -152,3 +152,9 @@ Normal tests use temporary data and mocked audio; models and paid API calls are 
 - `static/assets`: locally bundled illustrative SVGs. `data/catalog.json`: existing editorial library. Models and generated audio are Git-ignored.
 
 Next work: verify catalog facts and scientific names, test pronunciation and native audio on the actual iPhone, vary story templates and add reviewed species-specific illustrations. AI story/image generation remains outside this change.
+
+## Populate and review the creature library
+
+Use `./IMPORT_CREATURE_LIBRARY.sh --pilot 10` before `--all`. The importer researches exact scientific identities, queues licensed image candidates and pronunciation guidance, backs up changes and resumes interrupted work. Configure the adult Settings review with `.venv/bin/python scripts/configure_parent.py`; approvals preserve explicit review status. Local audio is generated only from approved guidance, never on a child's speaker tap.
+
+See [exact Ubuntu 26.04 installation, commands, supported sources and limitations](docs/CREATURE_LIBRARY.md#automated-population-on-ubuntu-2604--python-314). The cloud pilot encountered blocked source access: the 164-record encyclopedia remains incomplete, with no newly verified real facts, images or pronunciations claimed.

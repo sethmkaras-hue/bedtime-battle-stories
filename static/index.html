@@ -226,6 +226,7 @@
         ><button id="new-adventure">New Adventure</button
         ><button id="view-bracket">See the finished bracket</button>
       </section>
+      <section id="parent-review" hidden><p class="eyebrow">GROWN-UPS ONLY</p><h1>Creature content review</h1><p>Check source evidence before approving. Imported information is not automatically verified.</p><div id="parent-locked"><p id="parent-config-status"></p><form id="parent-login"><label>Parent passphrase<input id="parent-password" type="password" autocomplete="current-password" minlength="12" maxlength="256" required></label><button class="primary">Unlock review</button></form></div><div id="parent-unlocked" hidden><button id="parent-logout">Lock parent review</button><button id="parent-refresh">Refresh queue</button><p id="parent-coverage"></p><p class="soft-note">After approving guidance, run GENERATE_PRONUNCIATIONS.sh on the server. Creature speakers never generate audio.</p><div id="parent-proposals"></div><details><summary>Missing facts, images, pronunciations and cached audio</summary><div id="parent-missing"></div></details></div><p id="parent-review-message" role="status"></p></section>
       <section id="settings" hidden>
         <p class="eyebrow">JUST RIGHT FOR TONIGHT</p>
         <h1>Adventure settings</h1>
@@ -340,7 +341,7 @@
             </p>
           </details>
         </form>
-        <button type="button" id="open-attributions">
+        <button type="button" id="open-parent-review">Parent content review 🔒</button><button type="button" id="open-attributions">
           Image credits &amp; library audit
         </button>
         <p class="soft-note">
@@ -364,6 +365,6 @@
     </main>
     <script src="/static/settings.js"></script>
     <script src="/static/audio-player.js"></script>
-    <script src="/static/app.js"></script>
+    <script src="/static/app.js"></script><script src="/static/parent-review.js"></script>
   </body>
 </html>
