@@ -359,3 +359,8 @@ PYTHONPATH=. .venv/bin/python tests/import_review_smoke.py
 ### Commons API-policy update
 
 The scoped API exception, maxlag/rate-limit behavior, strict fallback and current test evidence are documented in [COMMONS_API_POLICY.md](COMMONS_API_POLICY.md). API diagnostics now distinguish local programmatic-policy allowance (`api_policy`) from HTTP acceptance or proxy failure. A cloud proxy failure does not establish a Wikimedia ban. Existing local imports, license/taxon checks, parent approval and audio caches remain in place.
+
+
+## Validated automatic images and approval-error fixes
+
+The current importer publishes evidence-complete images automatically through the same validated persistence boundary used by manual approvals. `--propose-only` retains a fully staged workflow. Uncertain images and unfinished scientific/pronunciation scopes remain in authenticated Parent Review; partial decisions no longer discard other work. Automated image checks are labeled separately from human review and do not verify the whole profile. See [IMPORT_VALIDATION.md](IMPORT_VALIDATION.md) for the reproduced HTTP 422 causes, field-level error responses, installation steps and tests showing real WebP delivery in selection.

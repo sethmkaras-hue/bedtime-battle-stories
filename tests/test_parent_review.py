@@ -151,7 +151,7 @@ def test_explicit_approval_preserves_id_and_protects_reviewed_field(parent):
             json={"decision": "approve", "scopes": ["science"], "confirm": True},
             headers=headers,
         ).status_code
-        == 422
+        == 409
     )
     assert client.post("/api/admin/logout", json={}, headers=headers).status_code == 200
     assert client.get("/api/admin/proposals").status_code == 401

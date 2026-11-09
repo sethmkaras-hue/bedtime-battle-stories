@@ -166,3 +166,6 @@ Commons robots failures now include endpoint, method, User-Agent, policy rule an
 
 
 Documented read-only requests to the exact Commons Action API now use a scoped API policy rather than the webpage crawler restriction on `/w/`. Ordinary scraping still checks robots; server/proxy denials remain blocking. See [policy basis, scope, tests and strict-mode fallback](docs/COMMONS_API_POLICY.md). Retry with `./IMPORT_CREATURE_LIBRARY.sh --pilot 10 --refresh --skip-audio`.
+
+
+Validated, evidence-complete creature images now install automatically; uncertain matches and unresolved science/pronunciations retain Parent Review. Approval errors now identify their creature and invalid fields, and installed images refresh in an open selection screen without losing selections. See [422 root causes, shared validation, upgrade commands and browser evidence](docs/IMPORT_VALIDATION.md).

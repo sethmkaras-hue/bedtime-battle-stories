@@ -97,7 +97,7 @@ def run():
                         }
                     ],
                     "pronunciation": {
-                        "phonetic": "fixture-GUIDE",
+                        "phonetic": "fixture-GUIDE " * 12,
                         "stress": "GUIDE",
                         "tts_text": "fixture guide",
                         "source_url": "https://example.test/reference",
@@ -125,6 +125,13 @@ def run():
                     has_touch=True,
                 )
                 errors = []
+                decisions = []
+                page.on(
+                    "request",
+                    lambda r: decisions.append(r.post_data_json)
+                    if r.method == "POST" and r.url.endswith("/decision")
+                    else None,
+                )
                 page.on("pageerror", lambda e: errors.append(str(e)))
                 page.goto(base)
                 page.locator("#settings-open").click()
@@ -144,10 +151,27 @@ def run():
                 page.wait_for_function(
                     "document.getElementById('parent-review-message').textContent.includes('Run IMPORT_CREATURE_LIBRARY')"
                 )
+                page.wait_for_function(
+                    "document.querySelector('.parent-proposal input[data-scope=science]') === null"
+                )
+                assert (
+                    page.locator(
+                        ".parent-proposal input[data-scope=pronunciation]"
+                    ).count()
+                    == 1
+                )
+                card = page.locator(".parent-proposal").first
+                card.locator("input[type=checkbox]").last.check()
+                card.get_by_role("button", name="Reject remaining updates").click()
                 page.locator(".parent-proposal").wait_for(state="detached")
                 page.locator("#parent-logout").click()
                 page.locator("#parent-locked").wait_for(state="visible")
                 assert page.evaluate("document.documentElement.scrollWidth<=innerWidth")
+                assert (
+                    decisions
+                    and "phonetic" not in decisions[0]
+                    and "tts_text" not in decisions[0]
+                )
                 assert not errors, errors
                 browser.close()
             with sqlite3.connect(folder / "app.sqlite3") as conn:

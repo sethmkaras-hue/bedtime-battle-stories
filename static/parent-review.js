@@ -13,12 +13,20 @@
       body: body ? JSON.stringify(body) : undefined,
     });
     const data = await response.json();
-    if (!response.ok)
+    if (!response.ok) {
+      const detail = data.detail;
+      const problems = Array.isArray(detail) ? detail : detail?.issues || [];
+      const fields = problems
+        .map((issue) => (issue.loc || []).join(".") + ": " + issue.msg)
+        .join("; ");
       throw Error(
-        typeof data.detail === "string"
-          ? data.detail
-          : "Review action was not accepted",
+        (typeof detail === "string"
+          ? detail
+          : detail?.message || "Review action failed") +
+          (detail?.creature ? " · " + detail.creature : "") +
+          (fields ? " · " + fields : ""),
       );
+    }
     return data;
   }
   function text(parent, value) {
@@ -85,6 +93,12 @@
     for (const issue of proposal.issues || []) text(card, issue);
     for (const url of proposal.source_links || [])
       link(card, "Source attempted / manual research", url);
+    const applied = new Set(row.applied_scopes || []);
+    if (applied.has("image"))
+      text(
+        card,
+        "Artwork from this proposal is already installed. Only remaining updates need a decision.",
+      );
     const scopes = [];
     function checkbox(label, value) {
       const wrapper = document.createElement("label");
@@ -97,7 +111,7 @@
       scopes.push(input);
       return input;
     }
-    if (Object.keys(proposal.science || {}).length)
+    if (Object.keys(proposal.science || {}).length && !applied.has("science"))
       checkbox(
         "I inspected these source-supported scientific fields",
         "science",
@@ -129,19 +143,23 @@
           card,
           "Locally supplied image · " +
             image.source_kind +
-            " · source and reuse rights still require adult inspection.",
+            (applied.has("image")
+              ? " · source metadata retained for audit."
+              : " · source and reuse rights still require adult inspection."),
         );
       link(card, "Original image and credit", image.original_source_url);
       link(card, "License", image.license_url);
       if (image.preview_url) {
         const img = document.createElement("img");
         img.src = image.preview_url;
-        img.alt = "Candidate image awaiting adult review";
+        img.alt = applied.has("image")
+          ? "Source image candidate retained for audit"
+          : "Candidate image awaiting adult review";
         img.loading = "lazy";
         card.append(img);
       }
     }
-    if (supported.length) {
+    if (supported.length && !applied.has("image")) {
       checkbox("I inspected the exact taxon, image and reuse rights", "image");
       imageSelect = document.createElement("select");
       for (const v of supported)
@@ -151,7 +169,7 @@
       card.append(imageSelect);
     }
     let phonetic, stress, tts;
-    if (proposal.pronunciation) {
+    if (proposal.pronunciation && !applied.has("pronunciation")) {
       checkbox(
         "I checked the pronunciation guidance against its source",
         "pronunciation",
@@ -204,12 +222,17 @@
     approve.textContent = "Approve inspected updates";
     approve.disabled = true;
     const reject = document.createElement("button");
-    reject.textContent = "Reject proposal";
+    reject.textContent = applied.size
+      ? "Reject remaining updates"
+      : "Reject proposal";
     reject.disabled = true;
-    confirm.onchange = () => {
-      approve.disabled = !confirm.checked;
+    function updateButtons() {
+      approve.disabled =
+        !confirm.checked || !scopes.some((input) => input.checked);
       reject.disabled = !confirm.checked;
-    };
+    }
+    confirm.onchange = updateButtons;
+    scopes.forEach((input) => (input.onchange = updateButtons));
     card.append(approve, reject);
     async function decide(decision) {
       approve.disabled = reject.disabled = true;
@@ -220,7 +243,11 @@
           scopes: scopes.filter((c) => c.checked).map((c) => c.dataset.scope),
           image_index: Number(imageSelect?.value || 0),
         };
-        if (phonetic) {
+        if (
+          decision === "approve" &&
+          body.scopes.includes("pronunciation") &&
+          phonetic
+        ) {
           body.phonetic = phonetic.value;
           body.stress = stress.value;
           body.tts_text = tts.value;
@@ -230,10 +257,11 @@
           data.audio_note ||
             "Decision saved. No tournament progress was changed.",
         );
+        await window.refreshCreatureLibrary?.();
         await load();
       } catch (error) {
         message(error.message);
-        approve.disabled = reject.disabled = !confirm.checked;
+        updateButtons();
       }
     }
     approve.onclick = () => decide("approve");

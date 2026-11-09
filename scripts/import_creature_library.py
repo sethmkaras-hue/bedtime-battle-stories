@@ -51,7 +51,7 @@ def cli():
     p.add_argument(
         "--propose-only",
         action="store_true",
-        help="Do not apply even exact source-supported facts",
+        help="Stage content without applying facts or publishing validated images",
     )
     p.add_argument(
         "--skip-audio",

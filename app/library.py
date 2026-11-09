@@ -9,6 +9,7 @@ import re
 import sqlite3
 import unicodedata
 import wave
+from urllib.parse import urlsplit
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -21,6 +22,46 @@ LICENSES = {
     "CC-BY-3.0",
     "CC-BY-SA-3.0",
 }
+LICENSE_PATHS = {
+    "CC0-1.0": "/publicdomain/zero/1.0/",
+    "Public-Domain": "/publicdomain/mark/1.0/",
+    "CC-BY-4.0": "/licenses/by/4.0/",
+    "CC-BY-SA-4.0": "/licenses/by-sa/4.0/",
+    "CC-BY-3.0": "/licenses/by/3.0/",
+    "CC-BY-SA-3.0": "/licenses/by-sa/3.0/",
+}
+SCIENCE_FIELDS = frozenset(
+    {
+        "taxon_rank",
+        "subcategory",
+        "time_period",
+        "geographic_distribution",
+        "diet",
+        "length",
+        "weight",
+        "modern_status",
+        "habitat",
+    }
+)
+REVIEWED_FIELDS = SCIENCE_FIELDS | {
+    "description",
+    "physical_characteristics",
+    "offensive_adaptations",
+    "defensive_adaptations",
+    "fun_facts",
+}
+
+
+def valid_license_declaration(license, url):
+    parsed = urlsplit(url or "")
+    return (
+        license in LICENSE_PATHS
+        and parsed.scheme == "https"
+        and parsed.netloc == "creativecommons.org"
+        and parsed.path.rstrip("/") == LICENSE_PATHS[license].rstrip("/")
+    )
+
+
 CATEGORIES = (
     "dinosaur",
     "shark",
@@ -89,23 +130,30 @@ class Pronunciation(StrictModel):
 
     @model_validator(mode="after")
     def evidence(self):
-        if self.status == "verified" and not all(
-            [
-                self.phonetic,
-                self.stress,
-                self.tts_text,
-                self.source_url,
-                self.verified_by,
-                self.checked_on,
+        if self.status == "verified":
+            required = {
+                "phonetic": self.phonetic,
+                "stress": self.stress,
+                "tts_text": self.tts_text,
+                "source_url": self.source_url,
+                "verified_by": self.verified_by,
+                "checked_on": self.checked_on,
+            }
+            missing = [
+                key
+                for key, value in required.items()
+                if not value or isinstance(value, str) and not value.strip()
             ]
-        ):
-            raise ValueError(
-                "Verified pronunciation requires a guide, stress, TTS text, inspected source, reviewer and date"
-            )
+            if missing:
+                raise ValueError(
+                    "Verified pronunciation missing required fields: "
+                    + ", ".join(missing)
+                )
         return self
 
 
 class Image(StrictModel):
+    approval_method: Literal["manual", "automated"] = "manual"
     placeholder: bool = True
     path: str | None = None
     variants: dict[str, str] = Field(default_factory=dict)
@@ -132,26 +180,37 @@ class Image(StrictModel):
         if not self.placeholder:
             if self.license not in LICENSES:
                 raise ValueError("Unsupported or unspecified reusable image license")
-            if not all(
-                [
-                    self.path,
-                    self.creator,
-                    self.original_source_url,
-                    self.license_url,
-                    self.attribution,
-                    self.modifications,
-                    self.identified_taxon,
-                    self.verified_by,
-                    self.checked_on,
-                ]
-            ):
+            required = {
+                key: getattr(self, key)
+                for key in (
+                    "path",
+                    "creator",
+                    "original_source_url",
+                    "license_url",
+                    "attribution",
+                    "modifications",
+                    "identified_taxon",
+                    "verified_by",
+                    "checked_on",
+                )
+            }
+            missing = [
+                key
+                for key, value in required.items()
+                if not value or isinstance(value, str) and not value.strip()
+            ]
+            if missing:
                 raise ValueError(
-                    "Real artwork requires complete attribution and taxon identification"
+                    "Real artwork missing required fields: " + ", ".join(missing)
                 )
             if not self.original_source_url.startswith(
                 "https://"
             ) or not self.license_url.startswith("https://"):
                 raise ValueError("Image source/license URLs must be HTTPS")
+            if not valid_license_declaration(self.license, self.license_url):
+                raise ValueError(
+                    "Image license identifier and license declaration must agree"
+                )
             if not self.path.endswith(".webp"):
                 raise ValueError("Imported images must be optimized local WebP files")
         return self
@@ -195,13 +254,15 @@ class CreatureRecord(StrictModel):
     pronunciation: Pronunciation = Field(default_factory=Pronunciation)
     sources: list[Source] = Field(default_factory=list)
     review_notes: list[str] = Field(default_factory=list)
-    import_stage: Literal['editorial','source_supported','manually_reviewed'] = 'editorial'
-    reviewed_fields: dict[str,ReviewStamp] = Field(default_factory=dict)
+    import_stage: Literal["editorial", "source_supported", "manually_reviewed"] = (
+        "editorial"
+    )
+    reviewed_fields: dict[str, ReviewStamp] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def scientific_evidence(self):
-        allowed_reviews={'time_period','modern_status','taxon_rank','subcategory','geographic_distribution','diet','length','weight','description','physical_characteristics','offensive_adaptations','defensive_adaptations','fun_facts'}
-        if not set(self.reviewed_fields)<=allowed_reviews:raise ValueError('Unsupported reviewed field')
+        if not set(self.reviewed_fields) <= REVIEWED_FIELDS:
+            raise ValueError("Unsupported reviewed field")
         if self.image.placeholder and self.image.path is None:
             category = (
                 "shark"
@@ -454,7 +515,7 @@ def validate_records(records, check_files=True):
     return parsed
 
 
-def import_records(conn, records):
+def import_records(conn, records, *, allow_reviewed_updates=False):
     parsed = validate_records(records)
     result = {"inserted": 0, "updated": 0, "protected": 0}
     # Caller supplies a transaction so any collision rolls the complete import back.
@@ -466,7 +527,7 @@ def import_records(conn, records):
         ).fetchone()
         if existing and r.id is not None and r.id != existing[0]:
             raise ValueError("Stable ID conflict for " + r.stable_key)
-        if existing and existing[1]:
+        if existing and existing[1] and not allow_reviewed_updates:
             result["protected"] += 1
             continue
         if existing:
@@ -519,17 +580,28 @@ def import_records(conn, records):
             (creature_id,),
         ).fetchone()
         old_record = json.loads(old[0]) if old else None
-        if old_record:
-            for field,stamp in old_record.get('reviewed_fields',{}).items():
-                setattr(r,field,getattr(CreatureRecord.model_validate(old_record),field))
-                r.reviewed_fields[field]=ReviewStamp.model_validate(stamp)
+        if old_record and not allow_reviewed_updates:
+            merged_sources = {s.id: s for s in r.sources}
+            merged_sources.update(
+                {s["id"]: Source.model_validate(s) for s in old_record["sources"]}
+            )
+            r.sources = list(merged_sources.values())
+            for field, stamp in old_record.get("reviewed_fields", {}).items():
+                setattr(
+                    r, field, getattr(CreatureRecord.model_validate(old_record), field)
+                )
+                r.reviewed_fields[field] = ReviewStamp.model_validate(stamp)
         old_pron = old_record["pronunciation"] if old_record else None
-        if old_pron and old_pron["status"] == "verified":
+        if old_pron and old_pron["status"] == "verified" and not allow_reviewed_updates:
             r.pronunciation = Pronunciation.model_validate(old_pron)
-        if old_record and not old_record["image"]["placeholder"]:
+        if (
+            old_record
+            and not old_record["image"]["placeholder"]
+            and not allow_reviewed_updates
+        ):
             r.image = Image.model_validate(old_record["image"])
         r.id = creature_id
-        r = CreatureRecord.model_validate(r.model_dump(mode="json"))
+        r = validate_records([r.model_dump(mode="json")])[0]
         conn.execute(
             """INSERT INTO creature_profiles VALUES (?,?,?,?,?) ON CONFLICT(creature_id) DO UPDATE SET
             scientific_identity=excluded.scientific_identity, record_json=excluded.record_json, protected=excluded.protected""",
@@ -616,6 +688,8 @@ def enrich(conn, rows, cache_root):
                     description=record["description"],
                     review_status="verified",
                 )
+            if "habitat" in record.get("reviewed_fields", {}):
+                item["habitat"] = record["habitat"]
             item["catalog_key"] = record["stable_key"]
             item["image_reference"] = (
                 record["image"]["path"] if not record["image"]["placeholder"] else None
