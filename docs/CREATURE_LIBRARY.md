@@ -164,7 +164,7 @@ AMNH, Smithsonian and Florida Museum are useful manual authorities, but do not y
 
 Requests use HTTPS, an identified user agent, robots checks, per-host pacing, bounded retries/backoff and Retry-After handling. Inaccessible robots policies fail closed. Redirects remain within explicit scientific/media hosts. There is no access-control workaround. APIs and sites may change terms or schema; inspect their current policies before use. Set `BBS_IMPORT_USER_AGENT` to include your contact if required by a publisher. Sources that cannot be fetched appear in the review queue with links/issues.
 
-Commons acquisition first resolves the exact scientific name and rank through Wikidata. A filename is insufficient: Commons MediaInfo must explicitly depict that taxon, descriptive metadata must agree, and reusable license/creator metadata must be present. Living sharks require photographic evidence; extinct candidates require reconstruction/paleoart evidence. Fossils and incomplete/uncertain identification are queued. Supported licenses remain CC0, Public Domain, CC BY and CC BY-SA 3.0/4.0. Preserve attribution and license obligations; Settings → Image credits lists approved artwork.
+Commons acquisition searches its API directly using the scientific name. Wikidata is optional (`--use-wikidata`), and access failure never prevents Commons search. A filename is insufficient: the file description must establish the requested taxon as its subject, with suitable image-medium evidence and reusable license/creator metadata. When optional structured depicts evidence is present and contradicts the taxon, the candidate is queued. Living sharks require photographic evidence; extinct candidates require reconstruction/paleoart evidence. Fossils and incomplete/uncertain identification are queued. Supported licenses remain CC0, Public Domain, CC BY and CC BY-SA 3.0/4.0. Preserve attribution and license obligations; Settings → Image credits lists approved artwork.
 
 Up to two supported candidates per creature are downloaded into quarantine and converted to a preview, with a 20 MB transfer and 25 megapixel decode limit. An adult selects the image before publication. Approval verifies the original checksum and produces local responsive WebP assets. Remote search results never become child-facing images merely because their names match.
 
@@ -189,3 +189,60 @@ Allow several GB for caches, originals, WebP variants and backups, in addition t
 The cloud pilot processed ten real catalog identities but **downloaded no scientific data, licensed imagery or pronunciation guidance**: the proxy blocked source access. It staged ten unresolved proposals without promoting records. Resuming reused all ten checkpoints with zero HTTP requests. Offline fixtures verify parsing, matching, licenses, download quarantine, restart, backups and protected review. Browser checks use synthetic evidence and audio; they do not establish real taxon accuracy, audible pronunciation quality or physical-device compatibility.
 
 Automated-import validation: 94 offline tests pass on Python 3.14 with media dependencies. The core-only environment passed with optional media tests skipped. Mobile Chromium regressions passed for authenticated parent approval/logout, encyclopedia prepared-file playback with no tap-time synthesis, and the complete seven-battle tournament. The GitHub workflow runs offline tests on Python 3.12 and 3.14; no remote CI outcome is implied by local results.
+
+
+## Commons-first images and supplied pronunciation references
+
+On upgrading to this importer version, old checkpoints are revisited once. Subsequent unchanged runs resume normally. To deliberately retry the pilot immediately:
+
+```bash
+./IMPORT_CREATURE_LIBRARY.sh --pilot 10 --refresh --skip-audio
+# Optional corroboration only; not required for search or downloads:
+./IMPORT_CREATURE_LIBRARY.sh --pilot 10 --use-wikidata --skip-audio
+```
+
+Commons search requests five file candidates using the exact scientific name. Exact subject descriptions and suitable reconstruction/photo evidence can qualify a candidate for download and WebP preview. Parent approval is still required for publication. Unrelated species, uncertain/comparison descriptions, fossil pictures, missing identity and incomplete/mismatched license declarations do not qualify for download. They remain in the queue with reasons and source links. A missing result preserves existing approved artwork or the existing labeled placeholder. Descriptive evidence is a conservative screening step, not scientific certification of the art; adults must inspect the work and attribution.
+
+The online pronunciation adapters remain NHM dinosaur pages and supplied educational URLs through `--pronunciation-index`. No new pronunciation source is assumed to permit scraping. NHM and Usborne are credible educational references, but this cloud's proxy blocks even their robots policies, so current automated-access permission could not be established here. `--allow-museum-pages` still requires your review of publisher terms, followed by runtime robots/access checks. Nothing bypasses robots or protected endpoints. If permission is absent, use a reference the publisher permits you to save or manually transcribe its written guidance; do not download or redistribute recordings.
+
+`--pronunciation-references` imports a **local JSON manifest** independently of `--allow-museum-pages`. It does not contact the cited websites. Use exact scientific names from the encyclopedia. The format is `{"schema_version":1,"entries":[...]}`; each entry has:
+
+- Required `scientific_name`, `source_url` (HTTPS), `publisher`, and `retrieved_on` (YYYY-MM-DD).
+- Either literal `phonetic`, explicit `stress`, and `tts_text`, or `reference_file` pointing to a saved `.html`/`.htm` file under the manifest directory. Saved HTML needs an exact scientific-name heading and a labeled written guide with stress; unsupported layouts require a structured transcription. Guides in another taxon's heading section are refused.
+- Optional `alternatives` listing source-supported accepted variants.
+- Optional original `status` (`unverified` or `verified`), `verified_by`, and `checked_on`. A supplied verified status requires both reviewer and date. These are retained as **source verification**, not automatic app approval.
+
+For example, after creating your own researched manifest and replacing every placeholder below:
+
+```json
+{
+  "schema_version": 1,
+  "entries": [{
+    "scientific_name": "EXACT SCIENTIFIC NAME FROM LIBRARY",
+    "source_url": "https://SOURCE-HOST/ACTUAL-REFERENCE",
+    "publisher": "ACTUAL EDUCATIONAL PUBLISHER",
+    "retrieved_on": "YYYY-MM-DD",
+    "phonetic": "LITERAL WRITTEN GUIDE FROM SOURCE",
+    "stress": "EMPHASIZED SYLLABLE FROM SOURCE",
+    "tts_text": "CAREFULLY TRANSCRIBED TTS TEXT",
+    "alternatives": [],
+    "status": "unverified"
+  }]
+}
+```
+
+For saved HTML, replace the three guidance fields with `"reference_file":"saved-guide.html"`; keep its source URL, publisher and date. Paths outside the manifest directory, duplicate identities, oversized files and missing guidance are refused. Only HTML text is parsed: scripts are not executed, assets are not fetched, recordings are not copied. A SHA-256 of saved HTML is retained in the proposal. Source files remain your local references rather than being published as app assets.
+
+```bash
+./IMPORT_CREATURE_LIBRARY.sh --pilot 10 --pronunciation-references /path/to/references.json --dry-run
+./IMPORT_CREATURE_LIBRARY.sh --pilot 10 --pronunciation-references /path/to/references.json
+# Settings → Parent content review: inspect source, guide, alternatives and original review metadata;
+# explicitly approve pronunciation, then generate original local audio:
+bash GENERATE_PRONUNCIATIONS.sh --provider kokoro
+```
+
+All supplied guides enter the pending queue as unverified. Existing approved pronunciations and artwork stay protected; explicit parent decisions can replace them. Proposals preserve original source-review metadata and citations; canonical approval records the parent's review and date. No file assertion grants authoritative status by itself. Changing supplied guidance invalidates the relevant import checkpoint; unchanged files reuse it. Generation remains verified-only, CPU-based and cached. No paid key is needed, and child taps never generate speech.
+
+Offline regression tests cover Commons-only search/download/WebP reuse, optional Wikidata robots denial, exact-species and license rejection, missing-image fallback, JSON and saved-HTML references, section isolation, checkpoint changes, reviewed-data preservation, and parent-approved generation/cache reuse. Network probes for Commons, NHM and Usborne were blocked by the cloud proxy. These mocked tests do not claim any newly acquired real images, researched guidance or audible quality validation.
+
+Validation for this discovery fix: **117 tests passed on Python 3.14** with media dependencies. Core-only Python 3.14 and Python 3.12 each passed 114 tests with three optional media checks skipped. The mobile Chromium parent-review regression also passed, including supplied-reference metadata display, deliberate approval and logout. Audio generation in the new integration test uses a deterministic local fixture provider, not a real pronunciation-quality assessment.

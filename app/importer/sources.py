@@ -4,7 +4,7 @@ from datetime import date
 from html import unescape
 from html.parser import HTMLParser
 import re
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 from app.library import normalize
 from .network import SourceUnavailable
 
@@ -19,6 +19,7 @@ class Text(HTMLParser):
         super().__init__()
         self.parts = []
         self.headings = []
+        self.heading_offsets = []
         self.in_heading = False
         self.skip = 0
 
@@ -28,6 +29,7 @@ class Text(HTMLParser):
         if tag in {"h1", "h2", "h3"}:
             self.in_heading = True
             self.headings.append("")
+            self.heading_offsets.append((len(self.parts), int(tag[1])))
         if tag in {"p", "div", "dt", "dd", "li", "br", "h1", "h2", "h3"}:
             self.parts.append("\n")
 
@@ -156,7 +158,23 @@ def parse_pronunciation(html, spoken_name):
     headings = [normalize(h) for h in page.headings]
     if normalize(spoken_name) not in headings:
         raise SourceUnavailable("Pronunciation page has no exact creature heading")
-    lines = page.text.splitlines()
+    matches = [i for i, h in enumerate(headings) if h == normalize(spoken_name)]
+    if len(matches) != 1:
+        raise SourceUnavailable("Pronunciation heading is ambiguous")
+    start, level = page.heading_offsets[matches[0]]
+    end = next(
+        (
+            offset
+            for offset, rank in page.heading_offsets[matches[0] + 1 :]
+            if rank <= level
+        ),
+        len(page.parts),
+    )
+    lines = [
+        " ".join(line.split())
+        for line in "".join(page.parts[start:end]).splitlines()
+        if line.strip()
+    ]
     for i, line in enumerate(lines):
         if not re.search(
             r"\b(pronunciation|pronounced|say it|how to say it)\b", line, re.I
@@ -190,7 +208,11 @@ def parse_pronunciation(html, spoken_name):
 
 
 def pronunciation(client, record, index=None):
-    urls = list((index or {}).get(record["display_name"], []))
+    urls = list(
+        (index or {}).get(
+            record["scientific_name"], (index or {}).get(record["display_name"], [])
+        )
+    )
     if record["category"] == "dinosaur":
         urls.insert(
             0,
@@ -281,13 +303,28 @@ def image_candidate(info, page, depicts, qid, name, living):
     license = licenses.get(label)
     description = value("ImageDescription")
     combined = description + " " + value("ObjectName")
+    # File titles/search hits are not identification evidence. Require the named
+    # subject in the description itself; comparisons and multi-animal scenes
+    # remain queued for adult research. Wikidata can corroborate, never gate search.
+    subject = r"(?:life |scientific )?(?:reconstruction|restoration|paleoart|photograph|photo)(?: of)?"
+    exact = r"(?<!\w)" + re.escape(normalize(name)) + r"(?!\w)"
+    caption = normalize(description)
+    clear_subject = bool(re.match(r"^(?:" + subject + r"[ :–-]+)?" + exact, caption))
+    ambiguous = bool(
+        re.search(
+            r"\b(vs|versus|compared|comparison|and|with|possibly|probably|unknown|unidentified|or)\b",
+            caption,
+        )
+    )
     reason = []
-    if qid not in depicts:
+    if qid is not None and qid not in depicts:
         reason.append("Structured depicts does not match the exact taxon entity")
-    if not re.search(
-        r"(?<!\w)" + re.escape(normalize(name)) + r"(?!\w)", normalize(combined)
-    ):
-        reason.append("Taxon is not identified in descriptive metadata")
+    if not clear_subject:
+        reason.append("Exact taxon is not established as the described subject")
+    if ambiguous:
+        reason.append(
+            "Ambiguous or multiple subjects require parent identification review"
+        )
     if re.search(
         r"\b(fossil|skeleton|skull|tooth|teeth|cast|mounted)\b", combined, re.I
     ):
@@ -306,7 +343,32 @@ def image_candidate(info, page, depicts, qid, name, living):
     license_url = (
         ext.get("LicenseUrl", {}).get("value", "").replace("http://", "https://", 1)
     )
-    if not creator or not license_url.startswith("https://creativecommons.org/"):
+    license_path = {
+        "CC0-1.0": "/publicdomain/zero/1.0/",
+        "Public-Domain": "/publicdomain/mark/1.0/",
+        "CC-BY-4.0": "/licenses/by/4.0/",
+        "CC-BY-SA-4.0": "/licenses/by-sa/4.0/",
+        "CC-BY-3.0": "/licenses/by/3.0/",
+        "CC-BY-SA-3.0": "/licenses/by-sa/3.0/",
+    }
+    source_page = urlsplit(info.get("descriptionurl") or "")
+    asset = urlsplit(info.get("url") or "")
+    if (
+        source_page.hostname != "commons.wikimedia.org"
+        or not source_page.path.startswith("/wiki/File:")
+        or source_page.scheme not in {"http", "https"}
+    ):
+        reason.append("Original Commons file attribution page is missing")
+    if asset.scheme != "https" or asset.hostname != "upload.wikimedia.org":
+        reason.append("Commons original download URL is missing or unsupported")
+    declaration = urlsplit(license_url)
+    if (
+        not creator
+        or declaration.scheme != "https"
+        or declaration.netloc != "creativecommons.org"
+        or declaration.path.rstrip("/")
+        != license_path.get(license, "invalid").rstrip("/")
+    ):
         reason.append("Creator/license declaration incomplete")
     return {
         "title": page.get("title"),
@@ -326,15 +388,18 @@ def image_candidate(info, page, depicts, qid, name, living):
         + str(info.get("descriptionurl", "")),
         "identified_taxon": name,
         "taxon_entity": qid,
+        "identity_evidence": "Commons file description"
+        + (" and structured depicts" if qid else ""),
         "supported": not reason,
         "issues": reason,
         "review_status": "pending",
     }
 
 
-def images(client, record):
+def images(client, record, use_wikidata=False):
     name = record["scientific_name"]
-    qid = taxon_entity(client, name)
+    qid = None
+    identity_notes = []
     result = client.json(
         COMMONS,
         {
@@ -348,37 +413,59 @@ def images(client, record):
             "format": "json",
         },
     )
+    # Search Commons first, including when optional Wikidata is denied.
+    if use_wikidata:
+        try:
+            qid = taxon_entity(client, name)
+        except (SourceUnavailable, ValueError, KeyError) as error:
+            identity_notes.append("Optional Wikidata unavailable: " + str(error))
     candidates = []
     for page in result.get("query", {}).get("pages", {}).values():
         info = next(iter(page.get("imageinfo", [])), None)
         if not info:
             continue
-        media = client.json(
-            COMMONS,
-            {
-                "action": "wbgetentities",
-                "ids": "M" + str(page["pageid"]),
-                "props": "claims",
-                "format": "json",
-            },
-        )
-        entity = media.get("entities", {}).get("M" + str(page["pageid"]), {})
-        statements = entity.get("statements", entity.get("claims", {}))
-        depicts = {
-            s.get("mainsnak", {}).get("datavalue", {}).get("value", {}).get("id")
-            for s in statements.get("P180", [])
-        }
+        depicts = set()
+        candidate_qid = qid
+        if qid:
+            try:
+                media = client.json(
+                    COMMONS,
+                    {
+                        "action": "wbgetentities",
+                        "ids": "M" + str(page["pageid"]),
+                        "props": "claims",
+                        "format": "json",
+                    },
+                )
+                entity = media.get("entities", {}).get("M" + str(page["pageid"]), {})
+                statements = entity.get("statements", entity.get("claims", {}))
+                depicts = {
+                    s.get("mainsnak", {})
+                    .get("datavalue", {})
+                    .get("value", {})
+                    .get("id")
+                    for s in statements.get("P180", [])
+                }
+                # Absent structured statements are not a negative identity claim.
+                if not depicts:
+                    candidate_qid = None
+            except (SourceUnavailable, ValueError, KeyError) as error:
+                candidate_qid = None
+                identity_notes.append(
+                    "Optional Commons structured data unavailable: " + str(error)
+                )
         candidates.append(
             image_candidate(
                 info,
                 page,
                 depicts,
-                qid,
+                candidate_qid,
                 name,
                 record["category"] == "shark"
                 and record.get("modern_status") != "extinct",
             )
         )
+        candidates[-1]["identity_notes"] = list(identity_notes)
     return candidates
 
 

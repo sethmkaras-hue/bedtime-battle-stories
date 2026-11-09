@@ -144,6 +144,22 @@
         "pronunciation",
       );
       link(card, "Pronunciation source", proposal.pronunciation.source_url);
+      if (proposal.pronunciation.acquisition === "supplied_reference") {
+        const evidence = document.createElement("p");
+        const reference = proposal.pronunciation;
+        evidence.textContent =
+          "Supplied reference · " +
+          reference.publisher +
+          " · retrieved " +
+          reference.retrieved_on +
+          " · original review: " +
+          JSON.stringify(reference.source_verification) +
+          (reference.alternatives?.length
+            ? " · alternatives: " + reference.alternatives.join("; ")
+            : "") +
+          ". App approval is still required.";
+        card.append(evidence);
+      }
       for (const [key, label] of [
         ["phonetic", "Written pronunciation"],
         ["stress", "Syllable emphasis"],
