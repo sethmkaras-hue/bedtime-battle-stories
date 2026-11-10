@@ -1,5 +1,7 @@
 # Creature library maintenance and current coverage
 
+**Current artwork workflow:** [local CPU image generation](LOCAL_IMAGES.md) replaces normal internet image discovery and image approval. Scientific/pronunciation review and existing source records remain. Earlier image-import sections below document the retained legacy utilities.
+
 ## Current research status
 
 The requested minimums are **150 verified dinosaurs, 60 sharks and 40 prehistoric marine animals**. This change does **not** claim those targets were achieved. The cloud proxy rejected requests to the Natural History Museum London, Florida Museum species profiles and Wikimedia Commons with HTTP 403. No new taxon, pronunciation or image license was marked verified from an inaccessible page. No museum audio was copied.

@@ -171,3 +171,9 @@ Documented read-only requests to the exact Commons Action API now use a scoped A
 Validated, evidence-complete creature images now install automatically; uncertain matches and unresolved science/pronunciations retain Parent Review. Approval errors now identify their creature and invalid fields, and installed images refresh in an open selection screen without losing selections. See [422 root causes, shared validation, upgrade commands and browser evidence](docs/IMPORT_VALIDATION.md).
 
 Importer robots enforcement is now on by default. Use `IMPORT_RESPECT_ROBOTS=false ./IMPORT_CREATURE_LIBRARY.sh --pilot 10 --refresh --skip-audio` for an explicit opt-out; HTTP access denials and licensing validation remain enforced. See [configuration details](docs/IMPORT_ROBOTS.md).
+
+## Local CPU creature illustrations
+
+Normal artwork now uses a separate Python 3.12 Stable Diffusion 1.5 CPU worker. Scientific importing remains separate; no Commons discovery, per-image approval, GPU or paid service is required for generated artwork. Images are cached with model/prompt/seed metadata and resume after interruptions. Settings provides status, prompt metadata and protected regeneration. Generated images are explicitly labeled AI illustrations, not verified anatomy.
+
+See [exact Ubuntu setup, model license/RAM planning, single-image/pilot/full/resume commands and limitations](docs/LOCAL_IMAGES.md). The runtime installed/imported here, but model downloads were proxy-blocked: **no real diffusion image or ten-creature quality pilot was completed**. Test the first image and pilot on the home server before running all 164.

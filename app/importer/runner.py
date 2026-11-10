@@ -92,6 +92,7 @@ def collect(
     use_wikidata=False,
     image_references=None,
     offline=False,
+    source_images=True,
 ):
     patch, evidence, issues = (
         ({}, [], ["Offline mode: online source research skipped."])
@@ -125,7 +126,7 @@ def collect(
             from .image_files import candidates as from_files
 
             candidates = from_files(record, supplied, folder, dry_run)
-        elif offline:
+        elif offline or not source_images:
             candidates = []
         else:
             candidates = (
@@ -133,7 +134,7 @@ def collect(
                 if use_wikidata
                 else sources.images(client, record)
             )
-        if not candidates:
+        if not candidates and source_images:
             issues.append(
                 "No Commons image candidates; retain the existing image or placeholder."
             )
@@ -274,6 +275,7 @@ def execute(
     use_wikidata=False,
     image_references=None,
     offline=False,
+    source_images=False,
 ):
     respect_robots = getattr(client, "respect_robots", robots_enabled())
     inputs = (
@@ -285,6 +287,7 @@ def execute(
             "images": image_references,
             "offline": offline,
             "respect_robots": respect_robots,
+            "source_images": source_images,
         }
         if pronunciation_references
         or pronunciation_index
@@ -293,6 +296,7 @@ def execute(
         or image_references
         or offline
         or not respect_robots
+        or source_images
         else None
     )
     folder = Path(folder)
@@ -457,6 +461,7 @@ def execute(
                     use_wikidata,
                     image_references,
                     offline,
+                    source_images or bool(image_references),
                 )
                 if dry_run:
                     pid = None

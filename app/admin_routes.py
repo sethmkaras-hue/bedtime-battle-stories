@@ -2,10 +2,10 @@ from typing import Literal
 import hmac
 import json
 from fastapi import APIRouter, HTTPException, Request, Response, Path as ApiPath
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from .importer.store import Store, root
-from .importer.review import approve, safe_file
+from .importer.review import approve
 from .importer.persistence import ContentError, pending, failure, issues
 
 router = APIRouter(prefix="/api/admin")
@@ -93,13 +93,15 @@ def proposals(request: Request, response: Response):
     store = Store()
     try:
         result = store.proposals()
+        result = [
+            row
+            for row in result
+            if row["proposal"].get("science")
+            or row["proposal"].get("pronunciation")
+            or not row["proposal"].get("images")
+        ]
         for row in result:
-            for i, image in enumerate(row["proposal"]["images"]):
-                has_preview = bool(image.get("preview_file"))
-                image.pop("original_file", None)
-                image.pop("preview_file", None)
-                if image.get("supported") and has_preview:
-                    image["preview_url"] = f"/api/admin/proposals/{row['id']}/image/{i}"
+            row["proposal"].pop("images", None)
             row["proposal"].pop("record", None)
         from . import main, library
         import sqlite3, os
@@ -118,36 +120,12 @@ def proposals(request: Request, response: Response):
         store.close()
 
 
-@router.get("/proposals/{pid}/image/{index}")
-def preview(pid: int, index: int, request: Request):
-    authorized(request)
-    store = Store()
-    try:
-        row = store.get(pid)
-        if not row:
-            raise ValueError("Proposal not found")
-        images = json.loads(row["payload"]).get("images", [])
-        if not 0 <= index < len(images):
-            raise ValueError("Image not found")
-        path = safe_file(store.root, images[index].get("preview_file", ""))
-        return FileResponse(
-            path,
-            media_type="image/webp",
-            headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"},
-        )
-    except (ValueError, KeyError) as error:
-        raise HTTPException(404, "Preview is unavailable") from error
-    finally:
-        store.close()
-
-
 class Decision(BaseModel):
     model_config = ConfigDict(extra="forbid")
     decision: Literal["approve", "reject"]
-    scopes: list[Literal["science", "image", "pronunciation"]] = Field(
+    scopes: list[Literal["science", "pronunciation"]] = Field(
         default_factory=list, max_length=3
     )
-    image_index: int = Field(default=0, ge=0, strict=True)
     confirm: Literal[True]
 
     @field_validator("confirm", mode="before")
@@ -181,7 +159,7 @@ def decide(body: Decision, request: Request, pid: int = ApiPath(gt=0)):
             for k, v in body.model_dump().items()
             if k in {"phonetic", "stress", "tts_text"} and v is not None
         }
-        return approve(main.DB, store, pid, body.scopes, body.image_index, edits)
+        return approve(main.DB, store, pid, body.scopes, pron_edits=edits)
     except (ValueError, KeyError, OSError) as error:
         context = failure(
             error, operation="parent_" + body.decision, record=record, proposal_id=pid

@@ -144,7 +144,6 @@ def run():
                 card = page.locator(".parent-proposal").first
                 assert "Synthetic educational fixture" in card.inner_text()
                 assert "Fixture alternate" in card.inner_text()
-                assert "Fixture identity evidence" in card.inner_text()
                 card.locator("input[data-scope=science]").check()
                 card.locator("input[type=checkbox]").last.check()
                 card.get_by_role("button", name="Approve inspected updates").click()
