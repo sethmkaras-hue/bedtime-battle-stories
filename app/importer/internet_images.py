@@ -100,6 +100,10 @@ def coverage(db):
             rows,
             Path(os.environ.get("BBS_AUDIO_CACHE", library.ROOT / "data/audio_cache")),
         )
+        imported = sum(
+            c.get("image_kind") == "internet" and c.get("artwork_placeholder") is False
+            for c in visible
+        )
         return {
             "total": len(profiles),
             "internet_images": imported,
@@ -237,6 +241,7 @@ def candidate(info, page, record):
         "attribution": text("Attribution") or text("Credit") or text("Artist") or None,
         "original_source_url": info.get("descriptionurl"),
         "download_url": info.get("url"),
+        "thumbnail_url": info.get("thumburl"),
         "retrieved_on": now(),
         "supported": not reasons,
         "issues": reasons,
@@ -252,7 +257,7 @@ def candidate(info, page, record):
     }
 
 
-def discover(client, record, use_wikidata=False):
+def discover(client, record, use_wikidata=False, query=None):
     """Bounded multiple searches and category pagination, independent of Wikidata."""
     name = record["scientific_name"]
     aliases = [name, record.get("display_name", name), *record.get("synonyms", [])]
@@ -272,6 +277,8 @@ def discover(client, record, use_wikidata=False):
         ]
     )
     queries += [f'"{name}" {suffix}' for suffix in suffixes]
+    if query:
+        queries = [query]
     found, diagnostics = {}, []
 
     def add(result):
@@ -295,6 +302,7 @@ def discover(client, record, use_wikidata=False):
                     "action": "query",
                     "prop": "imageinfo",
                     "iiprop": "url|size|mime|extmetadata",
+                    **({"iiurlwidth": 320} if query is not None else {}),
                     "format": "json",
                 },
             )
@@ -466,7 +474,7 @@ def convert(content):
         raise ValueError("Image exceeds safe decoded-pixel limits") from error
 
 
-def install(db, record, selected, content, directory=None):
+def install(db, record, selected, content, directory=None, explicit=False):
     """Only validated pixels and identity reach the transaction; no approval DTO."""
     if (
         not selected.get("supported")
@@ -524,14 +532,15 @@ def install(db, record, selected, content, directory=None):
             (record["id"],),
         ).fetchone()
         if (
-            old
+            not explicit
+            and old
             and valid_asset(dict(old))
             and json.loads(old["metadata_json"])["identity_confidence"]
             > selected["identity_confidence"]
         ):
             return False
         canonical = json.loads(current[0])["image"]
-        if library.canonical_image_available(canonical):
+        if not explicit and library.canonical_image_available(canonical):
             floor = (
                 100 if canonical.get("approval_method", "manual") == "manual" else 95
             )
@@ -549,6 +558,13 @@ def install(db, record, selected, content, directory=None):
             "UPDATE creatures SET image_reference=? WHERE id=?",
             (f"/api/library/images/{record['id']}/{key}", record["id"]),
         )
+        if conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE name='story_image_choice'"
+        ).fetchone():
+            conn.execute(
+                "DELETE FROM story_image_choice WHERE creature_id=?", (record["id"],)
+            )
+
     return True
 
 

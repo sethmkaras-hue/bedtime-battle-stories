@@ -1,5 +1,6 @@
 """Mobile UX regression with deterministic audio transport; no models or paid calls."""
 import io
+import json
 import os
 from pathlib import Path
 import sys
@@ -37,6 +38,14 @@ def run(base='http://127.0.0.1:8502', screenshots=None):
                 data={'fallback':True} if body.get('provider') in ['piper','browser'] else {'key':'a'*64,'state':'queued'}
             route.fulfill(status=200,json=data)
         page.route('**/api/audio**',route_audio)
+        # Preserve coverage of the original session-only client/API contract.
+        # Dedicated chapters_smoke.py exercises the new persistent flow.
+        def legacy_tournament(route):
+            if route.request.method != 'POST':return route.continue_()
+            body=route.request.post_data_json
+            response=route.fetch(url=base+'/api/tournament',method='POST',post_data=json.dumps({'creature_ids':body['creature_ids'],'shuffle':body.get('shuffle',False)}))
+            route.fulfill(response=response)
+        page.route('**/api/story/tournaments',legacy_tournament)
         def shot(name):
             if screenshots:
                 Path(screenshots).mkdir(parents=True,exist_ok=True)

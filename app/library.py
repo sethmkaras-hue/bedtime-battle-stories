@@ -781,6 +781,8 @@ def enrich(conn, rows, cache_root):
                 image_kind="internet",
                 internet_image=image,
             )
+        from app.chapters.images import overlay
+        overlay(conn, item)
         result.append(item)
     return result
 

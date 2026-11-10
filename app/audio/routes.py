@@ -85,6 +85,11 @@ def cache_stats(request: Request):
 def clear_cache(request: Request, x_bedtime_confirm: str = Header(default='')):
     if x_bedtime_confirm != 'clear':
         raise HTTPException(400, 'Cache deletion requires explicit confirmation')
+    from app.main import DB
+    from app.chapters.store import connection
+    with connection(DB) as conn:
+        if conn.execute("SELECT 1 FROM story_jobs WHERE kind='chapter' AND status IN ('pending','generating') LIMIT 1").fetchone():
+            raise HTTPException(409, 'Wait for chapter preparation to finish before clearing the audio cache.')
     try:
         return request.app.state.audio.clear()
     except QueueFull as error:

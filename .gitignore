@@ -21,3 +21,6 @@ data/*.sqlite3-*
 
 data/creature_images/
 *.creature-import.lock
+
+data/chapter_audio/
+*.chapter-worker.lock
