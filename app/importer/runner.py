@@ -25,7 +25,7 @@ PILOT = [
     "Parasaurolophus",
     "Allosaurus",
 ]
-VERSION = 4
+VERSION = 5
 
 
 def digest(record, inputs=None):
@@ -196,47 +196,66 @@ def collect(
 
 
 def apply_supported(db, record, proposal):
-    if not proposal["science"] or record["verification_status"] == "verified":
+    from .persistence import science_update, persist
+
+    if not proposal.get("science") or record["verification_status"] == "verified":
         return False
-    new = json.loads(json.dumps(record))
-    protected = record.get("reviewed_fields", {})
-    patch = {k: v for k, v in proposal["science"].items() if k not in protected}
-    new.update(patch)
-    new["import_stage"] = (
-        "source_supported"
-        if record.get("import_stage") != "manually_reviewed"
-        else "manually_reviewed"
-    )
-    by_id = {s["id"]: s for s in record["sources"]}
-    ids = {}
-    for source in proposal["evidence"]:
-        identity = {k: v for k, v in source.items() if k != "retrieved_on"}
-        suffix = hashlib.sha256(
-            json.dumps(
-                {"source": identity, "fields": proposal["science"]}, sort_keys=True
-            ).encode()
-        ).hexdigest()[:12]
-        sid = source["id"] + "-" + suffix
-        ids[source["id"]] = sid
-        if sid not in by_id:
-            by_id[sid] = {
-                k: v
-                for k, v in source.items()
-                if k in {"id", "title", "url", "publisher", "supports", "retrieved_on"}
-            }
-            by_id[sid]["id"] = sid
-    for measurement in ["length", "weight"]:
-        if measurement in patch:
-            new[measurement]["source_ids"] = [
-                ids.get(s, s) for s in new[measurement]["source_ids"]
-            ]
-    new["sources"] = list(by_id.values())
-    parsed = library.CreatureRecord.model_validate(new).model_dump(mode="json")
-    if parsed == record:
+    updated = science_update(record, proposal)
+    return persist(db, updated, record, operation="automatic_science")["changed"]
+
+
+def publish_supported_image(db, record, proposal, store, pid):
+    from .persistence import image_update, persist, failure
+
+    row = store.get(pid)
+    if not row or row["status"] != "pending":
         return False
-    with sqlite3.connect(db, timeout=5) as conn:
-        library.import_records(conn, [parsed])
-    return True
+    if "image" in store.applied(pid):
+        return False
+    if not record["image"]["placeholder"]:
+        # Reconcile a crash after the canonical commit but before queue bookkeeping.
+        image = record["image"]
+        if image.get("approval_method") == "automated":
+            for candidate in proposal.get("images", []):
+                digest = candidate.get("sha256", "")[:16]
+                if (
+                    digest
+                    and ("/import-" + str(pid) + "-" + digest + "/") in image["path"]
+                    and image["original_source_url"]
+                    == candidate.get("original_source_url")
+                ):
+                    library.validate_records([record])
+                    store.complete(pid, ["image"], "automatic_image_reconciled")
+                    break
+        return False
+    for candidate in proposal.get("images", []):
+        if not candidate.get("supported") or not candidate.get("original_file"):
+            continue
+        try:
+            updated = image_update(record, candidate, store.root, pid)
+            result = persist(
+                db, updated, record, operation="automatic_image", proposal_id=pid
+            )
+            store.complete(pid, ["image"], "automatic_image")
+            return result["changed"]
+        except (ValueError, KeyError, OSError) as error:
+            context = failure(
+                error, operation="automatic_image", record=record, proposal_id=pid
+            )
+            proposal["issues"].append(
+                "Automatic image publication failed: "
+                + "; ".join(issue["msg"] for issue in context["issues"])
+            )
+    return False
+
+
+def current_record(db, key):
+    with sqlite3.connect(db) as conn:
+        return json.loads(
+            conn.execute(
+                "SELECT record_json FROM creature_profiles WHERE stable_key=?", (key,)
+            ).fetchone()[0]
+        )
 
 
 def execute(
@@ -288,6 +307,7 @@ def execute(
         "processed": 0,
         "resumed": 0,
         "source_supported_applied": 0,
+        "images_published": 0,
         "proposals": [],
         "errors": [],
         "dry_run": dry_run,
@@ -380,9 +400,33 @@ def execute(
                     and saved["status"] != "rejected"
                     and record.get("id") is not None
                 ):
-                    applied = apply_supported(db, record, json.loads(saved["payload"]))
+                    try:
+                        applied = apply_supported(
+                            db, record, json.loads(saved["payload"])
+                        )
+                    except (ValueError, KeyError, OSError) as error:
+                        from .persistence import failure
+
+                        report["errors"].append(
+                            failure(
+                                error,
+                                operation="automatic_science",
+                                record=record,
+                                proposal_id=saved["id"],
+                            )
+                        )
+                        applied = False
                     report["source_supported_applied"] += int(applied)
-                    if applied:
+                    image_record = current_record(db, record["stable_key"])
+                    published = publish_supported_image(
+                        db,
+                        image_record,
+                        json.loads(saved["payload"]),
+                        store,
+                        saved["id"],
+                    )
+                    report["images_published"] += int(published)
+                    if applied or published:
                         with sqlite3.connect(db) as conn:
                             updated = json.loads(
                                 conn.execute(
@@ -418,10 +462,26 @@ def execute(
                 if apply and not dry_run and record.get("id") is not None:
                     try:
                         applied = apply_supported(db, record, proposal)
-                    except ValueError as error:
+                    except (ValueError, KeyError, OSError) as error:
+                        from .persistence import failure
+
+                        context = failure(
+                            error,
+                            operation="automatic_science",
+                            record=record,
+                            proposal_id=pid,
+                        )
+                        report["errors"].append(context)
                         proposal["issues"].append(
                             "Canonical validation refused update: " + str(error)
                         )
+                published = False
+                if apply and not dry_run and record.get("id") is not None:
+                    publication_record = current_record(db, record["stable_key"])
+                    published = publish_supported_image(
+                        db, publication_record, proposal, store, pid
+                    )
+                    report["images_published"] += int(published)
                 report["processed"] += 1
                 report["source_supported_applied"] += int(applied)
                 report["proposals"].append(
@@ -437,7 +497,7 @@ def execute(
                         "issues": proposal["issues"],
                     }
                 )
-                if applied:
+                if applied or published:
                     # Refresh the checkpoint to the post-import record so a normal
                     # restart does not immediately refetch our own supported update.
                     with sqlite3.connect(db) as conn:

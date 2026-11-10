@@ -138,7 +138,8 @@ def test_cannot_disguise_importer_as_browser(tmp_path, monkeypatch):
 
 
 @pytest.fixture
-def local_bundle(tmp_path, database):
+def local_bundle(tmp_path, database, monkeypatch):
+    monkeypatch.setattr(library, "ROOT", tmp_path / "published")
     image = pytest.importorskip("PIL.Image")
     with sqlite3.connect(database) as conn:
         record = json.loads(
@@ -200,6 +201,7 @@ def test_alternative_image_stages_offline_then_publishes_only_after_review(
         database,
         folder,
         pilot=1,
+        apply=False,
         offline=True,
         image_references=refs,
         client=NoNetwork(),
@@ -431,3 +433,141 @@ def test_csv_duplicate_columns_are_refused(tmp_path):
     path.write_text("scientific_name,scientific_name\na,b\n")
     with pytest.raises(ValueError, match="unique"):
         load_references(path)
+
+
+def test_validated_image_publishes_automatically_and_is_distinguished_from_human_review(
+    local_bundle, database, tmp_path
+):
+    path, credit, manifest, record = local_bundle
+    result = execute(
+        database,
+        tmp_path / "imports",
+        pilot=1,
+        offline=True,
+        image_references=load_images(path),
+        client=NoNetwork(),
+        progress=lambda *a, **k: None,
+    )
+    assert result["images_published"] == 1
+    with sqlite3.connect(database) as conn:
+        saved = json.loads(
+            conn.execute(
+                "SELECT record_json FROM creature_profiles WHERE creature_id=1"
+            ).fetchone()[0]
+        )
+    assert saved["id"] == record["id"] and saved["verification_status"] == "unverified"
+    assert (
+        saved["image"]["approval_method"] == "automated"
+        and saved["image"]["verified_by"] == "automated-import:v1"
+    )
+    assert library.local_asset(saved["image"]["path"]).is_file()
+    store = Store(tmp_path / "imports")
+    try:
+        assert store.applied(1) == ["image"] and store.proposals() == []
+    finally:
+        store.close()
+
+
+def test_automatic_image_can_fill_verified_profile_without_changing_its_science(
+    local_bundle, database, tmp_path
+):
+    path, credit, manifest, record = local_bundle
+    record.update(
+        verification_status="verified",
+        verified_by="Synthetic researcher",
+        checked_on="2026-11-01",
+        taxon_rank="species",
+        time_period="Synthetic interval",
+        subcategory="Synthetic group",
+        geographic_distribution=["Synthetic locality"],
+        physical_characteristics=["Synthetic trait"],
+        fun_facts=["Synthetic fact 1", "Synthetic fact 2", "Synthetic fact 3"],
+    )
+    record["sources"].append(
+        {
+            "id": "all-fields",
+            "title": "Synthetic reviewed evidence",
+            "url": "https://example.test/source",
+            "checked_on": "2026-11-01",
+            "supports": [
+                "taxonomy",
+                "description",
+                "time_period",
+                "habitat",
+                "diet",
+                "fun_facts",
+                "physical_characteristics",
+                "geographic_distribution",
+            ],
+        }
+    )
+    with sqlite3.connect(database) as conn:
+        library.import_records(conn, [record])
+        original = json.loads(
+            conn.execute(
+                "SELECT record_json FROM creature_profiles WHERE creature_id=1"
+            ).fetchone()[0]
+        )
+    report = execute(
+        database,
+        tmp_path / "imports",
+        pilot=1,
+        offline=True,
+        image_references=load_images(path),
+        client=NoNetwork(),
+        progress=lambda *a, **k: None,
+    )
+    assert report["images_published"] == 1
+    with sqlite3.connect(database) as conn:
+        saved = json.loads(
+            conn.execute(
+                "SELECT record_json FROM creature_profiles WHERE creature_id=1"
+            ).fetchone()[0]
+        )
+    assert {k: v for k, v in saved.items() if k not in {"image", "import_stage"}} == {
+        k: v for k, v in original.items() if k not in {"image", "import_stage"}
+    }
+    assert (
+        saved["image"]["approval_method"] == "automated"
+        and saved["verified_by"] == "Synthetic researcher"
+    )
+
+
+def test_interrupted_image_publication_reconciles_without_losing_review_state(
+    local_bundle, database, tmp_path, monkeypatch
+):
+    path, *_ = local_bundle
+    refs = load_images(path)
+    folder = tmp_path / "imports"
+    original = Store.complete
+
+    def interrupted(*args, **kwargs):
+        raise RuntimeError("Synthetic interruption after canonical commit")
+
+    monkeypatch.setattr(Store, "complete", interrupted)
+    with pytest.raises(RuntimeError, match="Synthetic interruption"):
+        execute(
+            database,
+            folder,
+            pilot=1,
+            offline=True,
+            image_references=refs,
+            client=NoNetwork(),
+            progress=lambda *a, **k: None,
+        )
+    monkeypatch.setattr(Store, "complete", original)
+    report = execute(
+        database,
+        folder,
+        pilot=1,
+        offline=True,
+        image_references=refs,
+        client=NoNetwork(),
+        progress=lambda *a, **k: None,
+    )
+    assert report["images_published"] == 0 and report["pending_review"] == 0
+    store = Store(folder)
+    try:
+        assert store.applied(1) == ["image"]
+    finally:
+        store.close()

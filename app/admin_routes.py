@@ -1,12 +1,12 @@
 from typing import Literal
 import hmac
 import json
-from urllib.parse import urlsplit
-from fastapi import APIRouter, HTTPException, Request, Response
-from fastapi.responses import FileResponse
-from pydantic import BaseModel, Field, ConfigDict
+from fastapi import APIRouter, HTTPException, Request, Response, Path as ApiPath
+from fastapi.responses import FileResponse, JSONResponse
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 from .importer.store import Store, root
 from .importer.review import approve, safe_file
+from .importer.persistence import ContentError, pending, failure, issues
 
 router = APIRouter(prefix="/api/admin")
 COOKIE = "bedtime_parent"
@@ -147,18 +147,30 @@ class Decision(BaseModel):
     scopes: list[Literal["science", "image", "pronunciation"]] = Field(
         default_factory=list, max_length=3
     )
-    image_index: int = Field(default=0, ge=0)
+    image_index: int = Field(default=0, ge=0, strict=True)
     confirm: Literal[True]
+
+    @field_validator("confirm", mode="before")
+    @classmethod
+    def explicit_confirmation(cls, value):
+        if value is not True:
+            raise ValueError("Confirm the decision explicitly")
+        return value
+
     phonetic: str | None = Field(default=None, max_length=100)
     stress: str | None = Field(default=None, max_length=100)
     tts_text: str | None = Field(default=None, max_length=200)
 
 
 @router.post("/proposals/{pid}/decision")
-def decide(pid: int, body: Decision, request: Request):
+def decide(body: Decision, request: Request, pid: int = ApiPath(gt=0)):
     authorized(request, True)
     store = Store()
+    record = None
     try:
+        row = store.get(pid)
+        record = json.loads(row["payload"]) if row else None
+        pending(store, pid)
         if body.decision == "reject":
             store.decide(pid, "rejected")
             return {"rejected": pid}
@@ -170,7 +182,72 @@ def decide(pid: int, body: Decision, request: Request):
             if k in {"phonetic", "stress", "tts_text"} and v is not None
         }
         return approve(main.DB, store, pid, body.scopes, body.image_index, edits)
-    except (ValueError, KeyError) as error:
-        raise HTTPException(422, str(error)) from error
+    except (ValueError, KeyError, OSError) as error:
+        context = failure(
+            error, operation="parent_" + body.decision, record=record, proposal_id=pid
+        )
+        detail = {
+            "code": error.code
+            if isinstance(error, ContentError)
+            else "invalid_content",
+            "message": str(error)
+            if isinstance(error, ContentError)
+            else "Imported content failed validation; correct the listed fields",
+            **context,
+        }
+        if isinstance(error, ContentError):
+            detail["issues"] = error.issues
+        raise HTTPException(
+            error.status if isinstance(error, ContentError) else 422, detail
+        ) from error
     finally:
         store.close()
+
+
+async def request_validation_error(request, error):
+    # Preserve auth/CSRF even when request parsing fails before the route runs.
+    if request.url.path != "/api/admin/login":
+        try:
+            authorized(request, request.method in {"POST", "PUT", "PATCH", "DELETE"})
+        except HTTPException as denied:
+            return JSONResponse(
+                status_code=denied.status_code, content={"detail": denied.detail}
+            )
+    # Do not log request bodies, passwords, cookies, tokens or Pydantic inputs.
+    problem = [{k: e[k] for k in ("loc", "msg", "type")} for e in error.errors()]
+    pid = request.path_params.get("pid")
+    if isinstance(pid, str) and pid.isdecimal():
+        pid = int(pid)
+    record = None
+    if isinstance(pid, int):
+        store = Store()
+        try:
+            row = store.get(pid)
+            if row:
+                record = json.loads(row["payload"])
+        finally:
+            store.close()
+    context = {
+        "operation": "parent_decision"
+        if "/decision" in request.url.path
+        else "parent_request",
+        "proposal_id": pid,
+        "creature": (record or {}).get("display_name"),
+        "stable_key": (record or {}).get("stable_key"),
+        "issues": problem,
+    }
+    import logging
+
+    logging.getLogger(__name__).warning(
+        "Parent request validation failed: %s", json.dumps(context)
+    )
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": {
+                "code": "invalid_request",
+                "message": "Request fields are invalid; see the listed fields",
+                **context,
+            }
+        },
+    )

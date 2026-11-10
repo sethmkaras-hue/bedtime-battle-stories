@@ -50,6 +50,7 @@ class Store:
             id INTEGER PRIMARY KEY, stable_key TEXT NOT NULL, fingerprint TEXT NOT NULL UNIQUE,
             payload TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', created TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS checkpoints(stable_key TEXT PRIMARY KEY,input_hash TEXT NOT NULL,proposal_id INTEGER NOT NULL);
+            CREATE TABLE IF NOT EXISTS proposal_scopes(proposal_id INTEGER NOT NULL, scope TEXT NOT NULL, operation TEXT NOT NULL, created TEXT NOT NULL, PRIMARY KEY(proposal_id,scope));
             CREATE TABLE IF NOT EXISTS review_events(id INTEGER PRIMARY KEY,proposal_id INTEGER NOT NULL,decision TEXT NOT NULL,created TEXT NOT NULL);
         """)
         self.conn.commit()
@@ -105,6 +106,7 @@ class Store:
                 "status": r["status"],
                 "created": r["created"],
                 "proposal": json.loads(r["payload"]),
+                "applied_scopes": self.applied(r["id"]),
             }
             for r in rows
         ]
@@ -113,6 +115,52 @@ class Store:
         row = self.conn.execute("SELECT * FROM proposals WHERE id=?", (pid,)).fetchone()
         return dict(row) if row else None
 
+    def applied(self, pid):
+        return [
+            row[0]
+            for row in self.conn.execute(
+                "SELECT scope FROM proposal_scopes WHERE proposal_id=? ORDER BY scope",
+                (pid,),
+            )
+        ]
+
+    def remaining(self, pid):
+        row = self.get(pid)
+        if not row:
+            return []
+        proposal = json.loads(row["payload"])
+        present = {
+            scope
+            for scope, key in (
+                ("science", "science"),
+                ("image", "images"),
+                ("pronunciation", "pronunciation"),
+            )
+            if proposal.get(key)
+        }
+        return sorted(present - set(self.applied(pid)))
+
+    def complete(self, pid, scopes, operation):
+        with self.conn:
+            for scope in scopes:
+                self.conn.execute(
+                    "INSERT OR IGNORE INTO proposal_scopes VALUES (?,?,?,?)",
+                    (pid, scope, operation, datetime.now(timezone.utc).isoformat()),
+                )
+            if not self.remaining(pid):
+                self.conn.execute(
+                    "UPDATE proposals SET status='approved' WHERE id=? AND status='pending'",
+                    (pid,),
+                )
+            self.conn.execute(
+                "INSERT INTO review_events(proposal_id,decision,created) VALUES (?,?,?)",
+                (
+                    pid,
+                    operation + ":" + ",".join(sorted(scopes)),
+                    datetime.now(timezone.utc).isoformat(),
+                ),
+            )
+
     def decide(self, pid, decision):
         with self.conn:
             cursor = self.conn.execute(
@@ -120,7 +168,13 @@ class Store:
                 (decision, pid),
             )
             if cursor.rowcount != 1:
-                raise ValueError("Proposal is no longer pending")
+                from .persistence import ContentError
+
+                raise ContentError(
+                    "Proposal is no longer pending",
+                    code="proposal_conflict",
+                    status=409,
+                )
             self.conn.execute(
                 "INSERT INTO review_events(proposal_id,decision,created) VALUES (?,?,?)",
                 (pid, decision, datetime.now(timezone.utc).isoformat()),

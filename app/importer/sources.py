@@ -5,7 +5,7 @@ from html import unescape
 from html.parser import HTMLParser
 import re
 from urllib.parse import quote, urlsplit
-from app.library import normalize
+from app.library import normalize, valid_license_declaration
 from .network import SourceUnavailable
 from .api_policy import COMMONS_API
 
@@ -344,14 +344,6 @@ def image_candidate(info, page, depicts, qid, name, living, source_kind="commons
     license_url = (
         ext.get("LicenseUrl", {}).get("value", "").replace("http://", "https://", 1)
     )
-    license_path = {
-        "CC0-1.0": "/publicdomain/zero/1.0/",
-        "Public-Domain": "/publicdomain/mark/1.0/",
-        "CC-BY-4.0": "/licenses/by/4.0/",
-        "CC-BY-SA-4.0": "/licenses/by-sa/4.0/",
-        "CC-BY-3.0": "/licenses/by/3.0/",
-        "CC-BY-SA-3.0": "/licenses/by-sa/3.0/",
-    }
     source_page = urlsplit(info.get("descriptionurl") or "")
     asset = urlsplit(info.get("url") or "")
     if source_kind == "commons" and (
@@ -371,15 +363,8 @@ def image_candidate(info, page, depicts, qid, name, living, source_kind="commons
         or source_page.password
     ):
         reason.append("An HTTPS original attribution/source page is required")
-    declaration = urlsplit(license_url)
-    if (
-        not creator
-        or declaration.scheme != "https"
-        or declaration.netloc != "creativecommons.org"
-        or declaration.path.rstrip("/")
-        != license_path.get(license, "invalid").rstrip("/")
-    ):
-        reason.append("Creator/license declaration incomplete")
+    if not creator or not valid_license_declaration(license, license_url):
+        reason.append("Creator/license declaration incomplete or inconsistent")
     return {
         "title": page.get("title"),
         "page_id": page.get("pageid"),

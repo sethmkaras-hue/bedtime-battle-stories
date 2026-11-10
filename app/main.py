@@ -9,11 +9,13 @@ import threading
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.exceptions import RequestValidationError
+from fastapi.exception_handlers import request_validation_exception_handler
 from pydantic import BaseModel, ConfigDict, Field, StrictInt
 from app.adventure import progress
 from app import library as encyclopedia
 from app.library_routes import router as library_router
-from app.admin_routes import router as admin_router
+from app.admin_routes import router as admin_router, request_validation_error
 from app.importer.auth import ParentAuth
 from app.importer.store import root as importer_root
 from app.audio.routes import router as audio_router, create_service
@@ -85,6 +87,13 @@ async def lifespan(app):
 
 
 app = FastAPI(title='Bedtime Battle Stories', lifespan=lifespan)
+
+@app.exception_handler(RequestValidationError)
+async def validation_error(request, exc):
+    if request.url.path.startswith('/api/admin/'):
+        return await request_validation_error(request, exc)
+    return await request_validation_exception_handler(request, exc)
+
 app.include_router(audio_router)
 app.include_router(library_router)
 app.include_router(admin_router)

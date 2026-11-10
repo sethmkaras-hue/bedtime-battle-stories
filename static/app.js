@@ -293,6 +293,18 @@ function creatureCard(c, selectable) {
   return card;
 }
 
+window.refreshCreatureLibrary = async () => {
+  const rows = await api("/api/creatures");
+  if (category && library.length) {
+    library = rows.filter(c => category === "ocean" ? ["shark", "marine_reptile"].includes(c.category) : c.category === category);
+    render();
+  }
+  if (encyclopediaLibrary.length) {
+    encyclopediaLibrary = rows;
+    renderEncyclopedia();
+  }
+};
+
 async function choose(value) {
   const rows = await api(
     value === "ocean" ? "/api/creatures" : "/api/creatures?category=" + value,
@@ -1076,6 +1088,7 @@ $("open-attributions").onclick = guarded(async () => {
       image.name + " · " + image.attribution + " · " + image.license,
     );
     profileParagraph(section, image.modifications);
+    profileParagraph(section, image.approval_method === "automated" ? "Automated source/identity/license checks; not a manually verified scientific profile." : "Artwork approved through manual review.");
     referenceLink(section, "Original image", image.original_source_url);
     referenceLink(section, "License", image.license_url);
     $("attribution-list").append(section);
