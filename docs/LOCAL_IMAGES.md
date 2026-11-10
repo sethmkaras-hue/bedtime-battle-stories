@@ -1,3 +1,5 @@
+> Historical workflow: normal artwork now uses the [automatic private Internet importer](INTERNET_IMAGES.md). Approval/generation UI and write routes are retired; the new guide supersedes conflicting setup instructions here.
+
 # Local CPU creature illustrations
 
 The normal artwork workflow is now local text-to-image diffusion. No Commons image search, source-photo download, per-image license approval, paid API, GPU or cloud image-generation service is required. Scientific importing and source-backed pronunciation remain separate. Existing creature IDs, scientific profiles, fictional game rules and audio caches are preserved.

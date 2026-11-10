@@ -90,14 +90,12 @@
         <h2>Special adaptations</h2>
         <div id="profile-adaptations"></div>
         <button id="profile-add" class="primary">Add to Tournament</button>
-        <details class="profile-credits">
-          <summary>Sources, pronunciation &amp; image credits</summary>
-          <div id="profile-sources"></div>
-        </details>
+        <p id="profile-image-attribution" class="soft-note"></p>
+        <div id="profile-sources" hidden></div>
       </section>
       <section id="attributions" hidden>
         <p class="eyebrow">FOR CURIOUS GROWN-UPS</p>
-        <h1>Image credits &amp; library care</h1>
+        <h1>Sources &amp; Credits</h1>
         <div id="attribution-list"></div>
         <pre id="library-audit-summary"></pre>
       </section>
@@ -226,45 +224,6 @@
         ><button id="new-adventure">New Adventure</button
         ><button id="view-bracket">See the finished bracket</button>
       </section>
-      <section id="parent-review" hidden>
-        <p class="eyebrow">GROWN-UPS ONLY</p>
-        <h1>Creature content review</h1>
-        <p>
-          Check source evidence before approving. Imported information is not
-          automatically verified.
-        </p>
-        <div id="parent-locked">
-          <p id="parent-config-status"></p>
-          <form id="parent-login">
-            <label
-              >Parent passphrase<input
-                id="parent-password"
-                type="password"
-                autocomplete="current-password"
-                minlength="12"
-                maxlength="256"
-                required /></label
-            ><button class="primary">Unlock review</button>
-          </form>
-        </div>
-        <div id="parent-unlocked" hidden>
-          <button id="parent-logout">Lock parent review</button
-          ><button id="parent-refresh">Refresh queue</button>
-          <p id="parent-coverage"></p>
-          <p class="soft-note">
-            After approving guidance, run GENERATE_PRONUNCIATIONS.sh on the
-            server. Creature speakers never generate audio.
-          </p>
-          <div id="parent-proposals"></div>
-          <details>
-            <summary>
-              Missing facts, images, pronunciations and cached audio
-            </summary>
-            <div id="parent-missing"></div>
-          </details>
-        </div>
-        <p id="parent-review-message" role="status"></p>
-      </section>
       <section id="settings" hidden>
         <p class="eyebrow">JUST RIGHT FOR TONIGHT</p>
         <h1>Adventure settings</h1>
@@ -380,25 +339,12 @@
           </details>
         </form>
         <details id="image-management">
-          <summary>Local creature illustrations</summary>
-          <p>
-            AI-generated artwork is illustrative, not scientifically verified.
-          </p>
-          <p id="image-generation-status">Checking local image generation…</p>
-          <button id="refresh-images">Refresh image status</button
-          ><label>Creature<select id="generated-image-creature"></select></label
-          ><button id="view-image-metadata">View prompt and metadata</button
-          ><button id="regenerate-creature-image">
-            Regenerate illustration
-          </button>
-          <p id="image-generation-message" role="status"></p>
-          <pre id="image-generation-metadata"></pre>
+          <summary>Internet creature images</summary>
+          <p id="image-import-coverage">Open Sources &amp; Credits to check local coverage.</p>
+          <button id="refresh-import-coverage" type="button">Check image coverage</button>
+          <p>Images are imported on the server. Existing artwork stays until a replacement is installed.</p>
         </details>
-        <button type="button" id="open-parent-review">
-          Parent content review 🔒</button
-        ><button type="button" id="open-attributions">
-          Image credits &amp; library audit
-        </button>
+        <button type="button" id="open-attributions">Sources &amp; Credits</button>
         <p class="soft-note">
           Creature speaker icons use prepared, source-reviewed audio only. Voice
           previews here may generate a short sample. To change prepared voices,
@@ -421,7 +367,6 @@
     <script src="/static/settings.js"></script>
     <script src="/static/audio-player.js"></script>
     <script src="/static/app.js"></script>
-    <script src="/static/parent-review.js"></script>
-    <script src="/static/image-settings.js"></script>
+    <script src="/static/import-settings.js"></script>
   </body>
 </html>

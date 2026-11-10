@@ -1,2 +1,2 @@
-# Offline image processing only; not required for normal application startup.
+# Optional CPU image import/conversion; web startup remains independent of Pillow.
 Pillow>=11,<13

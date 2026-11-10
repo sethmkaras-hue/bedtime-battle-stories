@@ -15,7 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field, StrictInt
 from app.adventure import progress
 from app import library as encyclopedia
 from app.library_routes import router as library_router
-from app.images.routes import router as image_router, admin_router as image_admin_router
+from app.images.routes import router as image_router
 from app.admin_routes import router as admin_router, request_validation_error
 from app.importer.auth import ParentAuth
 from app.importer.store import root as importer_root
@@ -98,7 +98,7 @@ async def validation_error(request, exc):
 app.include_router(audio_router)
 app.include_router(library_router)
 app.include_router(image_router)
-app.include_router(image_admin_router)
+# Local diffusion writes and legacy approval routes are intentionally unmounted.
 app.include_router(admin_router)
 app.mount('/static', StaticFiles(directory=ROOT / 'static'), name='static')
 

@@ -40,6 +40,14 @@ class Credit(BaseModel):
     identity_status: Literal["supported", "uncertain"] = "uncertain"
 
 
+class PrivateCredit(Credit):
+    # Local/private import retains declarations verbatim; missing rights are not
+    # evidence of public-domain status and are not a selection rejection.
+    creator: str | None = None
+    license: str | None = None
+    license_url: str | None = None
+
+
 def local_file(folder, relative, limit):
     path = (folder / relative).resolve()
     if not path.is_relative_to(folder) or not path.is_file():
@@ -49,7 +57,7 @@ def local_file(folder, relative, limit):
     return path
 
 
-def load_images(path):
+def load_images(path, private=False):
     path = Path(path).resolve()
     if path.stat().st_size > 2_000_000:
         raise ValueError("Image manifest exceeds 2 MB")
@@ -106,7 +114,11 @@ def load_images(path):
                     "Commons imageinfo/extmetadata values must be objects with textual values"
                 )
         else:
-            credit = Credit.model_validate(data).model_dump(mode="json")
+            credit = (
+                (PrivateCredit if private else Credit)
+                .model_validate(data)
+                .model_dump(mode="json")
+            )
             labels = {
                 "CC0-1.0": "CC0",
                 "Public-Domain": "Public domain",
@@ -119,10 +131,12 @@ def load_images(path):
             info = {
                 "descriptionurl": credit["source_url"],
                 "extmetadata": {
-                    k: {"value": v}
+                    k: {"value": v or ""}
                     for k, v in {
                         "Artist": credit["creator"],
-                        "LicenseShortName": labels[credit["license"]],
+                        "LicenseShortName": labels.get(
+                            credit["license"], credit["license"]
+                        ),
                         "LicenseUrl": credit["license_url"],
                         "ImageDescription": credit["description"],
                     }.items()

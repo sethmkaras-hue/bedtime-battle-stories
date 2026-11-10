@@ -54,9 +54,9 @@ Piper's Python 3.14 package/CLI and native phonemizer work in validation. Its of
 
 ## Creature book, research and prepared names
 
-Explore the creature book from Home without starting a tournament. Tap a creature picture for its profile and source/image credits. Selection keeps a separate Add/Remove action. Featured/category trails are available; biological trait trails show only reviewed claims. Existing creature IDs and fictional game ratings are preserved independently of encyclopedia data.
+Explore the creature book from Home without starting a tournament. Tap a creature picture for its profile; sources and image credits are in Settings. Selection keeps a separate Add/Remove action. Featured/category trails are available; biological trait trails show only reviewed claims. Existing creature IDs and fictional game ratings are preserved independently of encyclopedia data.
 
-**Research is incomplete:** outbound policy blocked the museum/Commons sources. The inherited **110 dinosaur genera, 42 sharks and 12 marine reptiles remain unverified**; no new verified taxa or licensed species photos were added. All 164 images are explicitly marked placeholders. Verified pronunciation coverage and prepared name audio are both **0/164**. [The full audit](docs/CREATURE_AUDIT.json) names every unresolved record; [the maintenance guide](docs/CREATURE_LIBRARY.md) gives target gaps, schema, licensing and research steps. No target was met by inventing facts.
+**Research is incomplete:** outbound policy blocked the museum/Commons sources. The inherited **110 dinosaur genera, 42 sharks and 12 marine reptiles remain unverified**; no new verified taxa or licensed species photos were added. The earlier audit found all 164 images were placeholders; current coverage is reported by `./IMPORT_CREATURE_LIBRARY.sh --coverage`. Verified pronunciation coverage and prepared name audio are both **0/164**. [The full audit](docs/CREATURE_AUDIT.json) names every unresolved record; [the maintenance guide](docs/CREATURE_LIBRARY.md) gives target gaps, schema, licensing and research steps. No target was met by inventing facts.
 
 Creature speakers now play **pre-generated local audio only**, never request TTS on tap. Missing audio shows a written fallback. After researching and importing verified guidance, a parent runs:
 
@@ -75,7 +75,7 @@ Repeat runs reuse current audio. The command skips unverified names, including i
 .venv/bin/python scripts/library.py audit --output data/library_audit.json
 ```
 
-Image preparation and real-image import validation use optional `requirements-media.txt`. Read the [licensed media workflow](docs/CREATURE_LIBRARY.md) before importing assets; never assume museum content is redistributable. Reviewed records, pronunciations and artwork are protected against automatic overwrites.
+Image preparation and real-image import validation use optional `requirements-media.txt`. Use the [private Internet image workflow](docs/INTERNET_IMAGES.md); imported files remain local and are not release assets. Reviewed records, pronunciations and artwork are protected against automatic overwrites.
 
 ## Tonight’s adventure
 
@@ -153,27 +153,20 @@ Normal tests use temporary data and mocked audio; models and paid API calls are 
 
 Next work: verify catalog facts and scientific names, test pronunciation and native audio on the actual iPhone, vary story templates and add reviewed species-specific illustrations. AI story/image generation remains outside this change.
 
-## Populate and review the creature library
+## Automatic private creature images
 
-Use `./IMPORT_CREATURE_LIBRARY.sh --pilot 10` before `--all`. The importer researches exact scientific identities, queues licensed image candidates and pronunciation guidance, backs up changes and resumes interrupted work. Configure the adult Settings review with `.venv/bin/python scripts/configure_parent.py`; approvals preserve explicit review status. Local audio is generated only from approved guidance, never on a child's speaker tap.
+Internet artwork replaces normal Stable Diffusion generation. Import existing images automatically, retain source/creator/license metadata, and preserve working artwork until a validated replacement is installed. No routine parent approvals are required. Robots enforcement defaults off for this importer; real access denials still stop requests. Missing license metadata does not block private local installation or imply permission to redistribute.
 
-See [exact Ubuntu 26.04 installation, commands, supported sources and limitations](docs/CREATURE_LIBRARY.md#automated-population-on-ubuntu-2604--python-314). The cloud pilot encountered blocked source access: the 164-record encyclopedia remains incomplete, with no newly verified real facts, images or pronunciations claimed.
+```bash
+.venv/bin/python -m pip install -r requirements.txt -r requirements-media.txt
+IMPORT_RESPECT_ROBOTS=false ./IMPORT_CREATURE_LIBRARY.sh --pilot 10 --refresh --skip-audio
+./IMPORT_CREATURE_LIBRARY.sh --coverage
+# After checking the pilot:
+./IMPORT_CREATURE_LIBRARY.sh --all --refresh --skip-audio
+# Resume without refreshing completed images:
+./IMPORT_CREATURE_LIBRARY.sh --all --skip-audio
+```
 
-Image discovery now searches Commons directly; Wikidata is optional. To retry an old pilot, use `./IMPORT_CREATURE_LIBRARY.sh --pilot 10 --refresh`. Import researched written pronunciation guidance without museum requests using `--pronunciation-references /path/to/references.json`. See [reference-file format and review workflow](docs/CREATURE_LIBRARY.md#commons-first-images-and-supplied-pronunciation-references).
+Images live in gitignored `data/creature_images/`; source/API caches live in `data/importer/`. Do not put third-party files in releases. Settings → Sources & Credits contains provenance and coverage. Existing AI files remain as fallbacks, but generation controls and approval write routes are unmounted. Scientific updates and written pronunciation imports run independently; no facts or verified pronunciations are invented. Speakers keep using prepared local audio.
 
-
-Commons robots failures now include endpoint, method, User-Agent, policy rule and HTTP-status diagnostics. Run `./IMPORT_CREATURE_LIBRARY.sh --diagnose-commons --report /tmp/commons-access.json`. When source access is prohibited, use `--offline --image-references /path/to/images.json`; pronunciation references accept CSV and JSON. See [local-image formats, alternatives, policy diagnosis and CSV instructions](docs/CREATURE_LIBRARY.md#access-policy-diagnosis-local-images-and-csv-guidance). Selection and the creature book display all available creatures by default, with lazy images and the eight-entrant limit preserved.
-
-
-Documented read-only requests to the exact Commons Action API now use a scoped API policy rather than the webpage crawler restriction on `/w/`. Ordinary scraping still checks robots; server/proxy denials remain blocking. See [policy basis, scope, tests and strict-mode fallback](docs/COMMONS_API_POLICY.md). Retry with `./IMPORT_CREATURE_LIBRARY.sh --pilot 10 --refresh --skip-audio`.
-
-
-Validated, evidence-complete creature images now install automatically; uncertain matches and unresolved science/pronunciations retain Parent Review. Approval errors now identify their creature and invalid fields, and installed images refresh in an open selection screen without losing selections. See [422 root causes, shared validation, upgrade commands and browser evidence](docs/IMPORT_VALIDATION.md).
-
-Importer robots enforcement is now on by default. Use `IMPORT_RESPECT_ROBOTS=false ./IMPORT_CREATURE_LIBRARY.sh --pilot 10 --refresh --skip-audio` for an explicit opt-out; HTTP access denials and licensing validation remain enforced. See [configuration details](docs/IMPORT_ROBOTS.md).
-
-## Local CPU creature illustrations
-
-Normal artwork now uses a separate Python 3.12 Stable Diffusion 1.5 CPU worker. Scientific importing remains separate; no Commons discovery, per-image approval, GPU or paid service is required for generated artwork. Images are cached with model/prompt/seed metadata and resume after interruptions. Settings provides status, prompt metadata and protected regeneration. Generated images are explicitly labeled AI illustrations, not verified anatomy.
-
-See [exact Ubuntu setup, model license/RAM planning, single-image/pilot/full/resume commands and limitations](docs/LOCAL_IMAGES.md). The runtime installed/imported here, but model downloads were proxy-blocked: **no real diffusion image or ten-creature quality pilot was completed**. Test the first image and pilot on the home server before running all 164.
+See [exact Ubuntu update/restart commands, image selection, reference files, reports and limitations](docs/INTERNET_IMAGES.md).

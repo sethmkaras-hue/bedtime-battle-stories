@@ -1,25 +1,21 @@
 # Importer robots configuration
 
-Requests respect robots.txt by default, including PBDB and Commons. Only
-`IMPORT_RESPECT_ROBOTS=false` (case-insensitive, surrounding whitespace ignored)
-disables robots retrieval/enforcement for the importer's existing allowed HTTPS
-hosts. Other values and an unset variable keep enforcement enabled.
+The private creature importer defaults to **`IMPORT_RESPECT_ROBOTS=false`**.
+False (case/whitespace-insensitive) skips fetching/evaluating robots.txt. An
+explicit true, or any other non-false value, enables enforcement.
 
 ```bash
 IMPORT_RESPECT_ROBOTS=false ./IMPORT_CREATURE_LIBRARY.sh --pilot 10 --refresh --skip-audio
+IMPORT_RESPECT_ROBOTS=true ./IMPORT_CREATURE_LIBRARY.sh --pilot 10 --skip-audio
 ```
 
-This applies to `paleobiodb.org/data1.2/`, `commons.wikimedia.org/w/api.php`, and
-allowed redirect destinations. It does not expand the HTTPS host allowlist,
-change authentication, solve CAPTCHAs, ignore HTTP 401/403, or bypass network
-policy. Timeouts, identified User-Agent, pacing, retries, Retry-After and image
-license/attribution checks remain. Diagnostics record `robots_disabled` and
-`respect_robots:false`; no robots.txt request is made in that mode.
+This covers approved scientific/image HTTPS hosts, including PBDB and the exact
+Commons Action API. It does not override website terms, authentication,
+CAPTCHAs, paywalls, 401/403 responses or network policy. Identified User-Agent,
+timeouts, host/redirect checks, serial pacing, retries and Retry-After remain.
+Access events record the configured mode. The retired BBS_COMMONS_API_POLICY
+flag does not override it. `.env.example` documents configuration; export values
+or prefix commands, since scripts do not source `.env` automatically.
 
-The earlier `BBS_COMMONS_API_POLICY` exception is retired: it cannot override
-the safe default. Metadata classification still supplies maxlag/API-error
-handling. Config changes participate in restart checkpoints; `--refresh` can
-also explicitly retry earlier attempts. Nothing deletes scientific/audio data.
-
-The `.env.example` is documentation: export variables or prefix the command;
-the scripts do not automatically source `.env`.
+Image rights metadata is now retained without a license eligibility gate in the
+private Internet pipeline. See [installation, safeguards and source credits](INTERNET_IMAGES.md).

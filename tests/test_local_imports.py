@@ -24,6 +24,7 @@ WMF_RULES = "User-agent: *\nAllow: /w/api.php?action=mobileview&\nAllow: /w/load
 def test_wikimedia_rule_logs_endpoint_method_status_rule_and_identity(
     tmp_path, monkeypatch
 ):
+    monkeypatch.setenv("IMPORT_RESPECT_ROBOTS", "true")
     monkeypatch.setenv("BBS_COMMONS_API_POLICY", "robots")
     ua = "BedtimeBattleStoriesImporter/1.0 (+https://example.test/contact)"
     monkeypatch.setenv("BBS_IMPORT_USER_AGENT", ua)
@@ -60,6 +61,7 @@ def test_wikimedia_rule_logs_endpoint_method_status_rule_and_identity(
 
 
 def test_policy_uses_actual_ua_wildcards_and_most_specific_allow(tmp_path, monkeypatch):
+    monkeypatch.setenv("IMPORT_RESPECT_ROBOTS", "true")
     monkeypatch.setenv(
         "BBS_IMPORT_USER_AGENT",
         "BedtimeBattleStoriesImporter/2.0 (+https://example.test)",
@@ -93,7 +95,8 @@ def test_policy_uses_actual_ua_wildcards_and_most_specific_allow(tmp_path, monke
         client.close()
 
 
-def test_http_rejection_is_distinct_from_robots_rejection(tmp_path):
+def test_http_rejection_is_distinct_from_robots_rejection(tmp_path, monkeypatch):
+    monkeypatch.setenv("IMPORT_RESPECT_ROBOTS", "true")
     client = PoliteClient(
         tmp_path,
         transport=httpx.MockTransport(
@@ -113,7 +116,8 @@ def test_http_rejection_is_distinct_from_robots_rejection(tmp_path):
         client.close()
 
 
-def test_unavailable_robots_fail_closed_and_preserve_http_status(tmp_path):
+def test_unavailable_robots_fail_closed_and_preserve_http_status(tmp_path, monkeypatch):
+    monkeypatch.setenv("IMPORT_RESPECT_ROBOTS", "true")
     calls = []
 
     def handler(r):

@@ -26,7 +26,6 @@ const screens = [
   "player",
   "celebration",
   "settings",
-  "parent-review",
   "quiet",
 ];
 const audio = new BedtimeAudio($("story-audio"), $("audio-status"), () => {
@@ -114,7 +113,7 @@ function guarded(fn) {
 function illustration(c) {
   const ref = c.image_reference;
   return typeof ref === "string" &&
-    (/^\/static\/[a-zA-Z0-9_./-]+$/.test(ref) || /^\/api\/creature-images\/files\/\d+\/[a-f0-9]{64}$/.test(ref)) &&
+    (/^\/static\/[a-zA-Z0-9_./-]+$/.test(ref) || /^\/api\/library\/images\/\d+\/[a-f0-9]{64}$/.test(ref) || /^\/api\/creature-images\/files\/\d+\/[a-f0-9]{64}$/.test(ref)) &&
     !ref.includes("..")
     ? ref
     : "/static/assets/" +
@@ -605,7 +604,6 @@ $("back").onclick = () => {
       encyclopedia: "welcome",
       profile: profileReturn,
       attributions: "settings",
-      "parent-review": "settings",
       categories: "welcome",
       selection: "categories",
       bracket: library.length ? "selection" : "welcome",
@@ -972,7 +970,7 @@ function openProfile(c) {
   $("profile-review").textContent =
     (p.verification_status === "verified"
       ? "Reviewed profile."
-      : p.import_stage === "source_supported" ? "Source-supported import; parent review pending." : p.import_stage === "manually_reviewed" ? "Some fields were reviewed; this profile is still incomplete." : "Science review pending. Unknown details are left unknown.") +
+      : p.import_stage === "source_supported" ? "Source-supported information." : p.import_stage === "manually_reviewed" ? "Some fields were reviewed; this profile is still incomplete." : "Unknown details are left unknown.") +
     (c.image_kind === "ai_generated" ? " AI-generated illustration; anatomical accuracy has not been verified." : c.artwork_placeholder !== false
       ? " The illustration is a decorative placeholder."
       : "");
@@ -1013,36 +1011,13 @@ function openProfile(c) {
   if (!traits.length) traits.push("Adaptations are awaiting source review.");
   traits.forEach((t) => profileParagraph($("profile-adaptations"), t));
   $("profile-sources").replaceChildren();
-  const pron = p.pronunciation || {};
-  profileParagraph(
-    $("profile-sources"),
-    "Pronunciation: " +
-      (pron.phonetic || c.pronunciation || "Not researched") +
-      " · " +
-      (pron.status || "unverified"),
-  );
-  if (pron.stress)
-    profileParagraph($("profile-sources"), "Stress: " + pron.stress);
-  referenceLink(
-    $("profile-sources"),
-    "Pronunciation guidance",
-    pron.source_url,
-  );
-  for (const s of p.sources || []) {
-    profileParagraph(
-      $("profile-sources"),
-      s.title +
-        (s.checked_on ? " · checked " + s.checked_on : " · not inspected"),
-    );
-    referenceLink($("profile-sources"), "Reference", s.url);
-  }
-  const art = p.image || {};
-  if (c.generated_image) {
-    profileParagraph($("profile-sources"), "AI-generated locally using " + c.generated_image.model + " at revision " + c.generated_image.revision + ". Model license: " + c.generated_image.model_license + ". Seed: " + c.generated_image.seed + ". This illustration is not verified anatomical evidence.");
-  } else {
-    profileParagraph($("profile-sources"), art.placeholder !== false ? "Artwork is a project placeholder, not a verified reconstruction." : art.attribution + " · " + art.license + " · " + art.modifications);
-    referenceLink($("profile-sources"), "Original image", art.original_source_url);
-    referenceLink($("profile-sources"), "Image license", art.license_url);
+  const art = c.internet_image || p.image || {};
+  $("profile-image-attribution").replaceChildren();
+  if (/CC[ -]BY/i.test(art.license || "")) {
+    profileParagraph($("profile-image-attribution"),
+      [art.creator || art.attribution, art.license, art.modifications].filter(Boolean).join(" · "));
+    referenceLink($("profile-image-attribution"), "Image source", art.original_source_url);
+    referenceLink($("profile-image-attribution"), "License", art.license_url);
   }
   $("profile-add").textContent = selected.includes(c.id)
     ? "Remove from Tournament"
@@ -1067,39 +1042,32 @@ $("profile-add").onclick = guarded(async () => {
   show("selection");
 });
 $("open-attributions").onclick = guarded(async () => {
-  const [images, audit] = await Promise.all([
-    api("/api/library/attributions"),
-    api("/api/library/audit"),
+  const [records, coverage] = await Promise.all([
+    api("/api/library/sources-credits"), api("/api/library/image-coverage"),
   ]);
   $("attribution-list").replaceChildren();
-  if (!images.length)
-    profileParagraph(
-      $("attribution-list"),
-      "No licensed species artwork has been imported yet. Current illustrations are explicitly marked project placeholders.",
-    );
-  for (const image of images) {
+  for (const record of records) {
     const section = document.createElement("article");
-    profileParagraph(
-      section,
-      image.name + " · " + image.attribution + " · " + image.license,
-    );
-    profileParagraph(section, image.modifications);
-    profileParagraph(section, image.approval_method === "automated" ? "Automated source/identity/license checks; not a manually verified scientific profile." : "Artwork approved through manual review.");
-    referenceLink(section, "Original image", image.original_source_url);
+    const image = record.image || {};
+    profileParagraph(section, record.name + " · " + (record.scientific_name || ""));
+    profileParagraph(section, "Artwork: " + record.image_kind);
+    profileParagraph(section, "Creator: " + (image.creator || "Not provided"));
+    profileParagraph(section, "License: " + (image.license || image.model_license || "Unknown; no permission asserted"));
+    profileParagraph(section, image.attribution || "Attribution not provided");
+    profileParagraph(section, image.modifications || "");
+    profileParagraph(section, "Retrieved: " + (image.retrieved_on || image.generated_at || "Not recorded"));
+    referenceLink(section, "Image source", image.original_source_url);
+    referenceLink(section, "Direct image", image.download_url);
     referenceLink(section, "License", image.license_url);
+    for (const source of record.sources || []) {
+      profileParagraph(section, source.title);
+      referenceLink(section, "Scientific reference", source.url);
+    }
+    const pron = record.pronunciation || {};
+    profileParagraph(section, "Pronunciation: " + (pron.phonetic || "Not sourced") + " · " + (pron.status || "unverified"));
+    referenceLink(section, "Pronunciation reference", pron.source_url);
     $("attribution-list").append(section);
   }
-  $("library-audit-summary").textContent = JSON.stringify(
-    {
-      counts: audit.counts,
-      verified: audit.verified_counts,
-      licensed_images: audit.licensed_images,
-      verified_pronunciations: audit.verified_pronunciations,
-      prepared_audio: audit.ready_pronunciations,
-      target_gaps: audit.target_gaps,
-    },
-    null,
-    2,
-  );
+  $("library-audit-summary").textContent = JSON.stringify(coverage, null, 2);
   show("attributions");
 });

@@ -3,16 +3,16 @@
 
 import argparse
 import json
-import tempfile
-from pathlib import Path
 import sqlite3
 import sys
+import tempfile
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from app import main, library
-from app.importer.runner import execute
-from app.importer.store import Store, root, backup
-from app.importer.network import atomic, SourceUnavailable
+from app import library, main
+from app.importer.internet_images import coverage, execute
+from app.importer.network import SourceUnavailable, atomic
+from app.importer.store import backup, root
 
 
 def cli():
@@ -20,7 +20,11 @@ def cli():
     mode = p.add_mutually_exclusive_group(required=True)
     mode.add_argument("--pilot", type=int)
     mode.add_argument("--all", action="store_true")
-    mode.add_argument("--review", action="store_true")
+    mode.add_argument(
+        "--coverage",
+        action="store_true",
+        help="Report actual local image coverage without network requests",
+    )
     mode.add_argument(
         "--diagnose-commons",
         action="store_true",
@@ -42,21 +46,11 @@ def cli():
         help="Use supplied references only; make no network requests",
     )
     p.add_argument("--dry-run", action="store_true")
-    p.add_argument(
-        "--legacy-source-images",
-        action="store_true",
-        help="Optional legacy source-art import; normal artwork uses GENERATE_CREATURE_IMAGES.sh",
-    )
     p.add_argument("--refresh", action="store_true")
     p.add_argument(
         "--allow-museum-pages",
         action="store_true",
         help="Enable HTML adapters only after reviewing publisher terms and robots policy",
-    )
-    p.add_argument(
-        "--propose-only",
-        action="store_true",
-        help="Stage content without applying facts or publishing validated images",
     )
     p.add_argument(
         "--skip-audio",
@@ -66,7 +60,7 @@ def cli():
     p.add_argument(
         "--generate-audio",
         action="store_true",
-        help="Generate only already parent-verified pronunciation records after import",
+        help="Generate only already source-verified pronunciation records after import",
     )
     p.add_argument("--db", type=Path, default=main.DB)
     p.add_argument("--work-dir", type=Path, default=root())
@@ -82,7 +76,23 @@ def cli():
         action="store_true",
         help="Optionally corroborate Commons descriptions with Wikidata/structured depicts",
     )
+    p.add_argument(
+        "--verbose", action="store_true", help="Print the complete JSON report"
+    )
     args = p.parse_args()
+    if args.skip_audio and args.generate_audio:
+        p.error("Choose --skip-audio or --generate-audio, not both")
+    import logging
+
+    args.work_dir.mkdir(parents=True, exist_ok=True)
+    logger = logging.getLogger("app.importer")
+    handler = logging.FileHandler(args.work_dir / "import.log")
+    handler.setFormatter(
+        logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
+    )
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
     if args.pilot is not None and not 1 <= args.pilot <= 50:
         p.error("--pilot must be between 1 and 50")
     references = None
@@ -98,14 +108,15 @@ def cli():
         from app.importer.image_files import load_images
 
         try:
-            images = load_images(args.image_references)
+            images = load_images(args.image_references, private=True)
         except (ValueError, OSError) as error:
             p.error(str(error))
     if args.offline and args.diagnose_commons:
         p.error("--diagnose-commons requires an online policy check; omit --offline")
     if args.diagnose_commons:
+        from app.importer.internet_images import discover as search_images
         from app.importer.network import PoliteClient
-        from app.importer.sources import images as search_images, COMMONS
+        from app.importer.sources import COMMONS
 
         with tempfile.TemporaryDirectory(
             prefix="bedtime-access-diagnostic-"
@@ -113,7 +124,7 @@ def cli():
             client = PoliteClient(temporary, refresh=True)
             errors = []
             try:
-                found = search_images(
+                found, errors = search_images(
                     client,
                     {"scientific_name": args.scientific_name, "category": "dinosaur"},
                 )
@@ -133,12 +144,10 @@ def cli():
                 "user_agent": client.user_agent,
                 "respect_robots": client.respect_robots,
             }
-    elif args.review:
-        store = Store(args.work_dir)
-        try:
-            result = {"pending": store.proposals()}
-        finally:
-            store.close()
+    elif args.coverage:
+        if not args.db.is_file():
+            p.error("Start the application once to initialize the database")
+        result = coverage(args.db)
     else:
         if args.dry_run and not args.db.exists():
             p.error(
@@ -157,23 +166,20 @@ def cli():
         result = execute(
             args.db,
             args.work_dir,
-            args.pilot,
-            args.all,
-            args.dry_run,
-            args.refresh,
-            not args.propose_only,
+            pilot=args.pilot,
+            dry_run=args.dry_run,
+            refresh=args.refresh,
             pronunciation_index=index,
             museum_pages=args.allow_museum_pages,
             pronunciation_references=references,
             use_wikidata=args.use_wikidata,
             image_references=images,
             offline=args.offline,
-            source_images=args.legacy_source_images,
         )
         result["backup_created"] = saved is not None
         if not args.skip_audio and not args.dry_run:
-            from scripts.generate_pronunciations import generate
             from app.audio.routes import create_service
+            from scripts.generate_pronunciations import generate
 
             service = create_service()
             try:
@@ -189,20 +195,26 @@ def cli():
             )
     if args.report:
         atomic(args.report, json.dumps(result, indent=2).encode())
-    print(json.dumps(result, indent=2))
-    # Missing sources are a usable review result, but never a successful full import.
-    if not args.review and (
-        result["errors"]
-        or result.get("pending_review", 0)
-        or any(r["issues"] for r in result["proposals"])
-        or result.get("pronunciation_generation", {}).get("failed")
-    ):
+    if args.verbose or args.coverage or args.diagnose_commons:
+        print(json.dumps(result, indent=2))
+    else:
         print(
-            "Import completed with unresolved source/review issues; inspect the report and parent queue.",
-            file=sys.stderr,
+            "Detailed report: "
+            + str(args.report or args.work_dir / "latest-report.json")
         )
-        return 2
-    return 0
+        print("Detailed diagnostics: " + str(args.work_dir / "import.log"))
+    return (
+        2
+        if not args.dry_run
+        and (
+            any(
+                not row.get("image_available", False)
+                for row in result.get("results", [])
+            )
+            or result.get("pronunciation_generation", {}).get("failed")
+        )
+        else 0
+    )
 
 
 if __name__ == "__main__":

@@ -659,6 +659,17 @@ def audio_options(conn, creature_id, record, cache_root, rows=None):
     return result
 
 
+def canonical_image_available(image):
+    if image.get("placeholder") is not False:
+        return False
+    try:
+        with local_asset(image.get("path")).open("rb") as stream:
+            header = stream.read(12)
+        return header[:4] == b"RIFF" and header[8:] == b"WEBP"
+    except (OSError, ValueError, TypeError):
+        return False
+
+
 def enrich(conn, rows, cache_root):
     from app.images import core as generated
 
@@ -675,6 +686,9 @@ def enrich(conn, rows, cache_root):
             )
             for row in conn.execute("SELECT * FROM creature_generated_images")
         }
+    from app.importer.internet_images import registered, render
+
+    internet_rows = registered(conn)
     rules = dict(conn.execute("SELECT creature_id,rating FROM creature_game_rules"))
     assets = {}
     for r in conn.execute(
@@ -715,6 +729,12 @@ def enrich(conn, rows, cache_root):
                 else {}
             )
             item["artwork_placeholder"] = record["image"]["placeholder"]
+            if not item["artwork_placeholder"] and not canonical_image_available(
+                record["image"]
+            ):
+                item.update(
+                    image_reference=None, image_variants={}, artwork_placeholder=True
+                )
             item["pronunciation_audio_options"] = audio_options(
                 conn,
                 item["id"],
@@ -744,6 +764,22 @@ def enrich(conn, rows, cache_root):
                 artwork_placeholder=False,
                 image_kind="ai_generated",
                 generated_image=image,
+            )
+        internet = internet_rows.get(item["id"])
+        if (
+            internet
+            and generated.valid_asset(internet)
+            and json.loads(internet["metadata_json"]).get("scientific_name")
+            == (record or {}).get("scientific_name")
+        ):
+            image = render(internet)
+            item.pop("generated_image", None)
+            item.update(
+                image_reference=image["url"],
+                image_variants={},
+                artwork_placeholder=False,
+                image_kind="internet",
+                internet_image=image,
             )
         result.append(item)
     return result

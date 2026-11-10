@@ -36,7 +36,7 @@ def run(base, screenshots=None):
         assert page.locator("#profile").is_visible()
         assert "Great white" in page.locator("#profile-name").inner_text()
         assert "Unknown" in page.locator("#profile-facts").inner_text()
-        assert "pending" in page.locator("#profile-review").inner_text()
+        assert "Unknown details" in page.locator("#profile-review").inner_text()
         page.locator("#profile-speaker .speaker").click()
         assert "not prepared" in page.locator("#message").inner_text()
         assert not any(

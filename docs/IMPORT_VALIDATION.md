@@ -1,3 +1,5 @@
+> Historical workflow: normal artwork now uses the [automatic private Internet importer](INTERNET_IMAGES.md). Approval/generation UI and write routes are retired; the new guide supersedes conflicting setup instructions here.
+
 # Import validation, approval errors and automatic images
 
 **Current artwork workflow:** [local CPU image generation](LOCAL_IMAGES.md) replaces normal internet image discovery and image approval. Scientific/pronunciation review and existing source records remain. Earlier image-import sections below document the retained legacy utilities.
