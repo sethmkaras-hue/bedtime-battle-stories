@@ -10,7 +10,7 @@ from urllib.parse import urlsplit
 from collections import deque
 import logging
 import httpx
-from .api_policy import metadata_request, POLICY_BASIS, POLICY_REFERENCE
+from .api_policy import metadata_request
 
 HOSTS = {
     "paleobiodb.org",
@@ -26,6 +26,11 @@ HOSTS = {
     "usborne.com",
 }
 USER_AGENT = "BedtimeBattleStoriesImporter/1.0 (+https://github.com/sethmkaras-hue/bedtime-battle-stories)"
+
+
+def robots_enabled():
+    """Only an explicit false value opts out; all other values fail closed."""
+    return os.environ.get("IMPORT_RESPECT_ROBOTS", "true").strip().lower() != "false"
 
 
 class SourceUnavailable(RuntimeError):
@@ -64,11 +69,7 @@ class PoliteClient:
             raise ValueError(
                 "BBS_IMPORT_USER_AGENT must retain BedtimeBattleStoriesImporter/ identification"
             )
-        self.commons_api_policy = os.environ.get(
-            "BBS_COMMONS_API_POLICY", "documented-api"
-        )
-        if self.commons_api_policy not in {"documented-api", "robots"}:
-            raise ValueError("BBS_COMMONS_API_POLICY must be documented-api or robots")
+        self.respect_robots = robots_enabled()
         self.events = deque(maxlen=2000)
         self.robots_metadata = {}
         self.last = {}
@@ -299,16 +300,15 @@ class PoliteClient:
 
     def _access_policy(self, url):
         self.validate_url(url)
-        if self.commons_api_policy == "documented-api" and metadata_request(url):
+        if not self.respect_robots:
             self.record(
-                phase="api_policy",
+                phase="robots_disabled",
                 endpoint=url,
                 http_status=None,
                 request_sent=False,
                 allowed=True,
-                policy_basis=POLICY_BASIS,
-                policy_reference=POLICY_REFERENCE,
                 robots_applied=False,
+                configuration="IMPORT_RESPECT_ROBOTS=false",
             )
             return
         self._robots(url)
@@ -340,8 +340,7 @@ class PoliteClient:
                     cached = None
             except (OSError, ValueError, KeyError, SourceUnavailable):
                 cached = None
-        # Select the documented API policy only for scoped Commons metadata reads.
-        # All other online requests, including redirects, retain robots checks.
+        # All online requests and redirect hops use the explicit robots setting.
         # A previously fetched response can be reused offline without another request.
         if cached and not self.refresh and self.clock() - cached["fetched"] < 86400:
             self.cache_hits += 1

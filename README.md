@@ -169,3 +169,5 @@ Documented read-only requests to the exact Commons Action API now use a scoped A
 
 
 Validated, evidence-complete creature images now install automatically; uncertain matches and unresolved science/pronunciations retain Parent Review. Approval errors now identify their creature and invalid fields, and installed images refresh in an open selection screen without losing selections. See [422 root causes, shared validation, upgrade commands and browser evidence](docs/IMPORT_VALIDATION.md).
+
+Importer robots enforcement is now on by default. Use `IMPORT_RESPECT_ROBOTS=false ./IMPORT_CREATURE_LIBRARY.sh --pilot 10 --refresh --skip-audio` for an explicit opt-out; HTTP access denials and licensing validation remain enforced. See [configuration details](docs/IMPORT_ROBOTS.md).

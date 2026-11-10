@@ -10,7 +10,7 @@ import tempfile
 from urllib.parse import quote, urlencode
 from app import library
 from . import sources
-from .network import PoliteClient, SourceUnavailable, atomic
+from .network import PoliteClient, SourceUnavailable, atomic, robots_enabled
 from .store import Store, backup
 
 PILOT = [
@@ -25,7 +25,7 @@ PILOT = [
     "Parasaurolophus",
     "Allosaurus",
 ]
-VERSION = 5
+VERSION = 6
 
 
 def digest(record, inputs=None):
@@ -275,6 +275,7 @@ def execute(
     image_references=None,
     offline=False,
 ):
+    respect_robots = getattr(client, "respect_robots", robots_enabled())
     inputs = (
         {
             "references": pronunciation_references,
@@ -283,6 +284,7 @@ def execute(
             "wikidata": use_wikidata,
             "images": image_references,
             "offline": offline,
+            "respect_robots": respect_robots,
         }
         if pronunciation_references
         or pronunciation_index
@@ -290,6 +292,7 @@ def execute(
         or use_wikidata
         or image_references
         or offline
+        or not respect_robots
         else None
     )
     folder = Path(folder)
@@ -311,6 +314,7 @@ def execute(
         "proposals": [],
         "errors": [],
         "dry_run": dry_run,
+        "respect_robots": respect_robots,
         "discovered": 0,
     }
     try:

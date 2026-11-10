@@ -1,15 +1,12 @@
-"""Scoped read-only Commons API policy, separate from webpage crawler policy.
+"""Classify Commons JSON metadata reads for maxlag and API-error handling.
 
-See docs/COMMONS_API_POLICY.md for the published interface basis and limits.
-This does not grant access past authentication, server denials or proxy policy.
+Access decisions use IMPORT_RESPECT_ROBOTS; this classifier grants no exception.
 """
 
 from urllib.parse import parse_qsl, urlsplit
 import re
 
 COMMONS_API = "https://commons.wikimedia.org/w/api.php"
-POLICY_BASIS = "commons-read-only-api-v1"
-POLICY_REFERENCE = "https://www.mediawiki.org/wiki/API:Etiquette"
 
 
 def metadata_request(url):

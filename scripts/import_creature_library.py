@@ -126,6 +126,7 @@ def cli():
                 "access_log": list(client.events),
                 "http_requests": client.requests,
                 "user_agent": client.user_agent,
+                "respect_robots": client.respect_robots,
             }
     elif args.review:
         store = Store(args.work_dir)
