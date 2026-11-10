@@ -1111,7 +1111,7 @@ body.reduced-motion *:after {
   padding: 20px;
   border-radius: 18px;
 }
-img[data-real-image] {
+img[data-real-image], img[data-generated-image] {
   object-fit: cover !important;
   border-radius: 12px;
 }
@@ -1119,9 +1119,10 @@ img[data-real-image] {
   color: var(--gold);
   box-shadow: 0 0 0 2px var(--gold);
 }
-img[data-real-image] {
+img[data-real-image], img[data-generated-image] {
   object-fit: contain !important;
 }
 #parent-login input,.parent-proposal input[type=text]{display:block;width:100%;padding:14px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:12px;min-height:48px}.parent-proposal{padding:20px;background:var(--surface);border:1px solid var(--line);border-radius:20px;margin:20px 0}.parent-proposal pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px}.parent-proposal img{display:block;max-width:100%;max-height:300px;object-fit:contain;border-radius:12px;margin:16px auto}.parent-proposal a{display:inline-block;padding:10px;color:var(--lavender);min-height:44px}.parent-proposal button{margin:10px 10px 0 0}
 
 @supports (content-visibility: auto) { .creature-grid > .creature { content-visibility: auto; contain-intrinsic-size: auto 280px; } }
+#image-management pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}#image-management select{max-width:100%;min-height:44px}#image-management button{margin:8px 8px 8px 0}

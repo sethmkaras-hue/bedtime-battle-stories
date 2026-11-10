@@ -1,0 +1,8 @@
+# Python 3.12 isolated environment; use SETUP_CREATURE_IMAGES.sh.
+torch==2.7.1+cpu
+diffusers==0.35.1
+transformers==4.56.2
+accelerate==1.10.1
+huggingface-hub==0.34.4
+safetensors==0.6.2
+Pillow>=11,<13

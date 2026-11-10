@@ -133,7 +133,6 @@ class Store:
             scope
             for scope, key in (
                 ("science", "science"),
-                ("image", "images"),
                 ("pronunciation", "pronunciation"),
             )
             if proposal.get(key)

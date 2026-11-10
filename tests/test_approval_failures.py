@@ -181,7 +181,7 @@ def test_science_range_validation_is_shared_with_automatic_imports(parent, caplo
     store.close()
 
 
-def test_missing_license_is_reported_without_writing_profile(parent):
+def test_retired_image_approval_is_rejected_without_writing_profile(parent):
     import hashlib
 
     client, pid, folder = parent
@@ -215,7 +215,7 @@ def test_missing_license_is_reported_without_writing_profile(parent):
     )
     assert result.status_code == 422
     assert (
-        "attribution" in result.text.lower()
+        "scopes" in result.text.lower()
         and result.json()["detail"]["creature"] == "Tyrannosaurus"
     )
     assert main.DB.read_bytes() == before and store.get(pid)["status"] == "pending"

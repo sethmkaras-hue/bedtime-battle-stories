@@ -114,7 +114,7 @@ function guarded(fn) {
 function illustration(c) {
   const ref = c.image_reference;
   return typeof ref === "string" &&
-    /^\/static\/[a-zA-Z0-9_./-]+$/.test(ref) &&
+    (/^\/static\/[a-zA-Z0-9_./-]+$/.test(ref) || /^\/api\/creature-images\/files\/\d+\/[a-f0-9]{64}$/.test(ref)) &&
     !ref.includes("..")
     ? ref
     : "/static/assets/" +
@@ -143,7 +143,8 @@ function picture(c) {
       img.sizes = "(max-width:700px)45vw,240px";
     }
   }
-  if (c.artwork_placeholder === false) img.dataset.realImage = "true";
+  if (c.image_kind === "ai_generated") img.dataset.generatedImage = "true";
+  else if (c.artwork_placeholder === false) img.dataset.realImage = "true";
   img.loading = "lazy";
   img.decoding = "async";
   img.onerror = () => {
@@ -263,10 +264,10 @@ function creatureCard(c, selectable) {
   pick.append(name);
   pick.onclick = () => openProfile(c);
   card.append(pick, hear(c));
-  if (c.artwork_placeholder !== false) {
+  if (c.artwork_placeholder !== false || c.image_kind === "ai_generated") {
     const note = document.createElement("p");
     note.className = "artwork-note";
-    note.textContent = "Illustration placeholder";
+    note.textContent = c.image_kind === "ai_generated" ? "AI-generated illustration" : "Illustration placeholder";
     card.append(note);
   }
   if (selectable) {
@@ -972,7 +973,7 @@ function openProfile(c) {
     (p.verification_status === "verified"
       ? "Reviewed profile."
       : p.import_stage === "source_supported" ? "Source-supported import; parent review pending." : p.import_stage === "manually_reviewed" ? "Some fields were reviewed; this profile is still incomplete." : "Science review pending. Unknown details are left unknown.") +
-    (c.artwork_placeholder !== false
+    (c.image_kind === "ai_generated" ? " AI-generated illustration; anatomical accuracy has not been verified." : c.artwork_placeholder !== false
       ? " The illustration is a decorative placeholder."
       : "");
   $("profile-facts").replaceChildren();
@@ -1036,18 +1037,13 @@ function openProfile(c) {
     referenceLink($("profile-sources"), "Reference", s.url);
   }
   const art = p.image || {};
-  profileParagraph(
-    $("profile-sources"),
-    art.placeholder !== false
-      ? "Artwork is a project placeholder, not a verified reconstruction."
-      : art.attribution + " · " + art.license + " · " + art.modifications,
-  );
-  referenceLink(
-    $("profile-sources"),
-    "Original image",
-    art.original_source_url,
-  );
-  referenceLink($("profile-sources"), "Image license", art.license_url);
+  if (c.generated_image) {
+    profileParagraph($("profile-sources"), "AI-generated locally using " + c.generated_image.model + " at revision " + c.generated_image.revision + ". Model license: " + c.generated_image.model_license + ". Seed: " + c.generated_image.seed + ". This illustration is not verified anatomical evidence.");
+  } else {
+    profileParagraph($("profile-sources"), art.placeholder !== false ? "Artwork is a project placeholder, not a verified reconstruction." : art.attribution + " · " + art.license + " · " + art.modifications);
+    referenceLink($("profile-sources"), "Original image", art.original_source_url);
+    referenceLink($("profile-sources"), "Image license", art.license_url);
+  }
   $("profile-add").textContent = selected.includes(c.id)
     ? "Remove from Tournament"
     : "Add to Tournament";

@@ -12,3 +12,9 @@ data/library_audit.json
 data/pronunciation_report.json
 data/importer/
 data/backups/
+.venv-images/
+data/generated_images/
+*.image-generation.lock
+
+.venv-image-bootstrap/
+data/*.sqlite3-*

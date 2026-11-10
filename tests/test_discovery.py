@@ -67,7 +67,8 @@ def commons_client(tmp_path, denied_wikidata=False, empty=False):
 
 
 @pytest.mark.parametrize("optional", [False, True])
-def test_commons_search_does_not_require_wikidata(tmp_path, optional):
+def test_commons_search_does_not_require_wikidata(tmp_path, optional, monkeypatch):
+    monkeypatch.setenv("IMPORT_RESPECT_ROBOTS", "false")
     client, calls = commons_client(tmp_path, denied_wikidata=optional)
     try:
         result = sources.images(

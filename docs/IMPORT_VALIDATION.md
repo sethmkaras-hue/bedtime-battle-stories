@@ -1,5 +1,7 @@
 # Import validation, approval errors and automatic images
 
+**Current artwork workflow:** [local CPU image generation](LOCAL_IMAGES.md) replaces normal internet image discovery and image approval. Scientific/pronunciation review and existing source records remain. Earlier image-import sections below document the retained legacy utilities.
+
 Validated images now publish automatically. Uncertain matches, incomplete licenses, unresolved scientific updates and pronunciation guidance retain authenticated parent review. This follows the chosen workflow: no removal of the review controls needed for uncertain content. Already-applied image actions disappear; partial decisions no longer discard remaining work.
 
 ## Reproduced failures and fixes

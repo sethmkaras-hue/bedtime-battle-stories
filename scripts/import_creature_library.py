@@ -42,6 +42,11 @@ def cli():
         help="Use supplied references only; make no network requests",
     )
     p.add_argument("--dry-run", action="store_true")
+    p.add_argument(
+        "--legacy-source-images",
+        action="store_true",
+        help="Optional legacy source-art import; normal artwork uses GENERATE_CREATURE_IMAGES.sh",
+    )
     p.add_argument("--refresh", action="store_true")
     p.add_argument(
         "--allow-museum-pages",
@@ -126,6 +131,7 @@ def cli():
                 "access_log": list(client.events),
                 "http_requests": client.requests,
                 "user_agent": client.user_agent,
+                "respect_robots": client.respect_robots,
             }
     elif args.review:
         store = Store(args.work_dir)
@@ -162,6 +168,7 @@ def cli():
             use_wikidata=args.use_wikidata,
             image_references=images,
             offline=args.offline,
+            source_images=args.legacy_source_images,
         )
         result["backup_created"] = saved is not None
         if not args.skip_audio and not args.dry_run:

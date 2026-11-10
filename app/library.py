@@ -660,6 +660,21 @@ def audio_options(conn, creature_id, record, cache_root, rows=None):
 
 
 def enrich(conn, rows, cache_root):
+    from app.images import core as generated
+
+    generated_rows = {}
+    if conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='creature_generated_images'"
+    ).fetchone():
+        generated_rows = {
+            row[0]: dict(
+                zip(
+                    ("creature_id", "key", "path", "root", "sha256", "metadata_json"),
+                    row,
+                )
+            )
+            for row in conn.execute("SELECT * FROM creature_generated_images")
+        }
     rules = dict(conn.execute("SELECT creature_id,rating FROM creature_game_rules"))
     assets = {}
     for r in conn.execute(
@@ -715,6 +730,21 @@ def enrich(conn, rows, cache_root):
             item["pronunciation_status"] = record["pronunciation"]["status"]
             if record["pronunciation"]["status"] == "verified":
                 item["pronunciation"] = record["pronunciation"]["tts_text"]
+        asset = generated_rows.get(item["id"])
+        if (
+            asset
+            and generated.valid_asset(asset)
+            and json.loads(asset["metadata_json"]).get("scientific_name")
+            == (record or {}).get("scientific_name")
+        ):
+            image = generated.render_asset(asset)
+            item.update(
+                image_reference=image["url"],
+                image_variants={},
+                artwork_placeholder=False,
+                image_kind="ai_generated",
+                generated_image=image,
+            )
         result.append(item)
     return result
 

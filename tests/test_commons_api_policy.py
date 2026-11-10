@@ -1,4 +1,4 @@
-"""Programmatic API policy is narrowly scoped; every response is synthetic."""
+"""Commons metadata handling with explicit robots opt-out; synthetic responses."""
 
 from email.utils import formatdate
 import hashlib
@@ -8,10 +8,16 @@ import sqlite3
 from pathlib import Path
 import httpx
 import pytest
-from app.importer.api_policy import COMMONS_API, metadata_request, POLICY_BASIS
+from app.importer.api_policy import COMMONS_API, metadata_request
 from app.importer.network import PoliteClient, SourceUnavailable
 from app.importer.runner import collect
 from test_importer import database
+
+
+@pytest.fixture(autouse=True)
+def explicit_robots_opt_out(monkeypatch):
+    monkeypatch.setenv("IMPORT_RESPECT_ROBOTS", "false")
+
 
 PARAMS = {
     "action": "query",
@@ -29,14 +35,14 @@ def api_url(params=None):
     return str(httpx.URL(COMMONS_API, params=params or PARAMS))
 
 
-def test_exact_metadata_api_uses_api_policy_even_when_crawler_paths_are_blocked(
+def test_explicit_opt_out_allows_metadata_when_crawler_paths_are_blocked(
     tmp_path,
 ):
     calls = []
 
     def handler(request):
         calls.append(request)
-        # There is no reason to fetch a webpage crawler policy for this API read.
+        # The explicitly disabled robots policy must not fetch robots.txt.
         assert request.url.path == "/w/api.php"
         assert request.method == "GET" and request.url.params["maxlag"] == "5"
         assert request.headers["user-agent"].startswith("BedtimeBattleStoriesImporter/")
@@ -51,11 +57,13 @@ def test_exact_metadata_api_uses_api_policy_even_when_crawler_paths_are_blocked(
         )
         assert client.json(COMMONS_API, PARAMS) == {"query": {"pages": {}}}
         assert len(calls) == 1
-        event = next(event for event in client.events if event["phase"] == "api_policy")
+        event = next(
+            event for event in client.events if event["phase"] == "robots_disabled"
+        )
         assert (
             event["allowed"]
             and not event["robots_applied"]
-            and event["policy_basis"] == POLICY_BASIS
+            and event["configuration"] == "IMPORT_RESPECT_ROBOTS=false"
         )
         assert client.events[-1]["http_status"] == 200
     finally:
@@ -82,7 +90,7 @@ def test_exact_metadata_api_uses_api_policy_even_when_crawler_paths_are_blocked(
         "https://commons.wikimedia.org/w/api.php?action=query&format=xml",
     ],
 )
-def test_api_exception_does_not_expand_to_other_urls_or_actions(url):
+def test_api_metadata_classifier_does_not_expand_to_other_urls_or_actions(url):
     assert not metadata_request(url)
 
 
@@ -96,7 +104,8 @@ def test_api_exception_does_not_expand_to_other_urls_or_actions(url):
         "https://commons.wikimedia.org/w/api.php?action=edit&format=json",
     ],
 )
-def test_other_requests_still_obey_robots(tmp_path, endpoint):
+def test_other_requests_still_obey_robots(tmp_path, endpoint, monkeypatch):
+    monkeypatch.setenv("IMPORT_RESPECT_ROBOTS", "true")
     calls = []
 
     def handler(request):
@@ -117,7 +126,10 @@ def test_other_requests_still_obey_robots(tmp_path, endpoint):
         client.close()
 
 
-def test_redirect_from_api_to_webpage_cannot_inherit_api_exception(tmp_path):
+def test_redirect_from_api_to_webpage_cannot_inherit_api_exception(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setenv("IMPORT_RESPECT_ROBOTS", "true")
     calls = []
 
     def handler(request):
@@ -133,7 +145,7 @@ def test_redirect_from_api_to_webpage_cannot_inherit_api_exception(tmp_path):
     try:
         with pytest.raises(SourceUnavailable, match="robots.txt disallows"):
             client.get(COMMONS_API, PARAMS)
-        assert [r.url.path for r in calls] == ["/w/api.php", "/robots.txt"]
+        assert [r.url.path for r in calls] == ["/robots.txt", "/w/api.php"]
     finally:
         client.close()
 

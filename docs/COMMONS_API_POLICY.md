@@ -1,5 +1,7 @@
 # Commons API access policy
 
+**Superseded access configuration:** robots are now respected by default for all requests. Only `IMPORT_RESPECT_ROBOTS=false` opts out. `BBS_COMMONS_API_POLICY` no longer grants an exception. The historical scope below still describes API-specific metadata/maxlag handling, not current access permission. See [IMPORT_ROBOTS.md](IMPORT_ROBOTS.md).
+
 The importer treats a small set of documented, read-only Commons API requests as programmatic API use, separately from ordinary webpage crawling. This replaces its earlier blanket application of crawler robots.txt to every URL below `/w/`.
 
 ## Basis and evidence

@@ -94,11 +94,6 @@
     for (const url of proposal.source_links || [])
       link(card, "Source attempted / manual research", url);
     const applied = new Set(row.applied_scopes || []);
-    if (applied.has("image"))
-      text(
-        card,
-        "Artwork from this proposal is already installed. Only remaining updates need a decision.",
-      );
     const scopes = [];
     function checkbox(label, value) {
       const wrapper = document.createElement("label");
@@ -116,58 +111,6 @@
         "I inspected these source-supported scientific fields",
         "science",
       );
-    let imageSelect = null;
-    const supported = (proposal.images || [])
-      .map((image, index) => ({ image, index }))
-      .filter((v) => v.image.supported && v.image.preview_url);
-    for (const { image, index } of (proposal.images || []).map(
-      (image, index) => ({ image, index }),
-    )) {
-      text(
-        card,
-        (image.title || "Image candidate") +
-          " · " +
-          (image.license || "Unsupported license") +
-          " · " +
-          (image.issues || []).join("; "),
-      );
-      text(card, image.attribution || "Attribution missing");
-      text(
-        card,
-        image.description || "No descriptive identity evidence supplied",
-      );
-      if (image.identity_evidence)
-        text(card, "Identity evidence: " + image.identity_evidence);
-      if (image.acquisition === "supplied_image")
-        text(
-          card,
-          "Locally supplied image · " +
-            image.source_kind +
-            (applied.has("image")
-              ? " · source metadata retained for audit."
-              : " · source and reuse rights still require adult inspection."),
-        );
-      link(card, "Original image and credit", image.original_source_url);
-      link(card, "License", image.license_url);
-      if (image.preview_url) {
-        const img = document.createElement("img");
-        img.src = image.preview_url;
-        img.alt = applied.has("image")
-          ? "Source image candidate retained for audit"
-          : "Candidate image awaiting adult review";
-        img.loading = "lazy";
-        card.append(img);
-      }
-    }
-    if (supported.length && !applied.has("image")) {
-      checkbox("I inspected the exact taxon, image and reuse rights", "image");
-      imageSelect = document.createElement("select");
-      for (const v of supported)
-        imageSelect.add(
-          new Option(v.image.title || "Image candidate " + v.index, v.index),
-        );
-      card.append(imageSelect);
-    }
     let phonetic, stress, tts;
     if (proposal.pronunciation && !applied.has("pronunciation")) {
       checkbox(
@@ -241,7 +184,6 @@
           decision,
           confirm: confirm.checked,
           scopes: scopes.filter((c) => c.checked).map((c) => c.dataset.scope),
-          image_index: Number(imageSelect?.value || 0),
         };
         if (
           decision === "approve" &&
