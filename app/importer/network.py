@@ -24,13 +24,15 @@ HOSTS = {
     "upload.wikimedia.org",
     "www.floridamuseum.ufl.edu",
     "usborne.com",
+    "static.inaturalist.org",
+    "inaturalist-open-data.s3.amazonaws.com",
 }
 USER_AGENT = "BedtimeBattleStoriesImporter/1.0 (+https://github.com/sethmkaras-hue/bedtime-battle-stories)"
 
 
 def robots_enabled():
-    """Only an explicit false value opts out; all other values fail closed."""
-    return os.environ.get("IMPORT_RESPECT_ROBOTS", "true").strip().lower() != "false"
+    """The private creature importer defaults off; explicit true enables robots."""
+    return os.environ.get("IMPORT_RESPECT_ROBOTS", "false").strip().lower() != "false"
 
 
 class SourceUnavailable(RuntimeError):
@@ -365,6 +367,9 @@ class PoliteClient:
                 str(result.request.url.join(result.headers.get("location", "")))
             )
             self._access_policy(url)
+            result = self._wire(url, limit=limit)
+        if result.status_code == 304 and not cached:
+            # No usable local entity exists: retry once without validators.
             result = self._wire(url, limit=limit)
         if result.status_code == 304 and cached:
             self.cache_hits += 1

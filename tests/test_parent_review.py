@@ -23,41 +23,50 @@ def parent(tmp_path, monkeypatch):
     monkeypatch.setattr(main, "DB", tmp_path / "app.sqlite3")
     monkeypatch.setattr(main, "CATALOG", False)
     monkeypatch.setattr(main, "SAMPLE", True)
-    with TestClient(main.app) as client:
-        with sqlite3.connect(main.DB) as conn:
-            record = json.loads(
-                conn.execute(
-                    "SELECT record_json FROM creature_profiles WHERE creature_id=1"
-                ).fetchone()[0]
-            )
-        store = Store(folder)
-        payload = {
-            "stable_key": record["stable_key"],
-            "record": record,
-            "science": {"time_period": "Source fixture period"},
-            "evidence": [
-                {
-                    "id": "fixture",
-                    "title": "Synthetic test source",
-                    "url": "https://paleobiodb.org/test",
-                    "supports": ["time_period"],
-                }
-            ],
-            "pronunciation": {
-                "phonetic": "tie-RAN-oh-sore-us",
-                "stress": "RAN",
-                "tts_text": "tie ran oh sore us",
-                "source_url": "https://www.nhm.ac.uk/test",
-            },
-            "images": [],
-            "issues": [],
-            "display_name": "Tyrannosaurus",
-            "scientific_name": "Tyrannosaurus rex",
-            "stage": "imported_candidates",
-        }
-        pid = store.stage(record["stable_key"], "test-input", payload)
-        store.close()
-        yield client, pid, folder
+    from app.admin_routes import legacy_review_router
+    from app.images.routes import admin_router as legacy_generation_router
+
+    original_routes = list(main.app.router.routes)
+    main.app.include_router(legacy_review_router)
+    main.app.include_router(legacy_generation_router)
+    try:
+        with TestClient(main.app) as client:
+            with sqlite3.connect(main.DB) as conn:
+                record = json.loads(
+                    conn.execute(
+                        "SELECT record_json FROM creature_profiles WHERE creature_id=1"
+                    ).fetchone()[0]
+                )
+            store = Store(folder)
+            payload = {
+                "stable_key": record["stable_key"],
+                "record": record,
+                "science": {"time_period": "Source fixture period"},
+                "evidence": [
+                    {
+                        "id": "fixture",
+                        "title": "Synthetic test source",
+                        "url": "https://paleobiodb.org/test",
+                        "supports": ["time_period"],
+                    }
+                ],
+                "pronunciation": {
+                    "phonetic": "tie-RAN-oh-sore-us",
+                    "stress": "RAN",
+                    "tts_text": "tie ran oh sore us",
+                    "source_url": "https://www.nhm.ac.uk/test",
+                },
+                "images": [],
+                "issues": [],
+                "display_name": "Tyrannosaurus",
+                "scientific_name": "Tyrannosaurus rex",
+                "stage": "imported_candidates",
+            }
+            pid = store.stage(record["stable_key"], "test-input", payload)
+            store.close()
+            yield client, pid, folder
+    finally:
+        main.app.router.routes[:] = original_routes
 
 
 def login(client):

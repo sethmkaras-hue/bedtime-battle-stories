@@ -18,3 +18,6 @@ data/generated_images/
 
 .venv-image-bootstrap/
 data/*.sqlite3-*
+
+data/creature_images/
+*.creature-import.lock

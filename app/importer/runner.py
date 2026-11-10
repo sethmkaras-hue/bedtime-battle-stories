@@ -295,7 +295,7 @@ def execute(
         or use_wikidata
         or image_references
         or offline
-        or not respect_robots
+        or respect_robots
         or source_images
         else None
     )

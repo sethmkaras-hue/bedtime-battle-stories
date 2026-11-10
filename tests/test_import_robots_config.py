@@ -13,9 +13,7 @@ TARGETS = [
 ]
 
 
-@pytest.mark.parametrize(
-    "setting", [None, "true", "", "0", "1", "no", "off", "invalid"]
-)
+@pytest.mark.parametrize("setting", ["true", "", "0", "1", "no", "off", "invalid"])
 @pytest.mark.parametrize("url", TARGETS)
 def test_default_and_non_false_values_enforce_disallow(
     tmp_path, monkeypatch, setting, url
@@ -44,12 +42,15 @@ def test_default_and_non_false_values_enforce_disallow(
         client.close()
 
 
-@pytest.mark.parametrize("setting", ["false", "FALSE", " false "])
+@pytest.mark.parametrize("setting", [None, "false", "FALSE", " false "])
 @pytest.mark.parametrize("url", TARGETS)
 def test_explicit_false_sends_previously_disallowed_requests(
     tmp_path, monkeypatch, setting, url
 ):
-    monkeypatch.setenv("IMPORT_RESPECT_ROBOTS", setting)
+    if setting is None:
+        monkeypatch.delenv("IMPORT_RESPECT_ROBOTS", raising=False)
+    else:
+        monkeypatch.setenv("IMPORT_RESPECT_ROBOTS", setting)
     calls = []
 
     def handler(request):
@@ -101,8 +102,10 @@ def test_opt_out_does_not_solve_or_cache_api_captcha(tmp_path, monkeypatch):
     client = PoliteClient(
         tmp_path,
         transport=httpx.MockTransport(
-            lambda r: calls.append(r)
-            or httpx.Response(200, text="<html><h1>Complete a CAPTCHA</h1></html>")
+            lambda r: (
+                calls.append(r)
+                or httpx.Response(200, text="<html><h1>Complete a CAPTCHA</h1></html>")
+            )
         ),
     )
     try:
@@ -119,9 +122,11 @@ def test_opt_out_keeps_redirect_allowlist(tmp_path, monkeypatch):
     client = PoliteClient(
         tmp_path,
         transport=httpx.MockTransport(
-            lambda r: calls.append(r)
-            or httpx.Response(
-                302, headers={"Location": "https://unapproved.test/redirect"}
+            lambda r: (
+                calls.append(r)
+                or httpx.Response(
+                    302, headers={"Location": "https://unapproved.test/redirect"}
+                )
             )
         ),
     )
@@ -200,7 +205,7 @@ def test_changing_robots_setting_invalidates_completed_checkpoints(
     run = lambda: execute(
         database, folder, pilot=1, client=client, progress=lambda *a, **k: None
     )
-    monkeypatch.delenv("IMPORT_RESPECT_ROBOTS", raising=False)
+    monkeypatch.setenv("IMPORT_RESPECT_ROBOTS", "true")
     assert run()["processed"] == 1 and run()["resumed"] == 1
     monkeypatch.setenv("IMPORT_RESPECT_ROBOTS", "false")
     report = run()

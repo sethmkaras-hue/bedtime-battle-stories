@@ -9,6 +9,7 @@ from .importer.review import approve
 from .importer.persistence import ContentError, pending, failure, issues
 
 router = APIRouter(prefix="/api/admin")
+legacy_review_router = APIRouter(prefix="/api/admin")
 COOKIE = "bedtime_parent"
 
 
@@ -86,7 +87,7 @@ def logout(request: Request, response: Response):
     return {"unlocked": False}
 
 
-@router.get("/proposals")
+@legacy_review_router.get("/proposals")
 def proposals(request: Request, response: Response):
     authorized(request)
     response.headers["Cache-Control"] = "no-store"
@@ -140,7 +141,7 @@ class Decision(BaseModel):
     tts_text: str | None = Field(default=None, max_length=200)
 
 
-@router.post("/proposals/{pid}/decision")
+@legacy_review_router.post("/proposals/{pid}/decision")
 def decide(body: Decision, request: Request, pid: int = ApiPath(gt=0)):
     authorized(request, True)
     store = Store()

@@ -110,7 +110,8 @@ def test_image_requires_depicts_identity_license_and_medium():
     )["supported"]
 
 
-def test_robots_denial_and_unapproved_redirect_are_not_bypassed(tmp_path):
+def test_robots_denial_and_unapproved_redirect_are_not_bypassed(tmp_path, monkeypatch):
+    monkeypatch.setenv("IMPORT_RESPECT_ROBOTS", "true")
     calls = []
 
     def denied(r):

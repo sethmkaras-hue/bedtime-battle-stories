@@ -88,3 +88,62 @@ def pronunciation_file(creature_id: int, key: str, request: Request):
         media_type="audio/wav",
         headers={"Cache-Control": "private, max-age=31536000, immutable"},
     )
+
+
+@router.get("/image-coverage")
+def image_coverage():
+    from .main import DB, ensure_database
+    from .importer.internet_images import coverage
+
+    ensure_database()
+    return coverage(DB)
+
+
+@router.get("/sources-credits")
+def sources_credits():
+    from .main import creatures
+
+    result = []
+    for creature in creatures():
+        profile = creature.get("profile", {})
+        result.append(
+            {
+                "id": creature["id"],
+                "name": creature["name"],
+                "scientific_name": profile.get("scientific_name"),
+                "sources": profile.get("sources", []),
+                "pronunciation": profile.get("pronunciation", {}),
+                "image": creature.get("internet_image")
+                or creature.get("generated_image")
+                or profile.get("image", {}),
+                "image_kind": creature.get("image_kind", "licensed_or_placeholder"),
+            }
+        )
+    return result
+
+
+@router.get("/images/{creature_id}/{key}")
+def internet_image_file(creature_id: int, key: str):
+    from .images.core import valid_asset
+
+    if not re.fullmatch(r"[a-f0-9]{64}", key):
+        raise HTTPException(404, "Image not found")
+    with connection() as conn:
+        if not conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE name='internet_image_versions'"
+        ).fetchone():
+            raise HTTPException(404, "Image not found")
+        asset = conn.execute(
+            "SELECT * FROM internet_image_versions WHERE creature_id=? AND key=?",
+            (creature_id, key),
+        ).fetchone()
+        if not asset or not valid_asset(dict(asset)):
+            raise HTTPException(404, "Image missing or corrupt; rerun the importer")
+    return FileResponse(
+        asset["path"],
+        media_type="image/webp",
+        headers={
+            "Cache-Control": "private, max-age=31536000, immutable",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
