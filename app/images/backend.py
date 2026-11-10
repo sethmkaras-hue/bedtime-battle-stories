@@ -1,6 +1,9 @@
 """Lazy CPU-only diffusion. Never imported by FastAPI startup."""
 
+import logging
+
 from .hardware import check
+from .prompts import fit_prompts
 
 
 class Interrupted(RuntimeError):
@@ -35,52 +38,37 @@ class DiffusionBackend:
         self.pipeline = StableDiffusionPipeline.from_pretrained(
             settings["model_path"],
             local_files_only=True,
-            torch_dtype=torch.float32,
             use_safetensors=True,
         )
         self.info["scheduler"] = self.pipeline.scheduler.__class__.__name__
-        self.pipeline.to("cpu")
+        self.pipeline.to(device="cpu", dtype=torch.float32)
         self.pipeline.enable_attention_slicing("max")
         self.pipeline.enable_vae_slicing()
         self.pipeline.set_progress_bar_config(disable=True)
-
-    def _embeddings(self, positive, negative):
-        # CLIP has 77-token windows. Encode bounded chunks instead of silently
-        # losing scientific details or the shared art direction to truncation.
-        tokenizer = self.pipeline.tokenizer
-        rows = [
-            tokenizer.encode(text, add_special_tokens=False)
-            for text in (positive, negative)
-        ]
-        chunks = max((len(row) + 74) // 75 for row in rows)
-        self.info["prompt_windows"] = chunks
-        if chunks > 4:
-            raise ValueError("Prompt exceeds the supported four CLIP windows")
-        result = []
-        for tokens in rows:
-            pieces = []
-            for n in range(chunks):
-                values = (
-                    [tokenizer.bos_token_id]
-                    + tokens[n * 75 : (n + 1) * 75]
-                    + [tokenizer.eos_token_id]
-                )
-                values += [tokenizer.pad_token_id] * (77 - len(values))
-                pieces.append(
-                    self.pipeline.text_encoder(
-                        self.torch.tensor([values], device="cpu")
-                    )[0]
-                )
-            result.append(self.torch.cat(pieces, dim=1))
-        return result
 
     def generate(
         self, settings, destination, stop=lambda: False, progress=lambda step: None
     ):
         with self.torch.inference_mode():
-            positive, negative = self._embeddings(
-                settings["prompt"], settings["negative_prompt"]
+            final = fit_prompts(
+                settings,
+                self.pipeline.tokenizer,
+                self.pipeline.text_encoder.config.max_position_embeddings,
             )
+            # Persist the exact prompts used, not just their unbudgeted recipe.
+            settings.update(final)
+            logger = logging.getLogger("creature_images")
+            for field, count in (
+                ("prompt", final["prompt_token_count"]),
+                ("negative_prompt", final["negative_prompt_token_count"]),
+            ):
+                message = (
+                    f"creature={settings.get('scientific_name', 'unknown')} "
+                    f"{field} tokens={count}/{final['prompt_token_limit']} "
+                    f"(including special tokens): {final[field]}"
+                )
+                logger.info(message)
+                print(message, flush=True)
 
             def step(pipe, index, timestep, kwargs):
                 if stop():
@@ -91,8 +79,8 @@ class DiffusionBackend:
                 return kwargs
 
             result = self.pipeline(
-                prompt_embeds=positive,
-                negative_prompt_embeds=negative,
+                prompt=final["prompt"],
+                negative_prompt=final["negative_prompt"],
                 width=settings["resolution"],
                 height=settings["resolution"],
                 num_inference_steps=settings["steps"],
