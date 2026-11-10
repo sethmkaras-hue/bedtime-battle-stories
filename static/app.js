@@ -24,13 +24,16 @@ const screens = [
   "selection",
   "bracket",
   "player",
+  "prediction",
+  "chapter-reveal",
+  "adventure-history",
   "celebration",
   "settings",
   "quiet",
 ];
 const audio = new BedtimeAudio($("story-audio"), $("audio-status"), () => {
   touch();
-  if (screen === "player" && current?.chapter) guarded(finishChapter)();
+  if (screen === "player" && (current?.chapter || (current?.id && window.PersistentChapters?.viewing()))) guarded(finishChapter)();
 });
 function touch() {
   lastAction = Date.now();
@@ -72,6 +75,8 @@ setInterval(checkIdle, 1000);
 function save() {
   try {
     sessionStorage.setItem("bedtimeTournament", JSON.stringify(current));
+    if (current?.id) localStorage.setItem("bedtimeStoryId", current.id);
+    else if (!current) localStorage.removeItem("bedtimeStoryId");
   } catch {}
   $("continue-adventure").hidden = !current;
 }
@@ -336,6 +341,7 @@ $("random").onclick = guarded(async () => {
   render();
 });
 async function createTournament(ids = selected) {
+  if (window.PersistentChapters) return PersistentChapters.create(ids);
   audio.stop();
   const p = settings.get();
   const result = await api("/api/tournament", {
@@ -367,6 +373,7 @@ $("surprise").onclick = guarded(async () => {
   await createTournament(ids);
 });
 function renderBracket() {
+  $("bracket").querySelector("h1").textContent=current.outline?.title || "The adventure path";
   $("rounds").replaceChildren();
   let activeId = current.chapter?.match_id;
   current.rounds.forEach((round, ri) => {
@@ -419,6 +426,12 @@ function renderBracket() {
         if (c) row.append(hear(c));
         card.append(row);
       });
+      if (current.id && m.status === "complete") {
+        const replay = document.createElement("button");
+        replay.textContent = "↺ Replay chapter";
+        replay.onclick = () => PersistentChapters.open(m.battle_id);
+        card.append(replay);
+      }
       list.append(card);
     });
     col.append(list);
@@ -466,6 +479,7 @@ function overrides(participants) {
 }
 
 async function openStory() {
+  if (current?.id) return PersistentChapters.open();
   if (!current?.chapter) return;
   const c = current.chapter;
   const ri = current.rounds.findIndex((r) =>
@@ -530,6 +544,7 @@ function context(completed = current.completed) {
   };
 }
 async function finishChapter() {
+  if (current?.id) return PersistentChapters.finish();
   if (!current?.chapter) return;
   const ending = current.chapter.ending;
   const result = await api("/api/adventure", {
@@ -556,6 +571,7 @@ $("pause").onclick = () => {
 };
 $("replay").onclick = () => audio.replay();
 $("story-rate").onchange = () => {
+  if (current?.id) PersistentChapters.audioChanged();
   settings.set("narrationRate", Number($("story-rate").value));
   if (audio.prefs) audio.prefs.narrationRate = settings.get().narrationRate;
   $("story-audio").playbackRate = settings.get().narrationRate;
@@ -603,6 +619,9 @@ $("back").onclick = () => {
     {
       encyclopedia: "welcome",
       profile: profileReturn,
+      prediction: "bracket",
+      "chapter-reveal": "bracket",
+      "adventure-history": "welcome",
       attributions: "settings",
       categories: "welcome",
       selection: "categories",
@@ -688,6 +707,7 @@ for (const [id, key] of Object.entries(fields))
           ? Number(el.value)
           : el.value,
     );
+    if (["narration-provider","narration-voice","narration-rate"].includes(id)) window.PersistentChapters?.audioChanged();
     if (id.endsWith("-provider"))
       voiceOptions(id.startsWith("narration") ? "narration" : "pronunciation");
   });
@@ -821,22 +841,14 @@ async function restore() {
     const stored = JSON.parse(
       sessionStorage.getItem("bedtimeTournament") || "null",
     );
-    if (stored) {
-      const ids =
-        stored.entrant_ids ||
-        stored.rounds[0].matches.flatMap((m) => [m.left.id, m.right.id]);
-      current = await api("/api/adventure", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          creature_ids: ids,
-          seed: stored.seed ?? 12345,
-          shuffle: stored.shuffle ?? false,
-          completed: stored.completed ?? 0,
-          realism: stored.realism,
-          duration: stored.duration,
-        }),
-      });
+    const persistentId = stored?.id || (!stored && localStorage.getItem("bedtimeStoryId"));
+    if (persistentId) {
+      current = await api("/api/story/tournaments/" + persistentId);
+      save();
+    } else if (stored?.rounds?.length === 3) {
+      // Preserve the legacy tab snapshot directly; do not rerun completed
+      // results or invent persistent context/predictions during restoration.
+      current = stored;
       save();
     }
     await refreshProviders();

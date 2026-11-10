@@ -13,6 +13,9 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.exception_handlers import request_validation_exception_handler
 from pydantic import BaseModel, ConfigDict, Field, StrictInt
 from app.adventure import progress
+from app.chapters import store as chapter_store
+from app.chapters.worker import Coordinator
+from app.chapters.routes import router as chapter_router, admin as chapter_admin_router
 from app import library as encyclopedia
 from app.library_routes import router as library_router
 from app.images.routes import router as image_router
@@ -35,6 +38,7 @@ HABITAT_ARENAS = {'land': {'land'}, 'marine': {'water'},
 
 def initialize_database():
     global _database_ready
+    new_database = not DB.exists()
     DB.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(DB) as conn:
         conn.execute('''CREATE TABLE IF NOT EXISTS creatures (
@@ -66,6 +70,7 @@ def initialize_database():
     with sqlite3.connect(DB) as conn:
         encyclopedia.bootstrap(conn)
 
+    chapter_store.migrate(DB, backup_existing=not new_database)
     _database_ready = (str(DB.resolve()), DB.stat().st_ino, SAMPLE, CATALOG)
 
 
@@ -81,9 +86,11 @@ async def lifespan(app):
     initialize_database()
     app.state.audio = create_service()
     app.state.parent_auth = ParentAuth(importer_root())
+    app.state.chapters = Coordinator(DB, app.state.audio, start=os.environ.get("BBS_DISABLE_CHAPTER_WORKER") != "1")
     try:
         yield
     finally:
+        app.state.chapters.close()
         app.state.audio.close()
 
 
@@ -95,6 +102,8 @@ async def validation_error(request, exc):
         return await request_validation_error(request, exc)
     return await request_validation_exception_handler(request, exc)
 
+app.include_router(chapter_router)
+app.include_router(chapter_admin_router)
 app.include_router(audio_router)
 app.include_router(library_router)
 app.include_router(image_router)

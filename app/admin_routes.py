@@ -22,7 +22,7 @@ def same_origin(request):
 def authorized(request, write=False):
     session = request.app.state.parent_auth.session(request.cookies.get(COOKIE))
     if not session:
-        raise HTTPException(401, "Unlock parent review first")
+        raise HTTPException(401, "Unlock grown-up controls first")
     if write:
         same_origin(request)
         if not hmac.compare_digest(

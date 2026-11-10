@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Set one local parent-review passphrase; never pass it on the command line."""
+"""Set one local grown-up-controls passphrase; never pass it on the command line."""
 
 import getpass
 import json
@@ -13,7 +13,7 @@ from app.importer.store import root
 from app.importer.network import atomic
 
 if __name__ == "__main__":
-    password = getpass.getpass("Parent review passphrase (12+ characters): ")
+    password = getpass.getpass("Grown-up controls passphrase (12+ characters): ")
     if password != getpass.getpass("Repeat passphrase: "):
         raise SystemExit("Passphrases did not match")
     record = password_record(password)
@@ -28,5 +28,5 @@ if __name__ == "__main__":
     finally:
         os.umask(previous)
     print(
-        "Parent review configured. Restart the app to invalidate existing sessions. No account was created."
+        "Grown-up controls configured. Restart the app to invalidate existing sessions. No account was created."
     )

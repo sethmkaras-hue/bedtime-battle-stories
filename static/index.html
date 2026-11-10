@@ -176,6 +176,19 @@
         </div>
         <p id="champion" hidden></p>
       </section>
+      <section id="prediction" hidden>
+        <p class="eyebrow">YOUR BIG GUESS</p><h1>Who do you think will win?</h1>
+        <div id="prediction-choices" class="creature-grid"></div>
+        <button id="prediction-skip" class="primary">✦ Surprise Me!</button>
+      </section>
+      <section id="chapter-reveal" hidden>
+        <p class="eyebrow">THE CHAPTER WINNER</p><h1 id="chapter-winner-name"></h1>
+        <div id="chapter-winner-picture"></div><p id="chapter-reveal-ending"></p><p id="prediction-response" class="subtitle"></p>
+        <button id="next-chapter" class="primary">Follow the adventure →</button>
+      </section>
+      <section id="adventure-history" hidden>
+        <h1>Our saved adventures</h1><div id="adventure-history-list"></div>
+      </section>
       <section id="player" hidden>
         <p id="battle-label" class="eyebrow"></p>
         <div id="battle-creatures" class="battle-creatures"></div>
@@ -213,6 +226,7 @@
         <button id="finish" class="secondary">
           I’ve read it · reveal the ending →
         </button>
+        <button id="retry-chapter" type="button" hidden>Try local narration again</button>
         <p id="timeout"></p>
       </section>
       <section id="celebration" class="celebration" hidden>
@@ -280,7 +294,7 @@
           <fieldset>
             <legend>Story choices</legend>
             <label
-              >Chapter length<select id="duration">
+              >Legacy chapter length<select id="duration">
                 <option value="short">About 1 minute</option>
                 <option value="normal">About 2 minutes</option>
                 <option value="long">About 3 minutes</option>
@@ -338,6 +352,34 @@
             </p>
           </details>
         </form>
+        <fieldset id="grownup-controls">
+          <legend>Grown-up story &amp; picture settings</legend>
+          <p id="adult-status">Unlock to change server settings or creature pictures.</p>
+          <label>Parent passphrase<input id="adult-password" type="password" autocomplete="current-password" /></label>
+          <button id="adult-unlock" type="button">Unlock</button><button id="adult-lock" type="button">Lock</button>
+          <div id="adult-tools" hidden>
+            <label>Battle Duration<select id="battle-duration"><option value="20">20 seconds</option><option value="30">30 seconds</option><option value="40" selected>40 seconds</option><option value="50">50 seconds</option><option value="60">60 seconds</option></select></label>
+            <label class="toggle"><input id="battle-predictions" type="checkbox" checked />Ask Who Will Win Before Each Battle</label>
+            <label>Story tone<select id="battle-tone"><option value="dramatic">Dramatic</option><option value="gentle">Gentle adventure</option></select></label>
+            <label class="toggle"><input id="battle-connected" type="checkbox" checked />Connected chapters</label>
+            <button id="save-battle-settings" type="button">Save story settings</button>
+            <button id="view-chapter-versions" type="button">View archived chapter versions</button><div id="chapter-versions"></div>
+            <button id="regenerate-chapter" type="button">Regenerate viewed chapter…</button>
+            <div id="regenerate-confirm" hidden><p>Prepare a new version? The original outcome, prediction and audio version will be kept.</p><button id="regenerate-confirm-yes" type="button">Yes, prepare a new version</button><button id="regenerate-cancel" type="button">Keep this chapter</button></div>
+            <details id="creature-image-manager"><summary>Creature Images</summary>
+              <label>Find a creature<input id="manage-creature-search" type="search" placeholder="Name, scientific name or category" /></label>
+              <label>Creature<select id="manage-creature"></select></label>
+              <div id="manage-current-image"></div><p id="manage-current-source"></p>
+              <label>Replacement search<input id="manage-image-query" type="search" placeholder="Automatic name search, or your own query" /></label>
+              <button id="manage-image-search" type="button">Search for Replacement</button>
+              <button id="manage-scientific-search" type="button">Search Scientific Name</button>
+              <button id="manage-image-refresh" type="button">Refresh results</button>
+              <p id="manage-image-status" role="status"></p><div id="manage-image-candidates" class="creature-grid"></div>
+              <button id="manage-image-more" type="button" hidden>Load More</button>
+              <h3>Image history</h3><div id="manage-image-history"></div>
+            </details>
+          </div>
+        </fieldset>
         <details id="image-management">
           <summary>Internet creature images</summary>
           <p id="image-import-coverage">Open Sources &amp; Credits to check local coverage.</p>
@@ -368,5 +410,7 @@
     <script src="/static/audio-player.js"></script>
     <script src="/static/app.js"></script>
     <script src="/static/import-settings.js"></script>
+    <script src="/static/chapters.js"></script>
+    <script src="/static/adult-tools.js"></script>
   </body>
 </html>

@@ -63,6 +63,7 @@ def metadata_request(url):
         "gcmlimit",
         "gcmcontinue",
         "iicontinue",
+        "iiurlwidth",
     }
     if params.get("action") != "query" or not set(params) <= allowed:
         return False
@@ -101,5 +102,7 @@ def metadata_request(url):
         len(params.get(key, "")) > 500
         for key in ("continue", "gcmcontinue", "iicontinue", "gcmtitle")
     ):
+        return False
+    if "iiurlwidth" in params and (not params["iiurlwidth"].isdigit() or not 16 <= int(params["iiurlwidth"]) <= 1024):
         return False
     return True
