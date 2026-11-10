@@ -2,9 +2,12 @@
 
 import random
 import re
+
 from pydantic import BaseModel, ConfigDict, Field
 
-VERSION = 1
+from . import combat
+
+VERSION = 2
 
 
 class Narrative(BaseModel):
@@ -19,6 +22,7 @@ class Narrative(BaseModel):
     transition: str
     chapter_number: int
     references: list[int]
+    combat_actions: list[str] = Field(default_factory=list)
     generation_version: int = VERSION
 
 
@@ -55,109 +59,67 @@ def generate(
         if settings["connected_chapters"]
         else []
     )
-    openings = [
-        f"A hush falls over the {place}. {a} and {b} face the next challenge!",
-        f"The moon peeks over the {place}. {a} moves closer, while {b} holds position.",
-        f"Something stirs in the {place}. Here come {a} and {b}, ready for a daring contest!",
-    ]
-    intro = rng.choice(openings)
-    if number == 7:
-        intro = f"Six completed battles have brought us here. The championship begins in the {place}! {a} and {b} face their greatest challenge."
-    elif refs:
-        last = previous[-1]
-        intro = f"After Chapter {last['chapter_number']}, {last['winner_name']} has advanced. Now {a} and {b} meet in the {place}."
-    # No unreviewed species-specific anatomy is invented. Generic contest motion
-    # works for the selected land/water arena; inspected traits can be mentioned.
-    traits = []
-    for creature in (left, right):
-        p = creature.get("profile") or {}
-        if p.get(
-            "verification_status"
-        ) == "verified" or "physical_characteristics" in p.get("reviewed_fields", {}):
-            supported = p.get("physical_characteristics", [])
-            if supported and not re.search(
-                r"\b(gore|dismemberment|bleeding|suffering|death|dies)\b",
-                supported[0],
-                re.I,
-            ):
-                traits.append(
-                    f"Remember {creature['name']}: {supported[0][:180].rstrip('.')}."
-                )
-    actions = [
-        f"{a} makes a bold move. {b} turns just in time. Neither gives up!",
-        f"{b} moves into the lead, but {a} finds an opening. The contest changes in a heartbeat!",
-        "A sudden turn changes everything! For a moment, the finish seems far away. Then a clever new path appears.",
-        "One contender holds a steady position. The other tries a daring approach. Who can find the final opening?",
-        "The moon lights the path ahead. A quick dodge brings a surprising chance, and the adventure grows even closer.",
-        "Both pause, then move again. Patience meets courage in this friendly contest. One final challenge remains.",
-        "A narrow opening appears. The challengers must choose carefully. A strong start matters, but a clever finish can change the story.",
-        "The arena feels quiet for one heartbeat. Then the contest springs to life again. Both creatures try their very best.",
-    ]
-    rng.shuffle(actions)
-    # Every length includes setting, both introductions, confrontation and reversal.
-    core = [
-        intro,
-        *traits[:1],
-        actions[0],
-        "But wait! The lead changes, and a surprising dodge keeps the challenge alive.",
-    ]
-    transition = (
-        "The champion can rest beneath the stars. Our seven-chapter adventure is complete."
-        if number == 7
-        else "Another chapter waits along the moonlit trail."
-    )
-    ending = (
-        f"With one decisive move, {winner['name']} takes the winning position! {loser['name']} retreats safely. "
-        + (
-            f"{winner['name']} is our champion! "
-            if number == 7
-            else f"{winner['name']} advances. "
-        )
-        + transition
-    )
     target = words or round(
         settings["duration_seconds"] * 2.15 * settings.get("speech_rate", 1)
     )
-    # Compact complete scenes when the full introduction does not fit. Add
-    # varied whole clauses measured by word count only as a starting estimate.
-    if len((" ".join(core) + " " + ending).split()) > target + 3:
-        start = (
-            "Six completed battles brought us here. "
-            if number == 7
-            else f"After Chapter {previous[-1]['chapter_number']}, "
-            if refs
-            else ""
+    # Keep continuity brief: never spend a short battle on a long introduction.
+    prefix = (
+        "Six completed battles. "
+        if number == 7
+        else f"After Chapter {previous[-1]['chapter_number']}, "
+        if refs
+        else ""
+    )
+    refs = refs[-1:] if refs else []
+    intro = prefix + f"{a} meets {b} in the {place}."
+    first = combat.attack(left, right, rng, settings["tone"] == "gentle")
+    counter = combat.attack(right, left, rng, settings["tone"] == "gentle")
+    core = [intro, f"{a} {first}! {b} counters and {counter}!"]
+    decisive = combat.finish(winner, loser, simulation["environment"], rng)
+    transition = (
+        "Our champion! Sweet dreams." if number == 7 else "On to the next chapter!"
+    )
+    ending = decisive + " " + transition
+    # Whole action clauses can expand a longer requested take; no silence padding
+    # or rate acceleration. Shortening retains both attacks and a tactical finish.
+    if target < 55:
+        opening = rng.choice(
+            [f"In the {place}!", f"At the {place}, they clash!", f"The {place} shakes!"]
         )
-        core = [
-            start + f"{a} meets {b} in the {place}.",
-            rng.choice(
-                [
-                    "A bold move! But wait, a quick turn changes the lead.",
-                    "One challenger takes the lead. A surprising maneuver opens another path!",
-                    "The first approach seems certain. Then a clever turn changes everything!",
-                    "They close in carefully. Suddenly, a daring dodge turns the contest around!",
-                ]
-            ),
-            *traits[:1],
-        ]
-        ending = (
-            f"{winner['name']} finds the opening and wins! {loser['name']} retreats safely. "
-            + (
-                "Our champion is here. Sweet dreams!"
-                if number == 7
-                else "The next chapter awaits!"
-            )
+        exchange = rng.choice(
+            [
+                f"{a} {combat.short_attack(left, right)}! {b} {combat.short_attack(right, left)}, leaving a bruise!",
+                f"{b} {combat.short_attack(right, left)}! {a} counters and {combat.short_attack(left, right)}. A bruise darkens!",
+            ]
         )
-    additions = actions + [
-        "One more chance appears.",
-        "The challengers watch carefully.",
-        "A brave new plan begins.",
-        "The moon shines above.",
-        "Each careful move matters.",
-        "The adventure grows closer.",
-        "Both stand ready.",
-        "Everything changes.",
-        "What courage!",
+        core = [prefix + opening, exchange]
+        water = simulation["environment"]["arena"] == "water"
+        move = (
+            rng.choice(["dives under the rush", "turns sharply"])
+            if water
+            else rng.choice(["sidesteps", "turns inside the attack"])
+        )
+        tactic = move + " and " + combat.short_attack(winner, loser)
+        retreat = "The wounded rival swims off." if water else "The rival limps away."
+        ending = f"{winner['name']} {tactic} and wins! {retreat}" + (
+            " Champion!" if number == 7 else ""
+        )
+    additions = [
+        f"{a} lunges again, but {b} twists out of reach.",
+        "A fierce counterattack turns the fight around.",
+        "The next impact sends both challengers reeling.",
+        "One more strike bruises the rival, but the fight continues.",
+        "Both recover their balance and clash again.",
+        "The rival guards its sore side and turns sharply.",
+        "A hard collision changes the angle of the fight.",
+        "A quick feint draws a counterattack into empty space.",
+        "The challengers press closer, looking for an opening.",
+        "Another daring strike sends the rival stumbling."
+        if simulation["environment"]["arena"] == "land"
+        else "Another daring strike sends the rival reeling.",
+        "A narrow opening appears.",
+        "The attack comes fast.",
+        "A bold counter lands.",
     ]
     rng.shuffle(additions)
     for sentence in additions:
@@ -167,22 +129,19 @@ def generate(
         if count + len(sentence.split()) <= target + 2:
             core.append(sentence)
     for sentence in (
-        "The stars shine overhead.",
-        "Both challengers gather courage.",
-        "The contest holds another surprise.",
-        "What a moment!",
+        "The challengers clash again.",
+        "Another hard strike lands.",
+        "The fight turns!",
     ):
         count = len((" ".join(core) + " " + ending).split())
         if count >= target - 2:
             break
         if count + len(sentence.split()) <= target + 2:
             core.append(sentence)
-    if settings.get("tone") == "gentle":
-        core[0] = "Under the gentle moonlight, " + core[0][0].lower() + core[0][1:]
     if simulation["environment"]["arena"] == "neutral":
         core.insert(
             0,
-            "This is a make-believe arena. Each creature stays safely in its own habitat.",
+            "In this make-believe shoreline arena, each creature stays in its own habitat.",
         )
     result = Narrative(
         title=("The Championship: " if number == 7 else f"Chapter {number}: ")
@@ -191,8 +150,9 @@ def generate(
         ending=ending,
         winner_id=winner["id"],
         participant_names=[a, b],
-        summary=f"{winner['name']} won in the {place}; {loser['name']} retreated safely.",
-        key_events=["A bold opening", "The lead reversed", "A safe decisive finish"],
+        summary=f"{winner['name']} won in the {place}; {loser['name']} retreated after physical attacks.",
+        key_events=[first, counter, decisive],
+        combat_actions=[first, counter, decisive],
         transition=transition,
         chapter_number=number,
         references=refs,

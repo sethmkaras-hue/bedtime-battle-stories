@@ -4,11 +4,14 @@ import hashlib
 import json
 from pathlib import Path
 from typing import Literal
-from fastapi import APIRouter, Request, HTTPException, Query
+
+from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, ConfigDict, Field, StrictInt, field_validator
+
 from app.admin_routes import authorized
-from . import store, images
+
+from . import images, store
 
 router = APIRouter(prefix="/api/story")
 admin = APIRouter(prefix="/api/admin")
@@ -43,7 +46,7 @@ class Strict(BaseModel):
 
 
 class Settings(Strict):
-    duration_seconds: Literal[20, 30, 40, 50, 60] = 40
+    duration_seconds: Literal[20, 30, 40, 50, 60] = 20
     tone: Literal["dramatic", "gentle"] = "dramatic"
     predictions_enabled: bool = True
     winner_mode: Literal["simulation"] = "simulation"
@@ -64,6 +67,7 @@ class AudioPrefs(Strict):
 
 
 class Prediction(Strict):
+    desired_winner_id: StrictInt | None = None
     predicted_winner_id: StrictInt | None = None
     skipped: bool = False
     audio: AudioPrefs = Field(default_factory=AudioPrefs)
@@ -147,6 +151,8 @@ def begin(tid: str, bid: str, body: Prediction, request: Request):
         body.predicted_winner_id,
         body.skipped,
         body.audio.model_dump(),
+        body.desired_winner_id,
+        "desired_winner_id" in body.model_fields_set,
     )
     return chapter(tid, bid)
 
@@ -185,6 +191,9 @@ def chapter(tid: str, bid: str):
             if chapter and chapter["audio"]
             else None,
             "prediction": prediction,
+            "desired_choice": store.desire(row),
+            "predictions_enabled": store.settings(conn)["predictions_enabled"],
+            "choices": store.choices(row) if row["completed"] else None,
             "completed": bool(row["completed"]),
             "simulation": json.loads(row["simulation"])
             if row["completed"] and row["simulation"]
@@ -438,3 +447,14 @@ def chapter_versions(tid: str, bid: str, request: Request):
         }
         for r in rows
     ]
+
+
+class Desire(Strict):
+    desired_winner_id: StrictInt | None = None
+
+
+@router.post("/tournaments/{tid}/battles/{bid}/desire")
+def save_desired(tid: str, bid: str, body: Desire, request: Request):
+    write(request)
+    call(store.save_desire, db(), tid, bid, body.desired_winner_id)
+    return chapter(tid, bid)

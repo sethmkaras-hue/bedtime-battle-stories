@@ -38,6 +38,7 @@ def run(base='http://127.0.0.1:8502', screenshots=None):
                 data={'fallback':True} if body.get('provider') in ['piper','browser'] else {'key':'a'*64,'state':'queued'}
             route.fulfill(status=200,json=data)
         page.route('**/api/audio**',route_audio)
+        page.route('**/api/library/creatures/*/pronunciation',lambda route:route.fulfill(status=202,json={'status':'failed'}))
         # Preserve coverage of the original session-only client/API contract.
         # Dedicated chapters_smoke.py exercises the new persistent flow.
         def legacy_tournament(route):
@@ -76,8 +77,9 @@ def run(base='http://127.0.0.1:8502', screenshots=None):
         page.locator('#search').evaluate("e=>e.parentElement.open=true")
         page.locator('#search').fill('tyrannosaurus');assert page.locator('.creature').count()==1
         page.locator('.speaker').first.click()
-        assert page.evaluate('speechSynthesis.last') is None
-        assert 'not prepared' in page.locator('#message').inner_text()
+        page.wait_for_function('!audio.pronouncing')
+        assert page.evaluate('speechSynthesis.last') is not None
+        assert 'device voice' in page.locator('#message').inner_text()
         assert state['requests']==0
         page.locator('#search').fill('')
         page.locator('#creatures .creature-select').first.click()

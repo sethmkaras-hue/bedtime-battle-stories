@@ -153,7 +153,7 @@ def test_duration_measurement_archiving_and_cache_clear(story):
     assert story[1].once()
     result = story[0].get(path).json()
     assert result["status"] == "ready" and result["audio"]["timing_met"]
-    assert 38 <= result["audio"]["actual_seconds"] <= 42
+    assert 18 <= result["audio"]["actual_seconds"] <= 22
     assert "winner_id" not in result["narrative"] and result["simulation"] is None
     with wave.open(result["audio"]["path"], "rb") as wav:
         assert wav.getnframes() / wav.getframerate() == pytest.approx(
@@ -411,6 +411,11 @@ def test_bounded_timing_preserves_best_valid_audio(story, monkeypatch):
             output.writeframes(b"\0\0" * 160000)
 
     monkeypatch.setattr(Voice, "generate_audio", fixed)
+    story[0].put(
+        "/api/admin/story/settings",
+        headers=login(story[0]),
+        json={**store.DEFAULTS, "duration_seconds": 40},
+    )
     state = new(story)
     path, bid, _ = begin(story, state)
     story[1].once()

@@ -744,6 +744,11 @@ def enrich(conn, rows, cache_root):
                     (item["id"], pronunciation_signature(record["pronunciation"])), []
                 ),
             )
+            from app.chapters.pronunciation import options as spoken_options
+
+            item["pronunciation_audio_options"] += spoken_options(
+                conn, item["id"], record, cache_root
+            )
             item["pronunciation_audio"] = next(
                 iter(item["pronunciation_audio_options"]), None
             )
@@ -782,6 +787,7 @@ def enrich(conn, rows, cache_root):
                 internet_image=image,
             )
         from app.chapters.images import overlay
+
         overlay(conn, item)
         result.append(item)
     return result

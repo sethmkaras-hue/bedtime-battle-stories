@@ -1,4 +1,5 @@
 "use strict";
+window.BedtimeNameUnlock="data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YSADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==";
 window.BedtimeAudio = class {
   constructor(audio, status, onEnded) {
     this.audio = audio;
@@ -12,7 +13,11 @@ window.BedtimeAudio = class {
     this.index = 0;
     this.nameAudio = new Audio();
     audio.addEventListener("play", () => {
+      this.nameToken++;
       this.nameAudio.pause();
+      this.playingNameButton?.removeAttribute("aria-busy");
+      this.playingNameButton?.setAttribute("aria-pressed","false");
+      this.pronouncing=false;
       window.speechSynthesis?.cancel();
     });
     audio.addEventListener("ended", () => onEnded());
@@ -27,6 +32,7 @@ window.BedtimeAudio = class {
     this.generating = false;
     this.audio.pause();
     this.nameAudio.pause();
+    this.playingNameButton?.removeAttribute("aria-busy");
     this.playingNameButton?.setAttribute("aria-pressed", "false");
     this.pronouncing = false;
     window.speechSynthesis?.cancel();
@@ -259,68 +265,69 @@ window.BedtimeAudio = class {
     }
   }
   async pronounce(creature, prefs, button) {
-    this.audio.pause();
-    this.nameAudio.pause();
-    window.speechSynthesis?.cancel();
-    if (!this.generating) this.token++;
-    this.pronouncing = true;
-    const nameToken = ++this.nameToken;
-    this.playingNameButton?.setAttribute("aria-pressed", "false");
-    const options = creature.pronunciation_audio_options || [];
-    const asset =
-      options.find(
-        (a) =>
-          a.provider === prefs.pronunciationProvider &&
-          a.voice === prefs.pronunciationVoice,
-      ) ||
-      creature.pronunciation_audio ||
-      options[0];
-    if (
-      !asset ||
-      !/^\/api\/library\/pronunciations\/\d+\/[0-9a-f]{64}$/.test(asset.url)
-    ) {
-      const guide =
-        creature.profile?.pronunciation?.phonetic || creature.pronunciation;
-      document.getElementById("message").textContent =
-        "Pronunciation audio is not prepared yet." +
-        (guide
-          ? (creature.profile?.pronunciation?.status === "verified"
-              ? " Written guide: "
-              : " Written guide (unverified): ") + guide
-          : " A parent can review this name.");
-      this.pronouncing = false;
-      console.info(
-        "Missing prebuilt pronunciation asset for creature",
-        creature.id,
-      );
-      return;
-    }
-    this.playingNameButton = button;
-    button?.setAttribute("aria-busy", "true");
-    this.nameAudio.onended = () =>
-      button?.setAttribute("aria-pressed", "false");
-    this.nameAudio.onerror = () => {
-      button?.setAttribute("aria-busy", "false");
-      button?.setAttribute("aria-pressed", "false");
-      document.getElementById("message").textContent =
-        "This pronunciation file is missing. Please ask a parent to refresh the prepared audio.";
+    this.audio.pause(); this.nameAudio.pause(); window.speechSynthesis?.cancel();
+    const token=++this.nameToken;
+    this.playingNameButton?.setAttribute("aria-pressed","false");
+    this.playingNameButton?.removeAttribute("aria-busy");
+    this.playingNameButton=button;this.pronouncing=true;
+    if(button){button.dataset.nameToken=String(token);button.setAttribute("aria-busy","true");}
+    const alive=()=>token===this.nameToken;
+    const message=text=>{if(alive())document.getElementById("message").textContent=text;};
+    const play=async(asset,recovered=false)=>{
+      if(!alive())return false;
+      this.audio.pause();window.speechSynthesis?.cancel();
+      this.nameAudio.onended=()=>{if(alive())button?.setAttribute("aria-pressed","false");};
+      this.nameAudio.onerror=null;
+      this.nameAudio.src=asset.url+(recovered?"?recovered="+Date.now():"");
+      this.nameAudio.currentTime=0;this.nameAudio.playbackRate=prefs.nameRate/(asset.speed||1);
+      try{await this.nameAudio.play();if(alive()){button?.setAttribute("aria-pressed","true");message("");}return true;}
+      catch(error){
+        if(!alive())return false;
+        if(error.name==="NotAllowedError") {message("Tap the picture or speaker again to play its name.");return true;}
+        return false;
+      }
     };
-    // Start the local media request directly within the tap gesture. No fetch,
-    // synthesis, browser speech or external request is made by this path.
-    if (!this.nameAudio.src.endsWith(asset.url)) this.nameAudio.src = asset.url;
-    this.nameAudio.currentTime = 0;
-    this.nameAudio.playbackRate = prefs.nameRate / (asset.speed || 1);
-    try {
-      await this.nameAudio.play();
-      if (nameToken === this.nameToken)
-        button?.setAttribute("aria-pressed", "true");
-    } catch {
-      if (nameToken !== this.nameToken) return;
-      document.getElementById("message").textContent =
-        "Tap the speaker again to play the prepared pronunciation.";
-    } finally {
-      if (nameToken === this.nameToken) this.pronouncing = false;
-      button?.removeAttribute("aria-busy");
+    try{
+      if(prefs.pronunciationProvider==="browser") {this.browserName(creature.name,prefs);return;}
+      const options=creature.pronunciation_audio_options||[];
+      const asset=options.find(a=>a.provider===prefs.pronunciationProvider && a.voice===prefs.pronunciationVoice)||creature.pronunciation_audio||options[0];
+      if(asset && /^\/api\/library\/pronunciations\/\d+\/[a-f0-9]{64}$/.test(asset.url)){
+        if(await play(asset))return;
+      }else{
+        // Prime this same HTMLAudioElement within the tap on Safari. This tiny
+        // silent UI unlock is not generated speech or a pronunciation claim.
+        this.nameAudio.onerror=null;
+        this.nameAudio.src=window.BedtimeNameUnlock;
+        try{await this.nameAudio.play();if(alive())this.nameAudio.pause();}catch{}
+      }
+      await new Promise(resolve=>setTimeout(resolve,120));
+      if(!alive())return;
+      message("Getting this name ready…");
+      const provider=prefs.pronunciationProvider==="piper"?"piper":"kokoro";
+      const voice=provider===prefs.pronunciationProvider?prefs.pronunciationVoice:"af_heart";
+      let response=await fetch(`/api/library/creatures/${creature.id}/pronunciation`,{
+        method:"POST",headers:{"Content-Type":"application/json","X-Bedtime-Client":"app"},
+        body:JSON.stringify({provider,voice,speed:prefs.nameRate})});
+      let data=await response.json();if(!response.ok)throw Error("Name unavailable");
+      while(["pending","generating"].includes(data.status)){
+        await new Promise(resolve=>setTimeout(resolve,400));if(!alive())return;
+        response=await fetch("/api/library/pronunciation-jobs/"+data.job_id);
+        const jobId=data.job_id;data=await response.json();data.job_id=jobId;
+        if(!response.ok)throw Error("Name unavailable");
+      }
+      if(!alive())return;
+      if(data.status!=="ready"||!data.asset)throw Error("Name unavailable");
+      creature.pronunciation_audio=data.asset;
+      creature.pronunciation_audio_options=[data.asset,...options.filter(a=>a.url!==data.asset.url)];
+      if(!await play(data.asset,true))throw Error("Playback unavailable");
+    }catch{
+      if(alive()){
+        this.browserName(creature.name,prefs);
+        message("Using a device voice for this name. You can tap again if it does not start.");
+      }
+    }finally{
+      if(alive())this.pronouncing=false;
+      if(button?.dataset.nameToken===String(token))button.removeAttribute("aria-busy");
     }
   }
   browserName(text, prefs) {

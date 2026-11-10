@@ -1135,3 +1135,13 @@ img[data-real-image], img[data-generated-image] {
 #manage-image-history button,#adventure-history-list button{display:block;width:100%;margin:8px 0;min-height:48px}
 
 #grownup-controls{min-width:0;min-inline-size:0}#manage-current-source{overflow-wrap:anywhere}#chapter-versions audio{width:100%;max-width:100%}
+
+.creature-notes{font-size:.85rem}.match-play{width:100%;min-height:48px;white-space:normal}.match.just-completed{outline:3px solid #699d6c;outline-offset:3px}
+@media(max-width:1000px){
+ #bracket[data-persistent="true"] #bracket-scroll{overflow:visible}
+ #bracket[data-persistent="true"] .rounds{display:block;min-width:0;width:100%}
+ #bracket[data-persistent="true"] .round{width:100%;min-width:0;margin-bottom:24px}
+ #bracket[data-persistent="true"] .round-matches{display:grid;grid-template-columns:1fr;gap:18px}
+ #bracket[data-persistent="true"] .match{min-width:0;width:100%}
+ #bracket[data-persistent="true"] svg.bracket-links{display:none}
+}

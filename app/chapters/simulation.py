@@ -4,7 +4,7 @@ import hashlib
 import math
 import random
 
-VERSION = 1
+VERSION = 2
 ARENAS = {
     "neutral": [("Make-believe shore-and-water arena", "neutral")],
     "land": [
@@ -64,7 +64,7 @@ def inputs(creature):
     return result
 
 
-def simulate(left, right, seed, arena):
+def _resolve(left, right, seed, arena, desired=None):
     rng = random.Random(seed)
     name, condition = rng.choice(ARENAS[arena])
     data = [inputs(left), inputs(right)]
@@ -99,7 +99,7 @@ def simulate(left, right, seed, arena):
     probability = min(
         0.85, max(0.15, 1 / (1 + math.exp((scores[1] - scores[0]) / 0.9)))
     )
-    draw = rng.random()
+    draw = rng.random() if desired is None else None
     return {
         "version": VERSION,
         "seed": seed,
@@ -119,7 +119,14 @@ def simulate(left, right, seed, arena):
         "scores": scores,
         "left_win_probability": probability,
         "draw": draw,
-        "winner_id": left["id"] if draw < probability else right["id"],
+        "winner_id": desired
+        if desired is not None
+        else left["id"]
+        if draw < probability
+        else right["id"],
+        "winner_determination_method": "child_choice"
+        if desired is not None
+        else "simulation",
     }
 
 
@@ -127,3 +134,13 @@ def battle_seed(seed, number):
     return int.from_bytes(
         hashlib.sha256(f"chapter:{seed}:{number}".encode()).digest()[:8], "big"
     )
+
+
+def simulate(left, right, seed, arena):
+    return _resolve(left, right, seed, arena)
+
+
+def chosen(left, right, seed, arena, desired):
+    if desired not in {left["id"], right["id"]}:
+        raise ValueError("Desired winner must be a competitor")
+    return _resolve(left, right, seed, arena, desired)

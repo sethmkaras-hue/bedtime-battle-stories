@@ -2,14 +2,16 @@
 
 import json
 import os
-from pathlib import Path
 import socket
 import subprocess
 import sys
 import tempfile
 import time
+from pathlib import Path
+
 import httpx
 from playwright.sync_api import sync_playwright
+
 from app.importer.auth import password_record
 
 
@@ -70,18 +72,63 @@ def run():
                 page.goto(base)
                 page.locator("#start-adventure").click()
                 page.locator("[data-category=dinosaur]").click()
+                # A missing clip is generated once by the local background
+                # adapter, then served as WAV. Tapping another name takes over.
+                page.locator("#creatures .creature-pick").first.click()
+                page.wait_for_function(
+                    "!audio.pronouncing && audio.nameAudio.src.includes('/api/library/pronunciations/')"
+                )
+                page.wait_for_function("audio.nameAudio.duration>0")
+                name_url = page.evaluate("audio.nameAudio.src")
+                page.evaluate(
+                    "()=>{audio.nameOriginalPlay=audio.nameAudio.play;audio.nameAudio.play=()=>Promise.reject(new DOMException('Gesture required','NotAllowedError'));}"
+                )
+                page.locator("#creatures .creature-pick").first.click()
+                page.wait_for_function(
+                    "document.getElementById('message').textContent.includes('Tap the picture')"
+                )
+                page.evaluate("()=>{audio.nameAudio.play=audio.nameOriginalPlay;}")
+                page.locator("#creatures .creature-pick").first.click()
+                page.wait_for_function("!audio.nameAudio.paused")
+
+                assert httpx.get(name_url).headers["content-type"] == "audio/wav"
+                page.locator("#creatures .creature-pick img").nth(1).click()
+                page.wait_for_function(
+                    "!audio.pronouncing && audio.nameAudio.src!=="
+                    + json.dumps(name_url)
+                )
+                page.evaluate("audio.stop()")
                 page.locator("#random").click()
                 page.wait_for_function("selected.length===8")
                 page.locator("#next").click()
                 page.locator("#bracket").wait_for(state="visible")
                 tid = page.evaluate("current.id")
                 assert tid
-                for number in range(1, 8):
-                    page.locator("#story").click()
+                for step, number in enumerate([4, 1, 2, 3, 5, 6, 7], 1):
+                    cards = page.locator("#rounds .match[data-battle]")
+                    launch = cards.nth(number - 1).locator(".match-play")
+                    launch.scroll_into_view_if_needed()
+                    top = cards.nth(number - 1).bounding_box()["y"]
+                    assert page.evaluate(
+                        "document.documentElement.scrollWidth<=innerWidth"
+                    )
+                    assert page.locator("#rounds .match-play:disabled").count() == (
+                        3
+                        if step == 1
+                        else page.locator("#rounds .match-play:disabled").count()
+                    )
+                    launch.click()
                     page.locator("#prediction").wait_for(state="visible")
                     assert page.locator("#prediction-choices button").count() == 2
-                    if number == 1:
+                    if step == 1:
                         page.locator("#prediction-choices button").first.click()
+                    else:
+                        page.locator("#prediction-skip").click()
+                    page.wait_for_function(
+                        "document.getElementById('battle-question').textContent.includes('THINK')"
+                    )
+                    if step == 1:
+                        page.locator("#prediction-choices button").nth(1).click()
                     else:
                         page.locator("#prediction-skip").click()
                     page.locator("#player").wait_for(state="visible")
@@ -97,10 +144,18 @@ def run():
                         .get_attribute("src")
                         .startswith("/api/story/audio/")
                     )
-                    assert page.evaluate("current.completed") == number - 1
-                    if number == 1:
+                    assert page.evaluate("current.completed") == step - 1
+                    if step == 1:
                         page.locator("#play").click()
                         page.wait_for_function("!audio.audio.paused")
+                        page.locator("#battle-creatures .speaker").first.click()
+                        page.wait_for_function(
+                            "audio.audio.paused && !audio.pronouncing"
+                        )
+                        page.locator("#play").click()
+                        page.wait_for_function(
+                            "!audio.audio.paused && audio.nameAudio.paused"
+                        )
                         page.locator("#pause").click()
                         assert page.evaluate("audio.audio.paused")
                         page.locator("#replay").click()
@@ -109,13 +164,33 @@ def run():
                     else:
                         page.locator("#finish").click()
                     page.locator("#chapter-reveal").wait_for(state="visible")
-                    assert page.evaluate("current.completed") == number
-                    if number == 1:
+                    assert page.evaluate("current.completed") == step
+                    if step == 1:
                         assert page.locator("#prediction-response").inner_text() in (
                             "You guessed it!",
                             "What an amazing battle!",
                         )
+                    if step == 1:
+                        choice = page.evaluate("current.history[0].choices")
+                        assert choice["desired_winner_id"] == choice["actual_winner_id"]
+                        assert (
+                            choice["predicted_winner_id"] != choice["actual_winner_id"]
+                        )
+                        assert choice["prediction_correct"] is False
                     page.locator("#next-chapter").click()
+                    if step < 7:
+                        page.locator("#bracket").wait_for(state="visible")
+                        page.wait_for_timeout(150)
+                        assert (
+                            abs(
+                                page.locator("#rounds .match[data-battle]")
+                                .nth(number - 1)
+                                .bounding_box()["y"]
+                                - top
+                            )
+                            < 5
+                        )
+                        assert page.locator("#rounds .just-completed").count() == 1
                 page.locator("#celebration").wait_for(state="visible")
                 page.reload()
                 page.locator("#continue-adventure").wait_for(state="visible")
@@ -126,7 +201,7 @@ def run():
                 )
                 page.locator("#view-bracket").click()
                 page.locator("#rounds button").filter(
-                    has_text="Replay chapter"
+                    has_text="Replay Battle"
                 ).first.click()
                 page.locator("#player").wait_for(state="visible")
                 page.wait_for_function("!audio.generating")
@@ -135,7 +210,9 @@ def run():
                 page.locator("#story-audio").dispatch_event("ended")
                 page.locator("#chapter-reveal").wait_for(state="visible")
                 assert page.locator("#prediction-response").inner_text() == (
-                    "You guessed it!"
+                    "What an adventure!"
+                    if prior_prediction["skipped"]
+                    else "You guessed it!"
                     if prior_prediction["correct"]
                     else "What an amazing battle!"
                 )

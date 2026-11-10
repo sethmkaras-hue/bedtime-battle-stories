@@ -2,12 +2,13 @@
 
 import io
 import os
-from pathlib import Path
 import sys
 import wave
+from pathlib import Path
+
 import httpx
-from PIL import Image
 import uvicorn
+from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app import main
@@ -43,6 +44,13 @@ class Voice:
             output.writeframes(
                 b"\0\0" * round(len(text.split()) / (2.15 * speed) * 8000)
             )
+
+
+class MissingPiper(Voice):
+    name = "piper"
+
+    def is_available(self):
+        return False
 
 
 def source(request):
@@ -99,7 +107,7 @@ if __name__ == "__main__":
     main.create_service = lambda: AudioService(
         os.environ["BBS_AUDIO_CACHE"],
         os.environ["BBS_MODEL_DIR"],
-        providers={"kokoro": Voice()},
+        providers={"kokoro": Voice(), "piper": MissingPiper()},
     )
     images.PoliteClient = client
     uvicorn.run(main.app, host="127.0.0.1", port=int(sys.argv[1]), log_level="warning")

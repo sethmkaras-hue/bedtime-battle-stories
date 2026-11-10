@@ -46,9 +46,23 @@ class AudioService:
             return None
         try:
             metrics = json.loads(metadata.read_text())
-            return {'key': key, 'state': 'ready', 'cached': cached,
-                    'url': f'/api/audio/files/{kind}/{key}', 'metrics': metrics}
-        except (OSError, ValueError):
+            if not isinstance(metrics, dict):
+                return None
+            with wave.open(str(path), "rb") as sound:
+                if (
+                    sound.getnframes() <= 0
+                    or len(sound.readframes(sound.getnframes()))
+                    != sound.getnframes() * sound.getnchannels() * sound.getsampwidth()
+                ):
+                    return None
+            return {
+                "key": key,
+                "state": "ready",
+                "cached": cached,
+                "url": f"/api/audio/files/{kind}/{key}",
+                "metrics": metrics,
+            }
+        except (OSError, ValueError, EOFError, wave.Error):
             return None
 
     def submit(self, request):
