@@ -143,7 +143,7 @@ def run():
                     card = page.locator("#creatures .creature").filter(
                         has=page.get_by_role("button", name="Meet " + name, exact=True)
                     )
-                    picture = card.locator(".creature-pick img")
+                    picture = card.locator(".creature-notes img")
                     picture.scroll_into_view_if_needed()
                     picture.evaluate("image => image.decode()")
                     url = picture.evaluate("image => image.currentSrc")
@@ -153,7 +153,7 @@ def run():
                         response.status_code == 200
                         and response.headers["content-type"] == "image/webp"
                     )
-                    card.locator(".creature-pick").click()
+                    card.locator(".creature-notes").click()
                     page.locator("#profile-image img").evaluate(
                         "image => image.decode()"
                     )

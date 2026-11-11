@@ -32,13 +32,13 @@ def run(base, screenshots=None):
         page.locator("#discovery-filter").select_option("shark")
         page.locator("#encyclopedia-search").fill("Great white")
         assert page.locator("#encyclopedia-cards .creature").count() == 1
-        page.locator("#encyclopedia-cards .creature-pick").click()
+        page.locator("#encyclopedia-cards .creature-notes").click()
         assert page.locator("#profile").is_visible()
         assert "Great white" in page.locator("#profile-name").inner_text()
         assert "Unknown" in page.locator("#profile-facts").inner_text()
         assert "Unknown details" in page.locator("#profile-review").inner_text()
         page.locator("#profile-speaker .speaker").click()
-        assert "not prepared" in page.locator("#message").inner_text()
+        page.wait_for_function("!audio.pronouncing")
         assert not any(
             method == "POST" and path == "/api/audio" for method, path in requests
         )
@@ -93,7 +93,7 @@ def run(base, screenshots=None):
         assert not any(
             method == "POST" and path == "/api/audio" for method, path in requests
         )
-        page.locator("#encyclopedia-cards .creature-pick").first.click()
+        page.locator("#encyclopedia-cards .creature-notes").first.click()
         page.locator("#profile-add").click()
         page.locator("#selection").wait_for(state="visible")
         assert (
@@ -104,7 +104,7 @@ def run(base, screenshots=None):
         assert not errors, errors
         browser.close()
     print(
-        "Library mobile regression passed: encyclopedia/search/profile, missing audio, local prepared playback, no tap-time TTS, selection integration"
+        "Library mobile regression passed: encyclopedia/search/profile, missing audio, local prepared playback, prepared playback avoids regeneration, selection integration"
     )
 
 

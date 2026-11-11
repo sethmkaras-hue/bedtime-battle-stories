@@ -5,11 +5,12 @@ import hashlib
 import json
 import logging
 import os
-from pathlib import Path
 import threading
 import time
 import wave
-from . import store, narrative
+from pathlib import Path
+
+from . import narrative, store
 
 LOG = logging.getLogger(__name__)
 
@@ -63,7 +64,7 @@ class Coordinator:
         with store.connection(self.db) as conn:
             conn.execute("BEGIN IMMEDIATE")
             job = conn.execute(
-                "SELECT * FROM story_jobs WHERE status='pending' ORDER BY created,id LIMIT 1"
+                "SELECT * FROM story_jobs WHERE status='pending' ORDER BY CASE WHEN kind='spoken_name' THEN 0 ELSE 1 END,created,id LIMIT 1"
             ).fetchone()
             if not job:
                 return False
@@ -74,6 +75,10 @@ class Coordinator:
         try:
             if job["kind"] == "chapter":
                 self.chapter(job["target"])
+            elif job["kind"] == "spoken_name":
+                from .pronunciation import work as speak_name
+
+                speak_name(self.db, job, self)
             else:
                 from .images import work
 

@@ -174,12 +174,12 @@
         >
           <div id="rounds" class="rounds"></div>
         </div>
-        <p id="champion" hidden></p>
+        <p id="champion" hidden></p><details><summary>Our saved battle choices</summary><div id="battle-choice-history"></div></details>
       </section>
       <section id="prediction" hidden>
-        <p class="eyebrow">YOUR BIG GUESS</p><h1>Who do you think will win?</h1>
+        <p id="question-stage" class="eyebrow">CHOOSE OR SKIP</p><h1 id="battle-question">Who do you WANT to win?</h1>
         <div id="prediction-choices" class="creature-grid"></div>
-        <button id="prediction-skip" class="primary">✦ Surprise Me!</button>
+        <button id="prediction-skip" class="primary">Skip</button>
       </section>
       <section id="chapter-reveal" hidden>
         <p class="eyebrow">THE CHAPTER WINNER</p><h1 id="chapter-winner-name"></h1>
@@ -358,8 +358,8 @@
           <label>Parent passphrase<input id="adult-password" type="password" autocomplete="current-password" /></label>
           <button id="adult-unlock" type="button">Unlock</button><button id="adult-lock" type="button">Lock</button>
           <div id="adult-tools" hidden>
-            <label>Battle Duration<select id="battle-duration"><option value="20">20 seconds</option><option value="30">30 seconds</option><option value="40" selected>40 seconds</option><option value="50">50 seconds</option><option value="60">60 seconds</option></select></label>
-            <label class="toggle"><input id="battle-predictions" type="checkbox" checked />Ask Who Will Win Before Each Battle</label>
+            <label>Battle Duration<select id="battle-duration"><option value="20" selected>20 seconds</option><option value="30">30 seconds</option><option value="40">40 seconds</option><option value="50">50 seconds</option><option value="60">60 seconds</option></select></label>
+            <label class="toggle"><input id="battle-predictions" type="checkbox" checked />Ask who you THINK will win (WANT remains optional)</label>
             <label>Story tone<select id="battle-tone"><option value="dramatic">Dramatic</option><option value="gentle">Gentle adventure</option></select></label>
             <label class="toggle"><input id="battle-connected" type="checkbox" checked />Connected chapters</label>
             <button id="save-battle-settings" type="button">Save story settings</button>

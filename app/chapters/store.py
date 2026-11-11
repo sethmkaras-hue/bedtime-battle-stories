@@ -3,12 +3,13 @@
 import json
 import sqlite3
 import uuid
-from datetime import datetime, timezone
 from contextlib import contextmanager
+from datetime import UTC, datetime
+
 from . import narrative, simulation
 
 DEFAULTS = {
-    "duration_seconds": 40,
+    "duration_seconds": 20,
     "tone": "dramatic",
     "predictions_enabled": True,
     "winner_mode": "simulation",
@@ -17,7 +18,7 @@ DEFAULTS = {
 
 
 def now():
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 @contextmanager
@@ -36,13 +37,41 @@ def migrate(db, backup_existing=True):
     from app.importer.store import backup
 
     with connection(db) as conn:
-        needed = not conn.execute(
-            "SELECT 1 FROM sqlite_master WHERE name='story_settings'"
-        ).fetchone()
+        has_settings = bool(
+            conn.execute(
+                "SELECT 1 FROM sqlite_master WHERE name='story_settings'"
+            ).fetchone()
+        )
+        columns = {r[1] for r in conn.execute("PRAGMA table_info(story_battles)")}
+        has_marker = bool(
+            conn.execute(
+                "SELECT 1 FROM sqlite_master WHERE name='story_update_migrations'"
+            ).fetchone()
+        )
+        applied = (
+            has_marker
+            and conn.execute(
+                "SELECT 1 FROM story_update_migrations WHERE name='short_battles_choices_v2'"
+            ).fetchone()
+        )
+        needed = (
+            not has_settings
+            or not {
+                "desired_winner_id",
+                "winner_method",
+                "choices_submitted",
+                "desired_submitted",
+            }
+            <= columns
+            or not applied
+        )
     if needed and backup_existing:
         backup(db)
     with connection(db) as conn:
         conn.executescript("""
+        CREATE TABLE IF NOT EXISTS spoken_name_assets(creature_id INTEGER NOT NULL,signature TEXT NOT NULL,
+          cache_key TEXT NOT NULL,provider TEXT NOT NULL,voice TEXT NOT NULL,speed REAL NOT NULL,metadata TEXT NOT NULL,created TEXT NOT NULL,
+          PRIMARY KEY(creature_id,signature,provider,voice,speed));
         CREATE TABLE IF NOT EXISTS story_tts_calibration(identity TEXT PRIMARY KEY,words_per_second REAL NOT NULL,samples INTEGER NOT NULL);
         CREATE TABLE IF NOT EXISTS story_settings(id INTEGER PRIMARY KEY CHECK(id=1),data TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS story_tournaments(id TEXT PRIMARY KEY,request_key TEXT NOT NULL UNIQUE,
@@ -68,8 +97,33 @@ def migrate(db, backup_existing=True):
           kind TEXT NOT NULL,asset_key TEXT,metadata TEXT NOT NULL,created TEXT NOT NULL);
         """)
         conn.execute(
+            "CREATE TABLE IF NOT EXISTS story_update_migrations(name TEXT PRIMARY KEY,applied TEXT NOT NULL)"
+        )
+        columns = {r[1] for r in conn.execute("PRAGMA table_info(story_battles)")}
+        for name, kind in [
+            ("desired_winner_id", "INTEGER"),
+            ("winner_method", "TEXT"),
+            ("choices_submitted", "TEXT"),
+            ("desired_submitted", "TEXT"),
+        ]:
+            if name not in columns:
+                conn.execute(f"ALTER TABLE story_battles ADD COLUMN {name} {kind}")
+        conn.execute(
             "INSERT OR IGNORE INTO story_settings VALUES(1,?)", (json.dumps(DEFAULTS),)
         )
+        if not conn.execute(
+            "SELECT 1 FROM story_update_migrations WHERE name='short_battles_choices_v2'"
+        ).fetchone():
+            prefs = settings(conn)
+            if prefs.get("duration_seconds") == 40:
+                prefs["duration_seconds"] = 20
+                conn.execute(
+                    "UPDATE story_settings SET data=? WHERE id=1", (json.dumps(prefs),)
+                )
+            conn.execute(
+                "INSERT INTO story_update_migrations VALUES('short_battles_choices_v2',?)",
+                (now(),),
+            )
 
 
 def settings(conn):
@@ -108,7 +162,8 @@ def enqueue(conn, kind, target, payload):
 
 def create(db, creatures, ids, seed, shuffle, request_key):
     import random
-    from app.main import arenas_for, HABITAT_ARENAS
+
+    from app.main import HABITAT_ARENAS, arenas_for
 
     if len(set(ids)) != 8 or any(i not in creatures for i in ids):
         raise ValueError("Choose eight distinct available creatures")
@@ -118,7 +173,7 @@ def create(db, creatures, ids, seed, shuffle, request_key):
         raise ValueError("Choose creatures with known safe habitats")
     if shuffle:
         random.Random(seed).shuffle(selected)
-    arena = sorted(arenas)[0] if arenas else "neutral"
+    arena = min(arenas) if arenas else "neutral"
     with connection(db) as conn:
         conn.execute("BEGIN IMMEDIATE")
         old = conn.execute(
@@ -156,7 +211,7 @@ def create(db, creatures, ids, seed, shuffle, request_key):
                 else (None, None)
             )
             conn.execute(
-                "INSERT INTO story_battles VALUES(?,?,?,?,?,NULL,NULL,NULL)",
+                "INSERT INTO story_battles(id,tournament_id,number,left_id,right_id,simulation,prediction,completed) VALUES(?,?,?,?,?,NULL,NULL,NULL)",
                 (uuid.uuid4().hex, tid, n, left, right),
             )
     return tid
@@ -186,16 +241,70 @@ def competitors(conn, tid, row):
     return tuple(json.loads(p["simulation"])["winner_id"] for p in previous)
 
 
-def begin(db, tid, bid, predicted, skipped, audio_settings):
+def save_desire(db, tid, bid, desired):
     with connection(db) as conn:
         conn.execute("BEGIN IMMEDIATE")
         row = battle(conn, tid, bid)
-        prior = conn.execute(
-            "SELECT COUNT(*) FROM story_battles WHERE tournament_id=? AND number<? AND completed IS NULL",
-            (tid, row["number"]),
-        ).fetchone()[0]
-        if prior:
-            raise ValueError("Complete the earlier chapters first")
+        left, right = competitors(conn, tid, row)
+        if desired is not None and desired not in (left, right):
+            raise ValueError("Choose one of these two creatures")
+        if row["desired_submitted"]:
+            if row["desired_winner_id"] != desired:
+                raise ValueError("Your desired winner is already saved")
+            return
+        if row["completed"] or row["simulation"] or row["prediction"]:
+            raise ValueError(
+                "This battle already has a saved outcome; replay it instead"
+            )
+        conn.execute(
+            "UPDATE story_battles SET desired_winner_id=?,desired_submitted=? WHERE id=?",
+            (desired, now(), bid),
+        )
+
+
+def desire(row):
+    if not row["desired_submitted"]:
+        return None
+    return {
+        "desired_winner_id": row["desired_winner_id"],
+        "skipped": row["desired_winner_id"] is None,
+        "timestamp": row["desired_submitted"],
+    }
+
+
+def choices(row):
+    if not row["choices_submitted"]:
+        return None
+    pred = json.loads(row["prediction"]) if row["prediction"] else {}
+    return {
+        "desired_winner_id": row["desired_winner_id"],
+        "predicted_winner_id": pred.get("predicted_winner_id"),
+        "winner_method": row["winner_method"],
+        "actual_winner_id": pred.get("actual_winner_id"),
+        "prediction_correct": pred.get("correct"),
+        "timestamp": row["choices_submitted"],
+    }
+
+
+def begin(
+    db,
+    tid,
+    bid,
+    predicted,
+    skipped,
+    audio_settings,
+    desired=None,
+    desired_supplied=False,
+):
+    with connection(db) as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        row = battle(conn, tid, bid)
+        if row["desired_submitted"]:
+            if (desired_supplied or desired is not None) and row["desired_winner_id"] != desired:
+                raise ValueError("Your desired winner is already saved")
+            desired = row["desired_winner_id"]
+        elif (row["simulation"] or row["prediction"]) and desired is not None:
+            raise ValueError("This battle already has a saved outcome")
         if row["completed"]:
             previous = json.loads(row["prediction"]) if row["prediction"] else None
             if previous and (
@@ -203,13 +312,15 @@ def begin(db, tid, bid, predicted, skipped, audio_settings):
                 or previous["skipped"] != skipped
             ):
                 raise ValueError("A completed battle cannot accept a new prediction")
-            return bid  # idempotent retries preserve the original prediction/result
+            return bid
         tournament = json.loads(
             conn.execute(
                 "SELECT data FROM story_tournaments WHERE id=?", (tid,)
             ).fetchone()[0]
         )
         left, right = competitors(conn, tid, row)
+        if desired is not None and desired not in (left, right):
+            raise ValueError("Choose one of these two creatures")
         if predicted is not None and predicted not in (left, right):
             raise ValueError("Predict one of these two creatures")
         prefs = settings(conn)
@@ -229,6 +340,15 @@ def begin(db, tid, bid, predicted, skipped, audio_settings):
                 "actual_winner_id": None,
                 "correct": None,
             }
+            if not row["desired_submitted"]:
+                conn.execute(
+                    "UPDATE story_battles SET desired_winner_id=?,desired_submitted=? WHERE id=?",
+                    (desired, now(), bid),
+                )
+            conn.execute(
+                "UPDATE story_battles SET choices_submitted=? WHERE id=?",
+                (prediction["timestamp"], bid),
+            )
             conn.execute(
                 "UPDATE story_battles SET prediction=? WHERE id=?",
                 (json.dumps(prediction), bid),
@@ -239,11 +359,18 @@ def begin(db, tid, bid, predicted, skipped, audio_settings):
             (json.dumps(tournament), tid),
         )
         if not row["simulation"]:
-            sim = simulation.simulate(
+            resolver = simulation.simulate if desired is None else simulation.chosen
+            args = [] if desired is None else [desired]
+            sim = resolver(
                 tournament["snapshots"][str(left)],
                 tournament["snapshots"][str(right)],
                 simulation.battle_seed(tournament["seed"], row["number"]),
                 tournament["arena"],
+                *args,
+            )
+            conn.execute(
+                "UPDATE story_battles SET winner_method=? WHERE id=?",
+                (sim["winner_determination_method"], bid),
             )
             sim["completed_at"] = now()
             conn.execute(
@@ -355,7 +482,18 @@ def state(db, tid, current_creatures=None):
             try:
                 left, right = competitors(conn, tid, row)
             except ValueError:
-                left, right = None, None
+                # Display an established feeder winner while its next opponent
+                # is still unknown; launching still requires both competitors.
+                feeds = {5: (1, 2), 6: (3, 4), 7: (5, 6)}[n]
+                established = []
+                for feed in feeds:
+                    prior = next(r for r in rows if r["number"] == feed)
+                    established.append(
+                        json.loads(prior["simulation"])["winner_id"]
+                        if prior["completed"] and prior["simulation"]
+                        else None
+                    )
+                left, right = established
             win = (
                 json.loads(row["simulation"])["winner_id"] if row["completed"] else None
             )
@@ -366,6 +504,7 @@ def state(db, tid, current_creatures=None):
                 "right": creature(right),
                 "winner": creature(win),
                 "status": "complete" if row["completed"] else "pending",
+                "eligible": bool(left and right and not row["completed"]),
                 "sources": []
                 if n <= 4
                 else ["r0m0", "r0m1"]
@@ -386,6 +525,7 @@ def state(db, tid, current_creatures=None):
                         "title": json.loads(chapter["narrative"])["title"]
                         if chapter and chapter["narrative"]
                         else f"Chapter {n}",
+                        "choices": choices(row),
                         "prediction": json.loads(row["prediction"])
                         if row["prediction"]
                         else None,

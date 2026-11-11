@@ -1,5 +1,7 @@
 # Interactive chapters and individual creature pictures
 
+**Historical implementation notes:** the subsequent [short-battle update](SHORT_BATTLES.md) changes the default to 20 seconds, adds WANT before THINK, permits any established matchup to play, and restores on-demand spoken names. Use its deployment and validation instructions for current behavior. Measurements below describe the earlier version.
+
 New adventures keep the existing eight-creature, seven-battle bracket, but store their results, predictions, chapters and narration locally. Defaults are **40 seconds**, **Dramatic**, predictions enabled, simulation winners, and connected chapters. Adult duration choices are 20/30/40/50/60 seconds. Previously prepared chapters are immutable during normal playback. No full image import or image generation is part of this upgrade.
 
 ## Components reused and extended

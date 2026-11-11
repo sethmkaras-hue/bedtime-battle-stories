@@ -47,7 +47,8 @@ function show(id) {
   $("message").textContent = "";
   touch();
   if (id === "bracket") requestAnimationFrame(drawConnectors);
-  window.scrollTo({ top: 0, behavior: "instant" });
+  if(id==="bracket" && current?.id && window.PersistentChapters)requestAnimationFrame(()=>PersistentChapters.restoreBracket());
+  else window.scrollTo({ top: 0, behavior: "instant" });
 }
 function stopAudio() {
   audio.stop();
@@ -133,6 +134,7 @@ function picture(c) {
   const img = document.createElement("img");
   img.src = illustration(c);
   img.alt = "";
+  img.addEventListener("click", event=>{if(img.closest("#prediction"))return;event.stopPropagation();touch();audio.pronounce(c,settings.get(),img);});
   if (c.image_variants) {
     const entries = Object.entries(c.image_variants).filter(
       ([width, path]) =>
@@ -165,7 +167,7 @@ function hear(c) {
     b.dataset.audioUrl = c.pronunciation_audio.url;
   else
     b.title =
-      "Audio not prepared; written guide available in the creature profile";
+      "Tap to prepare and hear this name";
   b.setAttribute("aria-label", "Pronounce " + c.name);
   b.innerHTML =
     '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 4 5 9H2v6h3l6 5V4Z"/><path d="M15 8c3 2 3 6 0 8m3-11c5 4 5 10 0 14" stroke-linecap="round"/></svg>';
@@ -266,8 +268,11 @@ function creatureCard(c, selectable) {
   const name = document.createElement("strong");
   name.textContent = c.name;
   pick.append(name);
-  pick.onclick = () => openProfile(c);
-  card.append(pick, hear(c));
+  pick.onclick = () => { touch(); audio.pronounce(c,settings.get(),pick); };
+  const details = document.createElement("button");
+  details.textContent="Creature notes";details.className="creature-notes";
+  details.onclick=()=>openProfile(c);
+  card.append(pick, hear(c), details);
   if (c.artwork_placeholder !== false || c.image_kind === "ai_generated") {
     const note = document.createElement("p");
     note.className = "artwork-note";
@@ -374,6 +379,16 @@ $("surprise").onclick = guarded(async () => {
 });
 function renderBracket() {
   $("bracket").querySelector("h1").textContent=current.outline?.title || "The adventure path";
+  $("bracket").dataset.persistent=String(Boolean(current.id));
+  $("story").hidden=Boolean(current.id);
+  $("battle-choice-history").replaceChildren();
+  for(const entry of current.history || []){
+    const line=document.createElement("p");const choice=entry.choices;
+    const creatures=current.rounds.flatMap(r=>r.matches).flatMap(m=>[m.left,m.right]).filter(Boolean);
+    const name=id=>creatures.find(c=>c.id===id)?.name || "Skipped";
+    line.textContent=choice?`Chapter ${entry.number}: WANT ${name(choice.desired_winner_id)} · THINK ${name(choice.predicted_winner_id)} · Winner ${name(choice.actual_winner_id)} (${choice.winner_method==="child_choice"?"your choice":"simulation"})`:`Chapter ${entry.number}: Earlier saved result; WANT choice was not recorded.`;
+    $("battle-choice-history").append(line);
+  }
   $("rounds").replaceChildren();
   let activeId = current.chapter?.match_id;
   current.rounds.forEach((round, ri) => {
@@ -394,6 +409,8 @@ function renderBracket() {
             ? "active"
             : "");
       card.dataset.match = m.id;
+      if(m.battle_id)card.dataset.battle=m.battle_id;
+      if(current.id && m.battle_id===window.PersistentChapters?.completedBattle())card.classList.add("just-completed");
       const label = document.createElement("p");
       label.className = "match-label";
       label.textContent =
@@ -426,11 +443,13 @@ function renderBracket() {
         if (c) row.append(hear(c));
         card.append(row);
       });
-      if (current.id && m.status === "complete") {
-        const replay = document.createElement("button");
-        replay.textContent = "↺ Replay chapter";
-        replay.onclick = () => PersistentChapters.open(m.battle_id);
-        card.append(replay);
+      if(current.id){
+        const launch=document.createElement("button");launch.className="match-play primary";
+        const eligible=m.left && m.right;
+        launch.textContent=m.status==="complete"?"Replay Battle":eligible?"Play Battle":"Waiting for Winners";
+        launch.disabled=!eligible;
+        launch.onclick=()=>PersistentChapters.open(m.battle_id);
+        card.append(launch);
       }
       list.append(card);
     });
